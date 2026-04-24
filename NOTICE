@@ -1,0 +1,33 @@
+svelte-mafs
+Copyright (c) 2026 Josh Hunter-Duvar and svelte-mafs contributors
+
+This product is a Svelte 5 port of and is heavily inspired by the API of:
+
+  Mafs (https://mafs.dev)
+  Copyright (c) Steven Petryk
+  Licensed under the MIT License — https://github.com/stevenpetryk/mafs/blob/main/LICENSE
+
+The component naming, prop shapes, and architectural decisions (root context,
+adaptive sampling, namespace exports for Plot/Coordinates/Transform) follow
+Mafs closely so that Mafs documentation and examples remain a useful reference
+for svelte-mafs users.
+
+----------------------------------------------------------------------
+
+This product depends on the following third-party software at runtime:
+
+  KaTeX (https://katex.org)
+  Copyright (c) 2013-2020 Khan Academy and other contributors
+  Licensed under the MIT License — https://github.com/KaTeX/KaTeX/blob/main/LICENSE
+
+  KaTeX is used to render LaTeX in <Text> labels. It is declared as a
+  regular dependency, not a peerDependency, because the version range is
+  narrow and the API surface we touch is internal-stable.
+
+----------------------------------------------------------------------
+
+Portions of the adaptive sampling algorithm in src/sampling.ts follow the
+recursive midpoint subdivision technique used by Mafs, which itself draws on
+the function-plot literature.
+
+If you build something with svelte-mafs, please consider also crediting Mafs.
