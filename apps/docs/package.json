@@ -1,0 +1,35 @@
+{
+  "name": "docs",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "prebuild": "pnpm docgen",
+    "preview": "astro preview",
+    "astro": "astro",
+    "docgen": "tsx scripts/docgen.ts",
+    "generate-types": "wrangler types"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^13.2.1",
+    "@astrojs/mdx": "^5.0.4",
+    "@astrojs/svelte": "^8.0.5",
+    "astro": "^6.1.9",
+    "svelte": "^5.55.5",
+    "svelte-mafs": "workspace:*",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.84.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.8",
+    "@types/node": "^25.6.0",
+    "tsx": "^4.19.0"
+  },
+  "overrides": {
+    "vite": "^7"
+  }
+}

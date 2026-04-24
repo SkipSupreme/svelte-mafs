@@ -1,0 +1,94 @@
+{
+  "modules": [
+    {
+      "module": "vec",
+      "description": null,
+      "exports": [
+        {
+          "name": "Vec2",
+          "kind": "type"
+        },
+        {
+          "name": "add",
+          "kind": "value"
+        },
+        {
+          "name": "sub",
+          "kind": "value"
+        },
+        {
+          "name": "scale",
+          "kind": "value"
+        },
+        {
+          "name": "dot",
+          "kind": "value"
+        },
+        {
+          "name": "mag",
+          "kind": "value"
+        },
+        {
+          "name": "normalize",
+          "kind": "value"
+        },
+        {
+          "name": "rotate",
+          "kind": "value"
+        },
+        {
+          "name": "lerp",
+          "kind": "value"
+        }
+      ]
+    },
+    {
+      "module": "math",
+      "description": null,
+      "exports": [
+        {
+          "name": "clamp",
+          "kind": "value"
+        },
+        {
+          "name": "round",
+          "kind": "value"
+        },
+        {
+          "name": "mapRange",
+          "kind": "value"
+        },
+        {
+          "name": "nearestPowerOfTen",
+          "kind": "value"
+        },
+        {
+          "name": "snapAngleToDegrees",
+          "kind": "value"
+        },
+        {
+          "name": "inferLabels",
+          "kind": "value"
+        }
+      ]
+    },
+    {
+      "module": "sampling",
+      "description": null,
+      "exports": [
+        {
+          "name": "Sample",
+          "kind": "type"
+        },
+        {
+          "name": "SampleOptions",
+          "kind": "type"
+        },
+        {
+          "name": "sample",
+          "kind": "value"
+        }
+      ]
+    }
+  ]
+}

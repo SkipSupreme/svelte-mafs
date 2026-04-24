@@ -1,0 +1,33 @@
+---
+import Base from '../layouts/Base.astro';
+import ThemePlayground from '../components/ThemePlayground.svelte';
+---
+
+<Base
+  title="Theme playground"
+  description="Edit svelte-mafs theme tokens live and copy the CSS."
+  prose
+>
+  <h1>Theme playground</h1>
+  <p>
+    Every color, stroke width, and radius in <code>svelte-mafs</code> is a CSS
+    custom property. Edit the tokens below to see a live preview, then paste
+    the generated CSS into your app's global stylesheet.
+  </p>
+  <p>
+    For dark mode, set the same tokens under
+    <code>:root[data-theme="dark"]</code> — or wrap any subtree in a
+    <code>data-theme</code> attribute and tokens cascade.
+  </p>
+
+  <ThemePlayground client:visible />
+
+  <h2>Where tokens apply</h2>
+  <ul>
+    <li><code>--mafs-fg</code> — default stroke for text, axes, and unstyled components.</li>
+    <li><code>--mafs-bg</code> — <code>&lt;Mafs&gt;</code> root canvas background.</li>
+    <li><code>--mafs-line-color</code> — axis lines.</li>
+    <li><code>--mafs-grid-color</code> — background grid ticks.</li>
+    <li><code>--mafs-blue</code>, <code>--mafs-red</code>, <code>--mafs-green</code>, <code>--mafs-yellow</code>, <code>--mafs-orange</code>, <code>--mafs-purple</code>, <code>--mafs-pink</code> — semantic palette slots used by component <code>color</code> props (e.g. <code>&lt;Plot.OfX color="red" /&gt;</code> resolves to <code>var(--mafs-red)</code>).</li>
+  </ul>
+</Base>

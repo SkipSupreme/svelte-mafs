@@ -1,0 +1,87 @@
+---
+import Nav from '../components/Nav.astro';
+import '../styles/global.css';
+
+interface Frontmatter {
+  title?: string;
+  description?: string;
+  prose?: boolean;
+}
+
+export interface Props extends Frontmatter {
+  frontmatter?: Frontmatter;
+}
+
+const fm = Astro.props.frontmatter ?? {};
+const title = Astro.props.title ?? fm.title ?? 'svelte-mafs';
+const description =
+  Astro.props.description ??
+  fm.description ??
+  'Svelte 5 components for interactive math visualization.';
+const prose = Astro.props.prose ?? fm.prose ?? false;
+
+const titleWithSuffix = title === 'svelte-mafs' ? title : `${title} · svelte-mafs`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <meta property="og:title" content={titleWithSuffix} />
+    <meta property="og:description" content={description} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" href="/favicon.ico" />
+    <title>{titleWithSuffix}</title>
+
+    {/* FOUC-free theme init: must run before paint. */}
+    <script is:inline>
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          var sys = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          document.documentElement.dataset.theme = saved || sys;
+        } catch (_) {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <Nav />
+    <main id="main" class={prose ? 'prose' : ''}>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="shell">
+        <p>
+          <a href="https://github.com/SkipSupreme/svelte-mafs" rel="noopener">GitHub</a>
+          <span class="sep" aria-hidden="true">·</span>
+          <a href="https://www.npmjs.com/package/svelte-mafs" rel="noopener">npm</a>
+          <span class="sep" aria-hidden="true">·</span>
+          <span>MIT. Inspired by <a href="https://mafs.dev" rel="noopener">Mafs</a>.</span>
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--site-border);
+    color: var(--site-fg-muted);
+    font-size: 0.875rem;
+    padding: 2rem 0 2.5rem;
+  }
+  .site-footer .shell {
+    max-width: var(--max-shell);
+    margin: 0 auto;
+    padding: 0 1.25rem;
+  }
+  .site-footer p { margin: 0; }
+  .sep { padding: 0 0.5rem; opacity: 0.6; }
+</style>

@@ -1,0 +1,61 @@
+---
+layout: ../../layouts/Base.astro
+title: "math"
+description: "API reference for the math module of svelte-mafs."
+prose: true
+---
+
+# `math`
+
+<p class="source-link">Source: <a href="https://github.com/SkipSupreme/svelte-mafs/blob/main/packages/svelte-mafs/src/math.ts"><code>packages/svelte-mafs/src/math.ts</code></a></p>
+
+## Exports
+
+### `clamp`
+
+```ts
+export const clamp = (v: number, min: number, max: number): number => …
+```
+
+### `round`
+
+```ts
+export const round = (v: number, precision = 0): number => …
+```
+
+### `mapRange`
+
+```ts
+export const mapRange = (
+  value: number,
+  fromMin: number,
+  fromMax: number,
+  toMin: number,
+  toMax: number,
+): number => …
+```
+
+### `nearestPowerOfTen`
+
+```ts
+export const nearestPowerOfTen = (v: number): number => …
+```
+
+### `snapAngleToDegrees`
+
+```ts
+export const snapAngleToDegrees = (rad: number, degrees: number): number => …
+```
+
+### `inferLabels`
+
+```ts
+export const inferLabels = (
+  min: number,
+  max: number,
+  target = 5,
+): number[] => …
+```
+
+Pick "nice" tick positions inside [min, max] aiming for roughly `target` ticks.
+Uses 1× / 2× / 5× multiples of the nearest power of ten so labels read cleanly.

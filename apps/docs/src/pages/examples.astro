@@ -1,0 +1,93 @@
+---
+import Base from '../layouts/Base.astro';
+
+interface Upcoming {
+  title: string;
+  slug: string;
+  source: string;
+  stream: string;
+}
+
+const upcoming: Upcoming[] = [
+  { title: 'Coordinates grid', slug: 'coordinates', source: 'Coordinates.Cartesian', stream: 'Stream 5' },
+  { title: 'Plot of y = sin(x)', slug: 'plot-of-x', source: 'Plot.OfX', stream: 'Stream 5' },
+  { title: 'Parametric curves', slug: 'plot-parametric', source: 'Plot.Parametric', stream: 'Stream 5' },
+  { title: 'Vector field', slug: 'plot-vector-field', source: 'Plot.VectorField', stream: 'Stream 5' },
+  { title: 'Draggable point on a curve', slug: 'movable-on-curve', source: 'MovablePoint + snapToCurve', stream: 'Stream 6' },
+  { title: 'Bezier curve editor', slug: 'bezier-editor', source: 'MovablePoint + Line.Segment', stream: 'Stream 6' },
+];
+---
+
+<Base title="Examples" description="Interactive svelte-mafs demos, shipping per component." prose>
+  <h1>Examples</h1>
+  <p>
+    Each example is a single file you can copy into your own project. Demos hydrate as
+    Svelte islands — the rest of the page stays static.
+  </p>
+
+  <p class="wave-note">
+    Wave B adds one route per component as it lands on <code>main</code>.
+    Ports of the <a href="https://mafs.dev" rel="noopener">Mafs homepage</a>
+    demos are below, each with a link to its tracking issue.
+  </p>
+
+  <ul class="upcoming-list">
+    {
+      upcoming.map((ex) => (
+        <li>
+          <div class="example-row">
+            <div>
+              <h2><code>{ex.title}</code></h2>
+              <p>
+                Built on <code>{ex.source}</code> — lands with {ex.stream}.
+              </p>
+            </div>
+            <span class="pending">Pending</span>
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+</Base>
+
+<style>
+  .wave-note {
+    color: var(--site-fg-muted);
+  }
+  .upcoming-list {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0 0;
+    display: grid;
+    gap: 0.75rem;
+  }
+  .upcoming-list li {
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.15rem;
+    background: var(--site-surface);
+  }
+  .example-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .example-row h2 {
+    margin: 0 0 0.25rem;
+    font-family: var(--font-body);
+    font-size: 1rem;
+  }
+  .example-row p { margin: 0; color: var(--site-fg-muted); font-size: 0.875rem; }
+  .pending {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.2em 0.6em;
+    border-radius: var(--radius-sm);
+    background: var(--site-bg);
+    color: var(--site-fg-muted);
+    border: 1px solid var(--site-border);
+    white-space: nowrap;
+  }
+</style>

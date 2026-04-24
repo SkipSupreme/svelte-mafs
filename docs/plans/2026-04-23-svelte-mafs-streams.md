@@ -493,6 +493,7 @@ TASKS:
 7. LICENSE (MIT) + NOTICE (Mafs attribution + KaTeX attribution).
 8. Visual regression baseline workflow — once apps/docs has example pages (from Stream 7 Wave B), add Playwright specs that screenshot each page and compare against committed PNGs in tests/e2e/__screenshots__/. Add CI step that fails on diff >2%, comments on PR with visual diff.
 9. Publish dry-run script — scripts/release-check.ts verifies dist/ contents, types ship, no secret leaks.
+10. **Pinch-zoom e2e (handoff from Stream 3)**: Stream 3 stayed in jsdom for drag + pan + wheel-zoom unit tests, but deferred multi-pointer pinch-zoom to your harness (see TODO comment in `packages/svelte-mafs/src/gestures/pan-zoom.ts` ~line 25). Add a Playwright fixture that dispatches two coordinated pointer sequences to verify pinch triggers `onZoom` with the correct factor and center.
 
 DONE CRITERIA:
 - CI passes on `main` after every stream merge
@@ -515,7 +516,8 @@ Canonical list for conflict detection. If your stream wants to touch a path not 
 |------|-------|---------|
 | `/package.json`, `pnpm-workspace.yaml`, `.gitignore`, `tsconfig.base.json` | S1 | all |
 | `packages/svelte-mafs/package.json` | S1 (add deps via PR to S1 branch if open, else captain merges) | all |
-| `packages/svelte-mafs/tsconfig.json`, `vite.config.ts`, `vitest.config.ts` | S1 | all |
+| `packages/svelte-mafs/tsconfig.json`, `vite.config.ts` | S1 | all |
+| `packages/svelte-mafs/vitest.config.ts` | **first-mover, captain merges** (S2 adds `svelteTesting()` plugin; later streams may extend) | all component streams |
 | `packages/svelte-mafs/src/index.ts` | **shared — append-only, captain serializes** | all |
 | `packages/svelte-mafs/src/test-setup.ts` | S1 | all |
 | `packages/svelte-mafs/src/{vec,math,sampling}.{ts,test.ts}` | S1 | S5 reads sampling |

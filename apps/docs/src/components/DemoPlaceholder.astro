@@ -1,0 +1,165 @@
+---
+// Decorative placeholder for Wave B demos. The SVG hints at the shape
+// of the real interactive demo that replaces this card. Swap the
+// inner <slot> for a Svelte island with client:visible when the
+// underlying component lands on main.
+
+export interface Props {
+  title: string;
+  kind: 'plot' | 'movable' | 'vector-field' | 'parametric';
+  href?: string;
+  note?: string;
+}
+
+const { title, kind, href, note = 'Live demo lands with the component.' } = Astro.props;
+---
+
+<figure class="demo-card" aria-label={`${title} demo preview`}>
+  <div class="demo-canvas" role="img" aria-hidden="true">
+    {kind === 'plot' && (
+      <svg viewBox="0 0 240 160" preserveAspectRatio="xMidYMid meet">
+        <g class="grid">
+          {Array.from({ length: 7 }, (_, i) => (
+            <line x1={30 + i * 30} y1="10" x2={30 + i * 30} y2="140" />
+          ))}
+          {Array.from({ length: 5 }, (_, i) => (
+            <line x1="10" y1={20 + i * 30} x2="230" y2={20 + i * 30} />
+          ))}
+        </g>
+        <line class="axis" x1="10" y1="80" x2="230" y2="80" />
+        <line class="axis" x1="120" y1="10" x2="120" y2="140" />
+        <path
+          class="curve"
+          d="M10,80 C40,20 70,20 100,80 S160,140 190,80 S230,40 230,60"
+          fill="none"
+        />
+      </svg>
+    )}
+    {kind === 'movable' && (
+      <svg viewBox="0 0 240 160" preserveAspectRatio="xMidYMid meet">
+        <g class="grid">
+          {Array.from({ length: 7 }, (_, i) => (
+            <line x1={30 + i * 30} y1="10" x2={30 + i * 30} y2="140" />
+          ))}
+          {Array.from({ length: 5 }, (_, i) => (
+            <line x1="10" y1={20 + i * 30} x2="230" y2={20 + i * 30} />
+          ))}
+        </g>
+        <line class="axis" x1="10" y1="80" x2="230" y2="80" />
+        <line class="axis" x1="120" y1="10" x2="120" y2="140" />
+        <circle cx="120" cy="80" r="64" class="curve" fill="none" />
+        <circle cx="170" cy="50" r="7" class="point" />
+        <circle cx="170" cy="50" r="12" class="point-halo" />
+      </svg>
+    )}
+    {kind === 'vector-field' && (
+      <svg viewBox="0 0 240 160" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <marker id="vf-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="currentColor" />
+          </marker>
+        </defs>
+        {Array.from({ length: 5 }).flatMap((_, r) =>
+          Array.from({ length: 7 }).map((_, c) => {
+            const cx = 30 + c * 30;
+            const cy = 20 + r * 30;
+            const dx = (c - 3) * 6;
+            const dy = (r - 2) * 6;
+            return (
+              <line
+                x1={cx}
+                y1={cy}
+                x2={cx + dx}
+                y2={cy + dy}
+                class="vector"
+                marker-end="url(#vf-arrow)"
+              />
+            );
+          })
+        )}
+      </svg>
+    )}
+    {kind === 'parametric' && (
+      <svg viewBox="0 0 240 160" preserveAspectRatio="xMidYMid meet">
+        <g class="grid">
+          {Array.from({ length: 7 }, (_, i) => (
+            <line x1={30 + i * 30} y1="10" x2={30 + i * 30} y2="140" />
+          ))}
+          {Array.from({ length: 5 }, (_, i) => (
+            <line x1="10" y1={20 + i * 30} x2="230" y2={20 + i * 30} />
+          ))}
+        </g>
+        <line class="axis" x1="10" y1="80" x2="230" y2="80" />
+        <line class="axis" x1="120" y1="10" x2="120" y2="140" />
+        <path
+          class="curve"
+          d="M120,80 Q140,20 180,40 T180,120 Q140,140 100,120 T60,40 Q100,20 120,80 Z"
+          fill="none"
+        />
+      </svg>
+    )}
+  </div>
+  <figcaption>
+    <h3 class="demo-title">{title}</h3>
+    <p class="demo-note">{note}</p>
+    {href && <a href={href} class="demo-link">Read spec →</a>}
+  </figcaption>
+</figure>
+
+<style>
+  .demo-card {
+    margin: 0;
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-lg);
+    background: var(--site-surface);
+    overflow: hidden;
+    transition: border-color 120ms ease, transform 120ms ease;
+  }
+  .demo-card:hover {
+    border-color: color-mix(in srgb, var(--site-accent) 50%, var(--site-border));
+  }
+  .demo-canvas {
+    aspect-ratio: 240 / 160;
+    padding: 0.75rem;
+    background:
+      repeating-linear-gradient(
+        0deg,
+        transparent 0 11px,
+        color-mix(in srgb, var(--site-border) 60%, transparent) 11px 12px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        transparent 0 11px,
+        color-mix(in srgb, var(--site-border) 60%, transparent) 11px 12px
+      ),
+      var(--site-bg);
+  }
+  .demo-canvas svg { display: block; width: 100%; height: 100%; }
+  .grid line { stroke: var(--site-border); stroke-width: 0.5; }
+  .axis { stroke: var(--site-fg-muted); stroke-width: 1; }
+  .curve { stroke: var(--site-accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .point { fill: var(--site-accent); }
+  .point-halo { fill: none; stroke: var(--site-accent); stroke-opacity: 0.3; stroke-width: 2; }
+  .vector { stroke: var(--site-accent); stroke-width: 1.25; color: var(--site-accent); }
+  figcaption {
+    padding: 1rem 1.1rem 1.1rem;
+    border-top: 1px solid var(--site-border);
+    background: var(--site-bg);
+  }
+  .demo-title {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem;
+  }
+  .demo-note {
+    font-size: 0.85rem;
+    color: var(--site-fg-muted);
+    margin: 0 0 0.5rem;
+  }
+  .demo-link {
+    font-size: 0.85rem;
+    text-decoration: none;
+  }
+  .demo-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+</style>

@@ -1,0 +1,182 @@
+---
+import Base from '../layouts/Base.astro';
+import DemoPlaceholder from '../components/DemoPlaceholder.astro';
+---
+
+<Base title="svelte-mafs" description="Svelte 5 components for interactive math visualization — plots, movable points, vector fields, and KaTeX labels, all tree-shakeable and keyboard-accessible.">
+  <section class="hero">
+    <p class="eyebrow">Svelte 5 · SVG · KaTeX · Tree-shakeable</p>
+    <h1>Interactive math visualization, native to Svelte 5.</h1>
+    <p class="lede">
+      A tiny component library for Cartesian plots, parametric curves,
+      vector fields, draggable points, and LaTeX labels. Runes-first
+      reactivity, pure-function math core, keyboard-navigable from
+      day one. Inspired by <a href="https://mafs.dev" rel="noopener">Mafs</a> for React.
+    </p>
+    <div class="cta-row">
+      <a class="cta cta-primary" href="/getting-started">Get started</a>
+      <a class="cta cta-secondary" href="https://github.com/SkipSupreme/svelte-mafs" rel="noopener">
+        View on GitHub →
+      </a>
+    </div>
+    <pre class="hero-snippet"><code>{`<Mafs viewBox={{ x: [-5, 5], y: [-2, 2] }}>
+  <Coordinates.Cartesian />
+  <Plot.OfX y={(x) => Math.sin(x)} />
+</Mafs>`}</code></pre>
+  </section>
+
+  <section class="demos" aria-labelledby="demos-heading">
+    <h2 id="demos-heading">Previews</h2>
+    <p class="demos-intro">
+      Live interactive demos hydrate as components land on <code>main</code>.
+      Until then, the shapes below preview what's shipping.
+    </p>
+    <div class="demo-grid">
+      <DemoPlaceholder
+        title="Plot.OfX"
+        kind="plot"
+        note="Adaptive sampling of y = f(x). Ships with Stream 5."
+      />
+      <DemoPlaceholder
+        title="MovablePoint"
+        kind="movable"
+        note="Drag + keyboard-navigable, with snap constraints. Ships with Stream 6."
+      />
+      <DemoPlaceholder
+        title="Plot.VectorField"
+        kind="vector-field"
+        note="Grid of arrows from f(x, y) → [dx, dy]. Ships with Stream 5."
+      />
+      <DemoPlaceholder
+        title="Plot.Parametric"
+        kind="parametric"
+        note="Closed curves from (t) → [x, y]. Ships with Stream 5."
+      />
+    </div>
+  </section>
+
+  <section class="features" aria-labelledby="features-heading">
+    <h2 id="features-heading">What you get</h2>
+    <ul class="feature-grid">
+      <li>
+        <h3>Tree-shakeable</h3>
+        <p>Importing only <code>&lt;Mafs&gt;</code> + <code>&lt;Plot.OfX&gt;</code> targets under 20&nbsp;KB gzipped (KaTeX is a peer).</p>
+      </li>
+      <li>
+        <h3>Runes-first</h3>
+        <p><code>$state</code>, <code>$derived</code>, <code>$bindable</code> — no stores in the public API, no React patterns smuggled in.</p>
+      </li>
+      <li>
+        <h3>Keyboard-accessible</h3>
+        <p>Every draggable has <code>role="slider"</code>, arrow-key movement, and a live region announcing value changes.</p>
+      </li>
+      <li>
+        <h3>KaTeX labels</h3>
+        <p>Static labels render at build time. Dynamic labels render on hydration. Either way, it's real math typesetting.</p>
+      </li>
+      <li>
+        <h3>Pure-function core</h3>
+        <p><code>vec.ts</code>, <code>math.ts</code>, <code>sampling.ts</code> ship with ≥95&nbsp;% coverage — no component can accidentally regress the math.</p>
+      </li>
+      <li>
+        <h3>SSR-safe</h3>
+        <p>SVG renders on the server; pointer handlers mount on hydration. Works inside SvelteKit, Astro islands, or static HTML.</p>
+      </li>
+    </ul>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    padding: 3rem 0 2.5rem;
+    max-width: 56rem;
+  }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.78rem;
+    color: var(--site-accent);
+    margin: 0 0 0.75rem;
+    font-weight: 600;
+  }
+  .hero h1 {
+    font-size: clamp(2.1rem, 5vw, 3.25rem);
+    margin: 0 0 1rem;
+  }
+  .lede {
+    font-size: 1.15rem;
+    color: var(--site-fg-muted);
+    max-width: 48rem;
+    margin: 0 0 1.75rem;
+  }
+  .cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0 0 2rem;
+  }
+  .cta {
+    display: inline-block;
+    padding: 0.65rem 1.1rem;
+    border-radius: var(--radius-md);
+    font-weight: 550;
+    text-decoration: none;
+    transition: transform 120ms ease, background-color 120ms ease;
+  }
+  .cta-primary {
+    background: var(--site-accent);
+    color: var(--site-accent-fg);
+    border: 1px solid var(--site-accent);
+  }
+  .cta-primary:hover { transform: translateY(-1px); }
+  .cta-secondary {
+    background: transparent;
+    color: var(--site-fg);
+    border: 1px solid var(--site-border);
+  }
+  .cta-secondary:hover { border-color: var(--site-fg-muted); }
+  .hero-snippet {
+    max-width: 44rem;
+    margin: 0;
+  }
+
+  .demos {
+    padding: 2.5rem 0;
+    border-top: 1px solid var(--site-border);
+  }
+  .demos-intro {
+    color: var(--site-fg-muted);
+    max-width: var(--max-prose);
+  }
+  .demo-grid {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    margin-top: 1.5rem;
+  }
+
+  .features {
+    padding: 2.5rem 0 1rem;
+    border-top: 1px solid var(--site-border);
+  }
+  .feature-grid {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+  .feature-grid li {
+    padding: 1.25rem 1.25rem 1rem;
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-lg);
+    background: var(--site-surface);
+  }
+  .feature-grid h3 {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    margin: 0 0 0.35rem;
+  }
+  .feature-grid p { margin: 0; color: var(--site-fg-muted); font-size: 0.9rem; }
+</style>

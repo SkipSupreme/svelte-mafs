@@ -1,0 +1,139 @@
+---
+layout: ../layouts/Base.astro
+title: Getting Started
+description: Install svelte-mafs and render your first interactive plot.
+prose: true
+---
+
+# Getting Started
+
+`svelte-mafs` ships as a tree-shakeable ESM package for Svelte&nbsp;5 projects.
+Svelte is a peer dependency &mdash; bring your own (v5+).
+
+## Install
+
+```bash
+pnpm add svelte-mafs
+# or: npm install svelte-mafs
+# or: yarn add svelte-mafs
+```
+
+Import the theme stylesheet once, at your app root:
+
+```ts
+import 'svelte-mafs/core.css';
+```
+
+If you want the bundled numeric font, add:
+
+```ts
+import 'svelte-mafs/font.css';
+```
+
+## Your first plot
+
+```svelte
+<script lang="ts">
+  import { Mafs, Coordinates, Plot } from 'svelte-mafs';
+</script>
+
+<Mafs viewBox={{ x: [-5, 5], y: [-2, 2] }}>
+  <Coordinates.Cartesian />
+  <Plot.OfX y={(x) => Math.sin(x)} />
+</Mafs>
+```
+
+That's enough to render a grid, labeled axes, and an adaptively-sampled
+sine curve. Resize the page &mdash; the plot scales. Zoom the page &mdash; the
+grid spacing adapts to integer powers-of-ten automatically.
+
+## Adding a movable point
+
+Points with `bind:x` / `bind:y` become two-way controls. The component
+publishes its position as soon as the user drags or presses an arrow key.
+
+```svelte
+<script lang="ts">
+  import { Mafs, Coordinates, Plot, MovablePoint } from 'svelte-mafs';
+  let x = $state(1);
+  let y = $state(1);
+</script>
+
+<Mafs viewBox={{ x: [-3, 3], y: [-3, 3] }}>
+  <Coordinates.Cartesian />
+  <Plot.OfX y={(t) => Math.sin(t) * x + y} />
+  <MovablePoint bind:x bind:y />
+</Mafs>
+
+<p>x = {x.toFixed(2)}, y = {y.toFixed(2)}</p>
+```
+
+`MovablePoint` is a native form control: it emits a `change` event,
+announces value changes via an ARIA live region, and responds to
+arrow keys (Shift for 10&times; step).
+
+## Theming
+
+Every color, weight, and radius is a CSS custom property. Override
+whichever you want on any ancestor of `<Mafs>`:
+
+```css
+:root {
+  --mafs-fg: #1a1a1a;
+  --mafs-bg: #fdfdfc;
+  --mafs-line-color: #1a1a1a;
+  --mafs-grid-color: #e4e4e0;
+  --mafs-blue: #2563eb;
+  --mafs-red: #dc2626;
+  --mafs-green: #16a34a;
+}
+
+:root[data-theme='dark'] {
+  --mafs-fg: #ededec;
+  --mafs-bg: #0e0f10;
+  /* ...and so on */
+}
+```
+
+There is no JavaScript theme switcher: toggling `data-theme` on any
+ancestor element flips colors reactively. Use the playground on this
+site to experiment with a token live.
+
+## Accessibility
+
+svelte-mafs treats keyboard and screen-reader support as non-negotiable:
+
+- Every `<MovablePoint>` has `role="slider"` with `aria-valuenow-x` /
+  `aria-valuenow-y` and responds to Arrow keys, `Home`, `End`, and
+  `Shift+Arrow` for coarse steps.
+- Value changes announce via a single `aria-live="polite"` region at
+  the `<Mafs>` root &mdash; screen readers speak the new position on drop.
+- Focus rings are driven by `:focus-visible` against a
+  `--mafs-focus` token, high-contrast by default.
+- `prefers-reduced-motion` disables smooth pan/zoom easing.
+
+Read the full [A11Y checklist](/A11Y) every demo on this site
+satisfies.
+
+## Inside SvelteKit, Astro, or plain Svelte
+
+`<Mafs>` is SSR-safe: the SVG renders server-side, pointer handlers
+mount on hydration. In Astro, drop any demo into an island:
+
+```astro
+---
+import MyDemo from '../components/MyDemo.svelte';
+---
+<MyDemo client:visible />
+```
+
+In SvelteKit, import and use normally. For a static Svelte project,
+pass the compiled component to `mount()`.
+
+## Next steps
+
+- Browse the [API reference](/api) for every exported component.
+- See [Examples](/examples) for full interactive demos, or
+  [open the Playground](/playground) to tweak theme tokens live.
+- File issues or start a discussion on
+  [GitHub](https://github.com/SkipSupreme/svelte-mafs).

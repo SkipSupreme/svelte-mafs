@@ -1,0 +1,59 @@
+---
+layout: ../../layouts/Base.astro
+title: "sampling"
+description: "API reference for the sampling module of svelte-mafs."
+prose: true
+---
+
+# `sampling`
+
+<p class="source-link">Source: <a href="https://github.com/SkipSupreme/svelte-mafs/blob/main/packages/svelte-mafs/src/sampling.ts"><code>packages/svelte-mafs/src/sampling.ts</code></a></p>
+
+## Types
+
+### `Sample`
+
+```ts
+export type Sample = readonly [number, number];
+```
+
+### `SampleOptions`
+
+```ts
+export interface SampleOptions {
+  readonly domain: readonly [number, number];
+  /** Max allowed y-deviation (user units) from linear interpolation before subdividing further. */
+  readonly tolerance: number;
+  /** Recursion cap. Protects against pathological functions (1/x, sin(1/x)). */
+  readonly maxDepth: number;
+  /**
+   * Force unconditional recursion to this depth before applying the flatness check.
+   * Catches symmetric features (e.g. a full period of sin where both endpoints and the
+   * midpoint all happen to sit at zero). Default 4 → 17 initial samples.
+   */
+  readonly minDepth?: number;
+}
+```
+
+## Exports
+
+### `sample`
+
+```ts
+export const sample = (
+  f: (x: number) => number,
+  opts: SampleOptions,
+): Sample[] => …
+```
+
+Adaptive midpoint-subdivision sampler for y = f(x).
+
+For each interval [x0, x1], evaluates the midpoint xm. If f(xm) is within
+`tolerance` of the chord through (x0, f(x0)) and (x1, f(x1)) the segment is
+flat enough and we emit three points. Otherwise we recurse on both halves
+until either flat or `maxDepth` is hit. The first `minDepth` levels are
+subdivided unconditionally so the sampler can find features the chord check
+would miss (e.g. symmetric bumps at the midpoint).
+
+Non-finite values, or values exceeding DIVERGENCE_THRESHOLD, produce a
+`[x, NaN]` marker so downstream path builders break the stroke into segments.

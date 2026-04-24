@@ -1,0 +1,179 @@
+:root {
+  --site-bg: #fdfdfc;
+  --site-fg: #1a1a1a;
+  --site-fg-muted: #5a5a5a;
+  --site-border: #e4e4e0;
+  --site-surface: #f5f5f2;
+  --site-accent: #2563eb;
+  --site-accent-fg: #ffffff;
+  --site-code-bg: #f5f5f2;
+  --site-code-fg: #1a1a1a;
+  --site-focus: #2563eb;
+
+  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --font-display: ui-serif, Georgia, "Times New Roman", serif;
+
+  --max-prose: 68ch;
+  --max-shell: 1120px;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+:root[data-theme="dark"] {
+  --site-bg: #0e0f10;
+  --site-fg: #ededec;
+  --site-fg-muted: #9a9a98;
+  --site-border: #27272a;
+  --site-surface: #18181a;
+  --site-accent: #60a5fa;
+  --site-accent-fg: #0e0f10;
+  --site-code-bg: #16171a;
+  --site-code-fg: #ededec;
+  --site-focus: #60a5fa;
+
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--site-bg);
+  color: var(--site-fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--max-shell);
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+main.prose {
+  max-width: calc(var(--max-prose) + 2.5rem);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+h1 { font-size: clamp(2rem, 4vw, 3rem); margin: 0 0 1rem; }
+h2 { font-size: 1.6rem; margin: 2.5rem 0 0.75rem; }
+h3 { font-size: 1.2rem; margin: 1.75rem 0 0.5rem; }
+
+p { margin: 0 0 1rem; }
+
+a {
+  color: var(--site-accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+a:hover { text-decoration-thickness: 2px; }
+
+:focus-visible {
+  outline: 2px solid var(--site-focus);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+code,
+kbd,
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+:not(pre) > code {
+  background: var(--site-code-bg);
+  color: var(--site-code-fg);
+  padding: 0.15em 0.35em;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--site-border);
+}
+
+pre {
+  background: var(--site-code-bg);
+  color: var(--site-code-fg);
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--site-border);
+  overflow-x: auto;
+  line-height: 1.55;
+}
+
+pre code { background: transparent; border: 0; padding: 0; }
+
+/* Shiki emits both light + dark inline styles using --shiki-dark / --shiki-dark-bg
+   custom props. We flip to them on [data-theme="dark"]. */
+:root[data-theme="dark"] .astro-code,
+:root[data-theme="dark"] .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--site-border);
+  margin: 2.5rem 0;
+}
+
+blockquote {
+  margin: 1.5rem 0;
+  padding: 0.25rem 1rem;
+  border-left: 3px solid var(--site-accent);
+  color: var(--site-fg-muted);
+}
+
+ul, ol { padding-left: 1.5rem; }
+li + li { margin-top: 0.25rem; }
+
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 1rem;
+  background: var(--site-accent);
+  color: var(--site-accent-fg);
+  padding: 0.5rem 0.85rem;
+  border-radius: var(--radius-sm);
+  z-index: 100;
+  text-decoration: none;
+}
+.skip-link:focus { top: 0.75rem; }
+
+@media (prefers-reduced-motion: no-preference) {
+  :root {
+    scroll-behavior: smooth;
+  }
+}

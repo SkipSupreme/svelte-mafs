@@ -1,0 +1,120 @@
+---
+import Base from '../../layouts/Base.astro';
+import manifest from '../../data/api-manifest.json';
+
+interface ManifestEntry {
+  module: string;
+  description: string | null;
+  exports: { name: string; kind: 'value' | 'type' }[];
+}
+
+// JSON imports widen string-literal unions to `string`; narrow at the boundary.
+const modules = manifest.modules as ManifestEntry[];
+---
+
+<Base
+  title="API reference"
+  description="Every exported symbol of svelte-mafs, auto-generated from source."
+  prose
+>
+  <h1>API reference</h1>
+  <p class="meta">
+    Auto-generated from <code>packages/svelte-mafs/src/*</code> at build time.
+  </p>
+
+  {
+    modules.length === 0 ? (
+      <p class="empty">
+        No exports yet — run <code>pnpm -F docs docgen</code> after the lib has
+        something to re-export.
+      </p>
+    ) : (
+      <div class="module-list">
+        {modules.map((mod) => (
+          <section class="module-card">
+            <h2>
+              <a href={`/api/${mod.module}`}><code>{mod.module}</code></a>
+            </h2>
+            {mod.description && <p class="module-desc">{mod.description}</p>}
+            <ul class="symbol-list">
+              {mod.exports.map((exp) => (
+                <li>
+                  <a href={`/api/${mod.module}#${exp.name.toLowerCase()}`}>
+                    <code>{exp.name}</code>
+                  </a>
+                  <span class={`kind-tag kind-${exp.kind}`}>{exp.kind}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    )
+  }
+
+  <h2>Coming from Streams 2&ndash;6</h2>
+  <p>
+    Svelte components (<code>&lt;Mafs&gt;</code>, <code>&lt;Plot.OfX&gt;</code>,
+    <code>&lt;MovablePoint&gt;</code>, etc.) arrive as their owning streams
+    land on <code>main</code>. Each merge triggers <code>prebuild</code> to
+    regenerate these pages, so the reference never drifts from the code.
+  </p>
+</Base>
+
+<style>
+  .meta {
+    color: var(--site-fg-muted);
+    font-size: 0.9rem;
+  }
+  .module-list {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+  .module-card {
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.15rem 1.15rem;
+    background: var(--site-surface);
+  }
+  .module-card h2 {
+    margin: 0 0 0.5rem;
+    font-family: var(--font-body);
+    font-size: 1.1rem;
+  }
+  .module-card h2 a { color: var(--site-fg); text-decoration: none; }
+  .module-card h2 a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .module-desc {
+    font-size: 0.875rem;
+    color: var(--site-fg-muted);
+    margin: 0 0 0.75rem;
+  }
+  .symbol-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.6rem;
+  }
+  .symbol-list li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0;
+  }
+  .symbol-list a { color: var(--site-fg); text-decoration: none; }
+  .symbol-list a:hover { color: var(--site-accent); }
+  .kind-tag {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.1em 0.4em;
+    border-radius: 2px;
+    border: 1px solid var(--site-border);
+    color: var(--site-fg-muted);
+  }
+  .kind-type { color: var(--site-accent); border-color: color-mix(in srgb, var(--site-accent) 40%, var(--site-border)); }
+  .empty { color: var(--site-fg-muted); }
+</style>

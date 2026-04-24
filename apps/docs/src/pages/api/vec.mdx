@@ -1,0 +1,68 @@
+---
+layout: ../../layouts/Base.astro
+title: "vec"
+description: "API reference for the vec module of svelte-mafs."
+prose: true
+---
+
+# `vec`
+
+<p class="source-link">Source: <a href="https://github.com/SkipSupreme/svelte-mafs/blob/main/packages/svelte-mafs/src/vec.ts"><code>packages/svelte-mafs/src/vec.ts</code></a></p>
+
+## Types
+
+### `Vec2`
+
+```ts
+export type Vec2 = readonly [number, number];
+```
+
+## Exports
+
+### `add`
+
+```ts
+export const add = (a: Vec2, b: Vec2): Vec2 => …
+```
+
+### `sub`
+
+```ts
+export const sub = (a: Vec2, b: Vec2): Vec2 => …
+```
+
+### `scale`
+
+```ts
+export const scale = (a: Vec2, k: number): Vec2 => …
+```
+
+### `dot`
+
+```ts
+export const dot = (a: Vec2, b: Vec2): number => …
+```
+
+### `mag`
+
+```ts
+export const mag = (a: Vec2): number => …
+```
+
+### `normalize`
+
+```ts
+export const normalize = (a: Vec2): Vec2 => …
+```
+
+### `rotate`
+
+```ts
+export const rotate = (a: Vec2, rad: number): Vec2 => …
+```
+
+### `lerp`
+
+```ts
+export const lerp = (a: Vec2, b: Vec2, t: number): Vec2 => …
+```

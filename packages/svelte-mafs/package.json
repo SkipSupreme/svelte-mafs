@@ -22,12 +22,11 @@
     "dist"
   ],
   "scripts": {
-    "build": "vite build && svelte-package -o dist",
+    "build": "vite build && svelte-package -i src -o dist",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src"
+    "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
     "svelte": "^5.0.0"
