@@ -188,6 +188,31 @@ describe("drag action", () => {
     expect(releaseSpy).toHaveBeenCalledWith(1);
   });
 
+  it("destroy() swallows releasePointerCapture errors (e.g. page unmount mid-drag)", () => {
+    const node = document.createElement("div");
+    document.body.appendChild(node);
+    const lifecycle = drag(node, { pxToUser: identity });
+    node.dispatchEvent(pe("pointerdown", { pointerId: 1, clientX: 0, clientY: 0 }));
+    vi.spyOn(node, "releasePointerCapture").mockImplementation(() => {
+      throw new DOMException("InvalidStateError");
+    });
+    expect(() => lifecycle.destroy?.()).not.toThrow();
+  });
+
+  it("swallows setPointerCapture errors on pointerdown", () => {
+    const node = document.createElement("div");
+    document.body.appendChild(node);
+    vi.spyOn(node, "setPointerCapture").mockImplementation(() => {
+      throw new DOMException("InvalidPointerId");
+    });
+    const onDragStart = vi.fn();
+    drag(node, { pxToUser: identity, onDragStart });
+    expect(() =>
+      node.dispatchEvent(pe("pointerdown", { pointerId: 1, clientX: 10, clientY: 20 })),
+    ).not.toThrow();
+    expect(onDragStart).toHaveBeenCalledWith([10, 20]);
+  });
+
   it("works on SVG elements", () => {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     document.body.appendChild(svg);
