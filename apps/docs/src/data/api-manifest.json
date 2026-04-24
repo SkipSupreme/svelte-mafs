@@ -89,6 +89,52 @@
           "kind": "value"
         }
       ]
+    },
+    {
+      "module": "context/coordinate-context",
+      "description": null,
+      "exports": [
+        {
+          "name": "CoordContext",
+          "kind": "type"
+        }
+      ]
+    },
+    {
+      "module": "gestures/index",
+      "description": null,
+      "exports": [
+        {
+          "name": "DragOptions",
+          "kind": "type"
+        },
+        {
+          "name": "PanZoomOptions",
+          "kind": "type"
+        },
+        {
+          "name": "drag",
+          "kind": "value"
+        },
+        {
+          "name": "panZoom",
+          "kind": "value"
+        }
+      ]
+    },
+    {
+      "module": "display/index",
+      "description": null,
+      "exports": [
+        {
+          "name": "Coordinates",
+          "kind": "value"
+        },
+        {
+          "name": "Plot",
+          "kind": "value"
+        }
+      ]
     }
   ]
 }

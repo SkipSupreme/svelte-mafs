@@ -194,8 +194,14 @@ async function loadModuleDoc(mod: string, exports: ExportRecord[]): Promise<Modu
 
 function renderMdx(doc: ModuleDoc): string {
   const lines: string[] = [];
+  // Layout path depth must track the module's directory nesting. A flat
+  // module like `math` sits at src/pages/api/math.mdx (2 levels above
+  // src/layouts), while a nested module like `display/index` sits at
+  // src/pages/api/display/index.mdx (3 levels above).
+  const depth = doc.module.split('/').length + 1;
+  const layoutPath = '../'.repeat(depth) + 'layouts/Base.astro';
   lines.push('---');
-  lines.push('layout: ../../layouts/Base.astro');
+  lines.push(`layout: ${layoutPath}`);
   lines.push(`title: ${JSON.stringify(doc.module)}`);
   lines.push(`description: ${JSON.stringify(`API reference for the ${doc.module} module of svelte-mafs.`)}`);
   lines.push('prose: true');
