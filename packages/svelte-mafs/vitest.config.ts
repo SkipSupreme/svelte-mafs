@@ -1,8 +1,13 @@
 import { defineConfig } from "vitest/config";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { svelteTesting } from "@testing-library/svelte/vite";
 
 export default defineConfig({
-  plugins: [svelte({ hot: false })],
+  // svelteTesting() adds `browser` to resolve.conditions so svelte/mount is
+  // available, wires noExternal for @testing-library/svelte-core, and
+  // registers the auto-cleanup beforeEach. Stream-1 follow-up: unblocks
+  // .svelte component tests in every downstream stream.
+  plugins: [svelte({ hot: false }), svelteTesting()],
   test: {
     environment: "jsdom",
     globals: true,
