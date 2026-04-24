@@ -130,6 +130,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # apps/docs resolves `svelte-mafs` through its package.json exports map,
+      # which points at dist/. A fresh checkout has no dist/, so the Astro dev
+      # server Playwright boots fails with "Failed to resolve entry for package
+      # svelte-mafs". Build the lib before Playwright starts the server.
+      - name: Build svelte-mafs (required by apps/docs dev server)
+        run: pnpm -F svelte-mafs build
+
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         id: pw-cache

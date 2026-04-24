@@ -21,7 +21,21 @@ export function drag(
   let opts: DragOptions = initial;
   let activePointerId: number | null = null;
 
-  const toUser = (e: PointerLike): Vec2 => opts.pxToUser([e.clientX, e.clientY]);
+  // Pointer events carry page-absolute clientX/Y, but consumers (e.g.
+  // Mafs's coord context) provide a pxToUser that expects coords local to
+  // the drag's reference element — for an SVG descendant, the enclosing
+  // <svg>; for a plain HTML node, the node itself. Without this
+  // translation, MovablePoint dragging was off by the SVG's page offset
+  // whenever Mafs wasn't rendered at (0, 0); jsdom masked the bug because
+  // its layout engine reports all rects as zero-sized / zero-offset.
+  const toUser = (e: PointerLike): Vec2 => {
+    const refEl =
+      "ownerSVGElement" in node && node.ownerSVGElement
+        ? node.ownerSVGElement
+        : (node as HTMLElement | SVGElement);
+    const rect = refEl.getBoundingClientRect();
+    return opts.pxToUser([e.clientX - rect.left, e.clientY - rect.top]);
+  };
 
   const onPointerDown = (raw: Event) => {
     const e = raw as unknown as PointerLike;

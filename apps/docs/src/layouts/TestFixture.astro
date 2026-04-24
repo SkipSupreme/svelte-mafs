@@ -1,0 +1,59 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>fixture: {title}</title>
+    <!--
+      Fixtures pin to light theme at the <html> level (bypassing the main
+      site's FOUC-free theme-init script) so Playwright screenshots are
+      deterministic regardless of the CI runner's prefers-color-scheme.
+    -->
+    <style is:inline>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #fff;
+      }
+      body {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        color: #111;
+      }
+      .fixture-shell {
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .fixture-label {
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #666;
+      }
+      .fixture-body {
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="fixture-shell">
+      <div class="fixture-label">Test fixture · {title}</div>
+      <div class="fixture-body" data-fixture={title}>
+        <slot />
+      </div>
+    </main>
+  </body>
+</html>

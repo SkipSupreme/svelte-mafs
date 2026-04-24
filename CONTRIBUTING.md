@@ -1,6 +1,8 @@
-# Contributing to svelte-mafs
+# Contributing to Tinker
 
-Thank you for considering a contribution. The bar for this library is high: it ships type-safe, accessible, well-tested Svelte 5 components for math education tooling. The conventions below exist to keep that bar where it is.
+Tinker is closed to external contributions while we build toward launch. These notes are for the internal build team. If that's you, read on.
+
+The bar is high: Tinker ships type-safe, accessible, well-tested Svelte 5 components for math education tooling. The conventions below exist to keep that bar where it is.
 
 ## Development setup
 
@@ -126,11 +128,43 @@ When PRs land on `main`, the Release workflow either:
 
 You don't run version/publish yourself.
 
+## Svelte 5 gotchas you'll hit
+
+### The `.svelte.ts` + `.svelte` resolver trap
+
+Svelte 5 lets you colocate rune-aware helpers in a `*.svelte.ts` file next to a component. If that helper module shares a basename with a component (e.g. `Transform.svelte.ts` + `Transform.svelte`), **TypeScript's "Bundler" resolver silently prefers the `.ts`** — so `import X from "./Transform.svelte"` can resolve to the helper instead of the component, with no error at compile time.
+
+**Rule:** put rune-aware helpers in a file with a *distinct* basename from any component it lives next to. The codebase currently does this as `matrix.ts` (not `Transform.svelte.ts`) and `Line.svelte.ts` (namespace-only, no `Line.svelte` component). If you add a new rune helper, check for a basename collision first.
+
+### `flushSync()` for `$effect` in jsdom tests
+
+Svelte 5's `$effect` callbacks are scheduled, not synchronous. Unit tests that mount a component and assert against its DOM will see stale state unless effects have run. The pattern the test suite standardises on:
+
+```ts
+import { flushSync } from "svelte";
+
+test("some reactive thing", () => {
+  const { container } = render(Comp, { props: { value: 1 } });
+  flushSync();                          // force pending $effects to run
+  expect(container.querySelector("..."));
+});
+```
+
+When rune state updates in response to a user event (e.g. a pointer drag that mutates `$state`), call `flushSync()` between the event dispatch and the assertion. See `src/interaction/MovablePoint.test.ts` for real examples.
+
+### Cross-file coordinate expectations
+
+`ctx.pxToUser` inside `<Mafs>` expects coordinates local to the SVG root — not page-absolute `clientX/clientY`. The `use:drag` action handles that translation internally via `node.ownerSVGElement.getBoundingClientRect()`; if you write a new gesture action that consumes pointer events, do the same. Unit tests don't catch the page-offset issue because jsdom reports all rects as zero.
+
+## Releases / changesets (internal-only)
+
+This repo contains a `.changeset/` directory as an internal changelog tool. **There is no npm publish pipeline for Tinker — it's a product, not a library.** When you land work that changes user-visible behavior, you can still run `pnpm changeset` to write a one-line note; Changesets will aggregate those into `CHANGELOG.md` when we cut internal version tags. But no external release artifact is produced.
+
+The `.github/workflows/release.yml` workflow from the original library scaffold was removed when we pivoted to product framing.
+
 ## Known issues / gotchas
 
-- **`pnpm -F svelte-mafs build` currently fails** in the lib because `svelte-package` defaults to `src/lib/` (SvelteKit convention) but sources sit at `src/`. Fix: change `package.json` script to `svelte-package -i src -o dist` (and add an exclude pattern for `*.test.ts`). Tracked: this gates `pnpm publish` for v0.1.0 and is a one-line fix from the lib package's owner.
 - **`pnpm lint` is not yet wired** — there's an `eslint src` script but no eslint config. CI's lint job is feature-gated and skips when no eslint config exists. Adding the config is a captain-level chore.
-- **`pnpm -F docs ...` will fail** until Stream 7 lands the Astro docs app. CI's e2e job is feature-gated on `apps/docs/package.json` existing.
 
 ## Code of Conduct
 
