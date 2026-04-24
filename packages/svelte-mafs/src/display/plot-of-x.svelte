@@ -8,7 +8,7 @@
     type StrokeStyle,
   } from "./_plot-utils.js";
 
-  interface Props {
+  export interface Props {
     y: (x: number) => number;
     /** Restrict sampling to this x-range. Defaults to the visible viewport. */
     domain?: readonly [number, number];

@@ -2,7 +2,7 @@
   import { getCoordContext } from "../context/coordinate-context.js";
   import { inferLabels } from "../math.js";
 
-  interface Props {
+  export interface Props {
     xAxis?: boolean;
     yAxis?: boolean;
     grid?: boolean;

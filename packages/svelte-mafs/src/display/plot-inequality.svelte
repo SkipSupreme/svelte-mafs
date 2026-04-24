@@ -3,7 +3,7 @@
   import { sample } from "../sampling.js";
   import { defaultTolerance } from "./_plot-utils.js";
 
-  interface Props {
+  export interface Props {
     /** The boundary curve. Region is {(x, y) : y > f(x)} or y < f(x). */
     y: (x: number) => number;
     /**

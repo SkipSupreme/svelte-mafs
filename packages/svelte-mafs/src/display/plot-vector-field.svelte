@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getCoordContext } from "../context/coordinate-context.js";
 
-  interface Props {
+  export interface Props {
     /** Vector field f(x, y) = [dx, dy] in user-space units. */
     xy: (x: number, y: number) => readonly [number, number];
     /** Grid spacing in user-space units. */

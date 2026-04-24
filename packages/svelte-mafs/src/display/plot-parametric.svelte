@@ -7,7 +7,7 @@
     type StrokeStyle,
   } from "./_plot-utils.js";
 
-  interface Props {
+  export interface Props {
     /** Parametric function f(t) = [x, y]. */
     xy: (t: number) => readonly [number, number];
     /** t-range to sample over. No sensible viewport default — required. */
