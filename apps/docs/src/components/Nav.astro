@@ -3,12 +3,11 @@ import ThemeToggle from './ThemeToggle.astro';
 
 const GITHUB_URL = 'https://github.com/SkipSupreme/svelte-mafs';
 
+// Primary nav is intentionally minimal while Tinker is pre-launch. The
+// dev-facing pages (api/examples/playground) still exist at their URLs —
+// they're just not promoted to the waitlist audience.
 const links = [
   { href: '/', label: 'Home' },
-  { href: '/getting-started', label: 'Getting Started' },
-  { href: '/api', label: 'API' },
-  { href: '/examples', label: 'Examples' },
-  { href: '/playground', label: 'Playground' },
   { href: GITHUB_URL, label: 'GitHub', external: true },
 ] as const;
 
@@ -19,13 +18,13 @@ const isActive = (href: string) =>
 
 <header class="site-header">
   <div class="shell">
-    <a href="/" class="brand" aria-label="svelte-mafs home">
+    <a href="/" class="brand" aria-label="Tinker home">
       <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true" class="brand-mark">
         <rect x="3" y="3" width="26" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" />
         <path d="M3 16 H29 M16 3 V29" stroke="currentColor" stroke-width="1" opacity="0.4" />
         <path d="M5 22 C 10 22, 12 10, 16 10 S 22 22, 27 10" fill="none" stroke="currentColor" stroke-width="1.75" />
       </svg>
-      <span>svelte-mafs</span>
+      <span>Tinker</span>
     </a>
 
     <nav aria-label="Primary">

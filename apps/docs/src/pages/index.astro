@@ -1,165 +1,159 @@
 ---
 import Base from '../layouts/Base.astro';
-import DemoPlaceholder from '../components/DemoPlaceholder.astro';
 ---
 
-<Base title="svelte-mafs" description="Svelte 5 components for interactive math visualization — plots, movable points, vector fields, and KaTeX labels, all tree-shakeable and keyboard-accessible.">
+<Base
+  title="Tinker"
+  description="Learn math, physics, and computer science the way 3Blue1Brown wishes Brilliant worked. Rigorous, visual, and built for adults who actually want to understand."
+>
   <section class="hero">
-    <p class="eyebrow">Svelte 5 · SVG · KaTeX · Tree-shakeable</p>
-    <h1>Interactive math visualization, native to Svelte 5.</h1>
+    <p class="eyebrow">In development · Coming 2026</p>
+    <h1>Learn by building intuition, not memorizing steps.</h1>
     <p class="lede">
-      A tiny component library for Cartesian plots, parametric curves,
-      vector fields, draggable points, and LaTeX labels. Runes-first
-      reactivity, pure-function math core, keyboard-navigable from
-      day one. Inspired by <a href="https://mafs.dev" rel="noopener">Mafs</a> for React.
+      Tinker is a new kind of learning app for math, physics, and computer
+      science — interactive the whole way down, with spaced-repetition that
+      actually tracks your understanding, and visualizations you can drag.
+      For adults who want rigor and intuition in the same product.
     </p>
-    <div class="cta-row">
-      <a class="cta cta-primary" href="/getting-started">Get started</a>
-      <a class="cta cta-secondary" href="https://github.com/SkipSupreme/svelte-mafs" rel="noopener">
-        View on GitHub →
-      </a>
-    </div>
-    <pre class="hero-snippet"><code>{`<Mafs viewBox={{ x: [-5, 5], y: [-2, 2] }}>
-  <Coordinates.Cartesian />
-  <Plot.OfX y={(x) => Math.sin(x)} />
-</Mafs>`}</code></pre>
+
+    <form class="waitlist" method="POST" action="#" data-waitlist>
+      <label class="sr-only" for="waitlist-email">Email address</label>
+      <input
+        id="waitlist-email"
+        type="email"
+        name="email"
+        placeholder="you@example.com"
+        autocomplete="email"
+        required
+      />
+      <button type="submit">Get on the waitlist</button>
+    </form>
+    <p class="form-note">No spam. One email when there's something real to show.</p>
   </section>
 
-  <section class="demos" aria-labelledby="demos-heading">
-    <h2 id="demos-heading">Previews</h2>
-    <p class="demos-intro">
-      Live interactive demos hydrate as components land on <code>main</code>.
-      Until then, the shapes below preview what's shipping.
-    </p>
-    <div class="demo-grid">
-      <DemoPlaceholder
-        title="Plot.OfX"
-        kind="plot"
-        note="Adaptive sampling of y = f(x). Ships with Stream 5."
-      />
-      <DemoPlaceholder
-        title="MovablePoint"
-        kind="movable"
-        note="Drag + keyboard-navigable, with snap constraints. Ships with Stream 6."
-      />
-      <DemoPlaceholder
-        title="Plot.VectorField"
-        kind="vector-field"
-        note="Grid of arrows from f(x, y) → [dx, dy]. Ships with Stream 5."
-      />
-      <DemoPlaceholder
-        title="Plot.Parametric"
-        kind="parametric"
-        note="Closed curves from (t) → [x, y]. Ships with Stream 5."
-      />
-    </div>
-  </section>
-
-  <section class="features" aria-labelledby="features-heading">
-    <h2 id="features-heading">What you get</h2>
-    <ul class="feature-grid">
+  <section class="pitch" aria-labelledby="pitch-heading">
+    <h2 id="pitch-heading">What we're building</h2>
+    <ul class="pitch-grid">
       <li>
-        <h3>Tree-shakeable</h3>
-        <p>Importing only <code>&lt;Mafs&gt;</code> + <code>&lt;Plot.OfX&gt;</code> targets under 20&nbsp;KB gzipped (KaTeX is a peer).</p>
+        <h3>Rigor <em>and</em> intuition</h3>
+        <p>
+          Brilliant builds intuition and stops short. Math Academy builds
+          procedural fluency and feels dry. Tinker pairs draggable,
+          3Blue1Brown-style visualizations with spaced-repetition on a
+          hand-built knowledge graph — both in one product.
+        </p>
       </li>
       <li>
-        <h3>Runes-first</h3>
-        <p><code>$state</code>, <code>$derived</code>, <code>$bindable</code> — no stores in the public API, no React patterns smuggled in.</p>
+        <h3>Knowledge graph you can trust</h3>
+        <p>
+          Every concept is a node with explicit prerequisites. Mastering an
+          advanced topic trickles credit down the graph, so you never
+          re-review what you've already proven you know.
+        </p>
       </li>
       <li>
-        <h3>Keyboard-accessible</h3>
-        <p>Every draggable has <code>role="slider"</code>, arrow-key movement, and a live region announcing value changes.</p>
+        <h3>Adult learners, not kids</h3>
+        <p>
+          No streaks guilt-tripping you. No cartoon characters. No walled
+          garden. Built for self-directed learners — whether you're a dev
+          brushing up linear algebra for ML or an engineer revisiting
+          multivariable calc.
+        </p>
       </li>
       <li>
-        <h3>KaTeX labels</h3>
-        <p>Static labels render at build time. Dynamic labels render on hydration. Either way, it's real math typesetting.</p>
-      </li>
-      <li>
-        <h3>Pure-function core</h3>
-        <p><code>vec.ts</code>, <code>math.ts</code>, <code>sampling.ts</code> ship with ≥95&nbsp;% coverage — no component can accidentally regress the math.</p>
-      </li>
-      <li>
-        <h3>SSR-safe</h3>
-        <p>SVG renders on the server; pointer handlers mount on hydration. Works inside SvelteKit, Astro islands, or static HTML.</p>
+        <h3>Works offline</h3>
+        <p>
+          Download a course, fly to Calgary, keep learning. Your progress
+          syncs when you're back online. No subscription trap — pay once,
+          learn forever is on the table.
+        </p>
       </li>
     </ul>
+  </section>
+
+  <section class="status" aria-labelledby="status-heading">
+    <h2 id="status-heading">Where this stands</h2>
+    <p>
+      Actively being built in the open. Source:
+      <a href="https://github.com/SkipSupreme/svelte-mafs" rel="noopener">
+        github.com/SkipSupreme/svelte-mafs
+      </a>.
+      Follow along on the waitlist and I'll ping you when the first wedge
+      (Math for ML) is ready to dogfood.
+    </p>
   </section>
 </Base>
 
 <style>
   .hero {
-    padding: 3rem 0 2.5rem;
-    max-width: 56rem;
+    padding: 4rem 0 3rem;
+    max-width: 52rem;
   }
   .eyebrow {
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    font-size: 0.72rem;
     color: var(--site-accent);
     margin: 0 0 0.75rem;
     font-weight: 600;
   }
   .hero h1 {
-    font-size: clamp(2.1rem, 5vw, 3.25rem);
-    margin: 0 0 1rem;
+    font-size: clamp(2.25rem, 6vw, 3.75rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 0 0 1.25rem;
   }
   .lede {
-    font-size: 1.15rem;
+    font-size: 1.18rem;
+    line-height: 1.55;
     color: var(--site-fg-muted);
-    max-width: 48rem;
-    margin: 0 0 1.75rem;
-  }
-  .cta-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
+    max-width: 44rem;
     margin: 0 0 2rem;
   }
-  .cta {
-    display: inline-block;
-    padding: 0.65rem 1.1rem;
-    border-radius: var(--radius-md);
-    font-weight: 550;
-    text-decoration: none;
-    transition: transform 120ms ease, background-color 120ms ease;
+
+  .waitlist {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    max-width: 32rem;
+    margin: 0 0 0.5rem;
   }
-  .cta-primary {
+  .waitlist input[type="email"] {
+    flex: 1 1 14rem;
+    padding: 0.75rem 0.9rem;
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    background: var(--site-surface);
+    color: var(--site-fg);
+    font: inherit;
+  }
+  .waitlist input[type="email"]:focus {
+    outline: 2px solid var(--site-accent);
+    outline-offset: 2px;
+  }
+  .waitlist button {
+    padding: 0.75rem 1.1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--site-accent);
     background: var(--site-accent);
     color: var(--site-accent-fg);
-    border: 1px solid var(--site-accent);
+    font: inherit;
+    font-weight: 550;
+    cursor: pointer;
+    transition: transform 120ms ease;
   }
-  .cta-primary:hover { transform: translateY(-1px); }
-  .cta-secondary {
-    background: transparent;
-    color: var(--site-fg);
-    border: 1px solid var(--site-border);
-  }
-  .cta-secondary:hover { border-color: var(--site-fg-muted); }
-  .hero-snippet {
-    max-width: 44rem;
-    margin: 0;
-  }
-
-  .demos {
-    padding: 2.5rem 0;
-    border-top: 1px solid var(--site-border);
-  }
-  .demos-intro {
+  .waitlist button:hover { transform: translateY(-1px); }
+  .form-note {
+    font-size: 0.82rem;
     color: var(--site-fg-muted);
-    max-width: var(--max-prose);
-  }
-  .demo-grid {
-    display: grid;
-    gap: 1.25rem;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    margin-top: 1.5rem;
+    margin: 0.25rem 0 0;
   }
 
-  .features {
-    padding: 2.5rem 0 1rem;
+  .pitch, .status {
+    padding: 2.75rem 0;
     border-top: 1px solid var(--site-border);
   }
-  .feature-grid {
+  .pitch-grid {
     list-style: none;
     padding: 0;
     margin: 1.5rem 0 0;
@@ -167,16 +161,58 @@ import DemoPlaceholder from '../components/DemoPlaceholder.astro';
     gap: 1.25rem;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   }
-  .feature-grid li {
+  .pitch-grid li {
     padding: 1.25rem 1.25rem 1rem;
     border: 1px solid var(--site-border);
     border-radius: var(--radius-lg);
     background: var(--site-surface);
   }
-  .feature-grid h3 {
+  .pitch-grid h3 {
     font-family: var(--font-body);
-    font-size: 1rem;
-    margin: 0 0 0.35rem;
+    font-size: 1.02rem;
+    margin: 0 0 0.4rem;
   }
-  .feature-grid p { margin: 0; color: var(--site-fg-muted); font-size: 0.9rem; }
+  .pitch-grid em {
+    font-style: italic;
+    color: var(--site-accent);
+    font-weight: 600;
+  }
+  .pitch-grid p {
+    margin: 0;
+    color: var(--site-fg-muted);
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .status p { color: var(--site-fg-muted); max-width: var(--max-prose); }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 </style>
+
+<script>
+  // Waitlist form stub — intercepts submit so the form doesn't 404 on a
+  // non-existent endpoint. When a real provider (Beehiiv / Buttondown /
+  // ConvertKit) is wired up, swap this for a real POST and remove the stub.
+  const form = document.querySelector<HTMLFormElement>('form[data-waitlist]');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = form.querySelector<HTMLInputElement>('input[type="email"]');
+      if (!input?.value) return;
+      const btn = form.querySelector<HTMLButtonElement>('button');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Noted — real signup coming soon';
+      }
+      console.log('[waitlist stub]', input.value);
+    });
+  }
+</script>

@@ -127,6 +127,30 @@
       "description": null,
       "exports": [
         {
+          "name": "Point",
+          "kind": "value"
+        },
+        {
+          "name": "Line",
+          "kind": "value"
+        },
+        {
+          "name": "Circle",
+          "kind": "value"
+        },
+        {
+          "name": "Ellipse",
+          "kind": "value"
+        },
+        {
+          "name": "Polygon",
+          "kind": "value"
+        },
+        {
+          "name": "Vector",
+          "kind": "value"
+        },
+        {
           "name": "Coordinates",
           "kind": "value"
         },

@@ -13,14 +13,14 @@ export interface Props extends Frontmatter {
 }
 
 const fm = Astro.props.frontmatter ?? {};
-const title = Astro.props.title ?? fm.title ?? 'svelte-mafs';
+const title = Astro.props.title ?? fm.title ?? 'Tinker';
 const description =
   Astro.props.description ??
   fm.description ??
-  'Svelte 5 components for interactive math visualization.';
+  'Rigorous, visual, spaced-repetition-backed learning for adults.';
 const prose = Astro.props.prose ?? fm.prose ?? false;
 
-const titleWithSuffix = title === 'svelte-mafs' ? title : `${title} · svelte-mafs`;
+const titleWithSuffix = title === 'Tinker' ? title : `${title} · Tinker`;
 ---
 
 <!doctype html>
@@ -59,11 +59,9 @@ const titleWithSuffix = title === 'svelte-mafs' ? title : `${title} · svelte-ma
     <footer class="site-footer">
       <div class="shell">
         <p>
-          <a href="https://github.com/SkipSupreme/svelte-mafs" rel="noopener">GitHub</a>
+          <a href="https://github.com/SkipSupreme/svelte-mafs" rel="noopener">Source</a>
           <span class="sep" aria-hidden="true">·</span>
-          <a href="https://www.npmjs.com/package/svelte-mafs" rel="noopener">npm</a>
-          <span class="sep" aria-hidden="true">·</span>
-          <span>MIT. Inspired by <a href="https://mafs.dev" rel="noopener">Mafs</a>.</span>
+          <span>Tinker · in development · Calgary, AB</span>
         </p>
       </div>
     </footer>
