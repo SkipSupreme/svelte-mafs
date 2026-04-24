@@ -1,0 +1,20 @@
+/*
+ * svelte-mafs numeric font.
+ *
+ * TODO: ship a real bundled font (Computer Modern or Iosevka subset for
+ * digits / math punctuation) as a follow-up. For v0.1.0 we fall back to
+ * the platform monospace stack so typecheck stays zero-asset and apps
+ * don't pay for a font they may want to override.
+ */
+
+:where(.mafs-root),
+:where([data-mafs-root]) {
+  --mafs-font-numeric:
+    ui-monospace,
+    SFMono-Regular,
+    "SF Mono",
+    Menlo,
+    Consolas,
+    "Liberation Mono",
+    monospace;
+}

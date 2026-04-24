@@ -1,0 +1,73 @@
+/*
+ * svelte-mafs core theme.
+ *
+ * Custom properties are declared on `.mafs-root` so they cascade into SVG
+ * children. We also accept the `[data-mafs-root]` attribute Stream 2's
+ * <Mafs> root element already emits, so consumers get the theme for free
+ * without wiring an extra class. Dark mode toggles via a
+ * `[data-theme="dark"]` ancestor — the same convention apps/docs uses for
+ * its global theme switch, so a single user toggle themes the whole page
+ * including the <Mafs> canvas.
+ *
+ * :where() keeps specificity at 0 on all selectors so consumer overrides
+ * (e.g. `<Mafs style="--mafs-blue: ..."/>`) always win.
+ */
+
+:where(.mafs-root),
+:where([data-mafs-root]) {
+  /* Semantic tokens */
+  --mafs-fg: #1f2937;
+  --mafs-bg: #ffffff;
+  --mafs-line-color: #1f2937;
+  --mafs-grid-color: #e5e7eb;
+
+  /* Palette — matches Mafs.dev's signature hues so docs examples feel
+   * familiar. Saturated but not neon; readable on white and near-black. */
+  --mafs-blue: #3b82f6;
+  --mafs-red: #ef4444;
+  --mafs-green: #10b981;
+  --mafs-yellow: #eab308;
+  --mafs-orange: #f97316;
+  --mafs-purple: #8b5cf6;
+  --mafs-pink: #ec4899;
+
+  color: var(--mafs-fg);
+  background: var(--mafs-bg);
+  font-family: var(--mafs-font-numeric, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
+
+:where([data-theme="dark"]) .mafs-root,
+:where([data-theme="dark"]) [data-mafs-root] {
+  --mafs-fg: #f3f4f6;
+  --mafs-bg: #0b1020;
+  --mafs-line-color: #f3f4f6;
+  --mafs-grid-color: #1f2937;
+
+  /* Palette bumped in lightness for AA contrast on a dark surface. */
+  --mafs-blue: #60a5fa;
+  --mafs-red: #f87171;
+  --mafs-green: #34d399;
+  --mafs-yellow: #facc15;
+  --mafs-orange: #fb923c;
+  --mafs-purple: #a78bfa;
+  --mafs-pink: #f472b6;
+}
+
+/* Respect OS preference when the app hasn't opted into a manual toggle. */
+@media (prefers-color-scheme: dark) {
+  :where(:not([data-theme="light"])) .mafs-root,
+  :where(:not([data-theme="light"])) [data-mafs-root] {
+    --mafs-fg: #f3f4f6;
+    --mafs-bg: #0b1020;
+    --mafs-line-color: #f3f4f6;
+    --mafs-grid-color: #1f2937;
+
+    --mafs-blue: #60a5fa;
+    --mafs-red: #f87171;
+    --mafs-green: #34d399;
+    --mafs-yellow: #facc15;
+    --mafs-orange: #fb923c;
+    --mafs-purple: #a78bfa;
+    --mafs-pink: #f472b6;
+  }
+}
