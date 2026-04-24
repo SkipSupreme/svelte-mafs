@@ -28,12 +28,12 @@ const parsePoints = (d: string): Array<[number, number]> => {
 
 describe("<Plot.Parametric>", () => {
   it("renders an empty-ish path when domain is a single point", () => {
-    const path = mount({ xy: (t) => [t, t], t: [1, 1] });
+    const path = mount({ xy: (t: number) => [t, t], t: [1, 1] });
     expect(path.getAttribute("d")).toBe("M 1 1");
   });
 
   it("linear parametric (t, 2t) goes from endpoint to endpoint", () => {
-    const path = mount({ xy: (t) => [t, 2 * t], t: [0, 2] });
+    const path = mount({ xy: (t: number) => [t, 2 * t], t: [0, 2] });
     const d = path.getAttribute("d")!;
     expect(d.startsWith("M 0 0")).toBe(true);
     expect(d.endsWith("L 2 4")).toBe(true);
@@ -41,7 +41,7 @@ describe("<Plot.Parametric>", () => {
 
   it("unit circle sampled over [0, 2π] stays on the unit circle", () => {
     const path = mount({
-      xy: (t) => [Math.cos(t), Math.sin(t)],
+      xy: (t: number) => [Math.cos(t), Math.sin(t)],
       t: [0, 2 * Math.PI],
     });
     const pts = parsePoints(path.getAttribute("d")!);
@@ -66,7 +66,7 @@ describe("<Plot.Parametric>", () => {
 
   it("non-finite output breaks the stroke", () => {
     const path = mount({
-      xy: (t) => [t, 1 / t],
+      xy: (t: number) => [t, 1 / t],
       t: [-1, 1],
     });
     const d = path.getAttribute("d")!;
@@ -76,7 +76,7 @@ describe("<Plot.Parametric>", () => {
 
   it("styling props propagate", () => {
     const path = mount({
-      xy: (t) => [t, t],
+      xy: (t: number) => [t, t],
       t: [0, 1],
       color: "#112233",
       weight: 5,

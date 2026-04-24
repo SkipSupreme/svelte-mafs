@@ -28,3 +28,6 @@ export type { CoordContext } from "./context/coordinate-context.js";
 // Stream 3 — gesture actions (use:drag, use:panZoom)
 export type { DragOptions, PanZoomOptions } from "./gestures/index.js";
 export { drag, panZoom } from "./gestures/index.js";
+
+// Stream 5 — Coordinates + Plot namespaces
+export { Coordinates, Plot } from "./display/index.js";

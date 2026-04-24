@@ -19,7 +19,7 @@ const countLineTo = (d: string) => (d.match(/L /g) ?? []).length;
 describe("<Plot.OfX>", () => {
   describe("path geometry", () => {
     it("linear f produces a path starting at [xMin, f(xMin)] and ending at [xMax, f(xMax)]", () => {
-      const path = mount({ y: (x) => x });
+      const path = mount({ y: (x: number) => x });
       const d = path.getAttribute("d")!;
       expect(d.startsWith("M -5 -5")).toBe(true);
       // Last command must land at x=5, y=5 (line y=x at domain edges).
@@ -27,20 +27,20 @@ describe("<Plot.OfX>", () => {
     });
 
     it("linear f has exactly one M (no stroke breaks)", () => {
-      const path = mount({ y: (x) => 2 * x });
+      const path = mount({ y: (x: number) => 2 * x });
       expect(countMoveTo(path.getAttribute("d")!)).toBe(1);
     });
 
     it("sinusoid produces strictly more segments than a line over the same range", () => {
-      const line = mount({ y: (x) => x });
-      const sinu = mount({ y: (x) => Math.sin(x) });
+      const line = mount({ y: (x: number) => x });
+      const sinu = mount({ y: (x: number) => Math.sin(x) });
       expect(countLineTo(sinu.getAttribute("d")!)).toBeGreaterThan(
         countLineTo(line.getAttribute("d")!),
       );
     });
 
     it("honors a custom domain narrower than the viewport", () => {
-      const path = mount({ y: (x) => x, domain: [0, 1] as const });
+      const path = mount({ y: (x: number) => x, domain: [0, 1] as const });
       const d = path.getAttribute("d")!;
       expect(d.startsWith("M 0 0")).toBe(true);
       expect(d.endsWith("L 1 1")).toBe(true);
@@ -48,7 +48,7 @@ describe("<Plot.OfX>", () => {
 
     it("breaks the stroke into multiple sub-paths when f emits non-finite values", () => {
       // f(x) = 1/x near 0: sampler emits NaN-markers around the singularity.
-      const path = mount({ y: (x) => 1 / x }, { viewBox: { x: [-2, 2], y: [-10, 10] } });
+      const path = mount({ y: (x: number) => 1 / x }, { viewBox: { x: [-2, 2], y: [-10, 10] } });
       expect(countMoveTo(path.getAttribute("d")!)).toBeGreaterThanOrEqual(2);
     });
   });

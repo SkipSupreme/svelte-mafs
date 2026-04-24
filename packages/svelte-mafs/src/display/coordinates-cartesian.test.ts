@@ -1,10 +1,13 @@
 import { render } from "@testing-library/svelte";
 import { describe, expect, it } from "vitest";
+import type { ComponentProps } from "svelte";
 import { inferLabels } from "../math.js";
 import Harness from "./coordinates-cartesian.harness.svelte";
 
-const mount = (props: Parameters<typeof render>[1] extends { props?: infer P } ? P : never = {}) => {
-  const { container } = render(Harness, { props });
+type HarnessProps = ComponentProps<typeof Harness>;
+
+const mount = (props: Partial<HarnessProps> = {}) => {
+  const { container } = render(Harness, { props: props as HarnessProps });
   const svg = container.querySelector("svg[data-mafs-root]");
   if (!svg) throw new Error("<Mafs> root not rendered");
   return svg as SVGSVGElement;

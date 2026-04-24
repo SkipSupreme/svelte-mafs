@@ -40,7 +40,7 @@ describe("<Plot.VectorField>", () => {
 
   it("non-finite vectors are skipped (no shaft for that grid point)", () => {
     const group = mount({
-      xy: (x, y) => (x === 0 && y === 0 ? [Number.NaN, Number.NaN] : [1, 0]),
+      xy: (x: number, y: number) => (x === 0 && y === 0 ? [Number.NaN, Number.NaN] : [1, 0]),
     });
     // 121 total - 1 skipped at origin.
     expect(group.querySelectorAll('[data-mafs-arrow="shaft"]').length).toBe(120);
@@ -49,7 +49,7 @@ describe("<Plot.VectorField>", () => {
   it("auto-normalizes so the longest drawn arrow fits inside step×normalizedLength", () => {
     // Single huge vector at (0, 0); elsewhere unit.
     const group = mount({
-      xy: (x, y) => (x === 0 && y === 0 ? [1000, 0] : [1, 0]),
+      xy: (x: number, y: number) => (x === 0 && y === 0 ? [1000, 0] : [1, 0]),
       step: 1,
       normalizedLength: 0.8,
     });

@@ -20,7 +20,7 @@ describe("<Plot.OfY>", () => {
   describe("path geometry", () => {
     it("swaps axes: for x(y)=y the path goes [yMin,yMin]→[yMax,yMax] as [x,y] pairs", () => {
       // f(y) = y is the line y=x but parameterized on y. Start/end x should equal y.
-      const path = mount({ x: (y) => y });
+      const path = mount({ x: (y: number) => y });
       const d = path.getAttribute("d")!;
       expect(d.startsWith("M -5 -5")).toBe(true);
       expect(d.endsWith("L 5 5")).toBe(true);
@@ -35,21 +35,21 @@ describe("<Plot.OfY>", () => {
 
     it("sinusoid over y produces more segments than a constant", () => {
       const flat = mount({ x: () => 0 });
-      const sinu = mount({ x: (y) => Math.sin(y) });
+      const sinu = mount({ x: (y: number) => Math.sin(y) });
       expect(countLineTo(sinu.getAttribute("d")!)).toBeGreaterThan(
         countLineTo(flat.getAttribute("d")!),
       );
     });
 
     it("honors a custom y-domain narrower than the viewport", () => {
-      const path = mount({ x: (y) => y, domain: [0, 2] as const });
+      const path = mount({ x: (y: number) => y, domain: [0, 2] as const });
       const d = path.getAttribute("d")!;
       expect(d.startsWith("M 0 0")).toBe(true);
       expect(d.endsWith("L 2 2")).toBe(true);
     });
 
     it("breaks the stroke at non-finite outputs", () => {
-      const path = mount({ x: (y) => 1 / y }, { viewBox: { x: [-10, 10], y: [-2, 2] } });
+      const path = mount({ x: (y: number) => 1 / y }, { viewBox: { x: [-10, 10], y: [-2, 2] } });
       expect(countMoveTo(path.getAttribute("d")!)).toBeGreaterThanOrEqual(2);
     });
   });

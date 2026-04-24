@@ -33,7 +33,7 @@ describe("<Plot.Inequality>", () => {
 
   it("starts the path at [xMin, f(xMin)] and ends the curve portion at [xMax, f(xMax)]", () => {
     // f(x) = x/2: at x=-5 → y=-2.5; at x=5 → y=2.5.
-    const path = mount({ y: (x) => x / 2 });
+    const path = mount({ y: (x: number) => x / 2 });
     const d = path.getAttribute("d")!;
     expect(d.startsWith("M -5 -2.5")).toBe(true);
     // Last curve point before closure: "L 5 2.5 L 5 5 L -5 5 Z"
