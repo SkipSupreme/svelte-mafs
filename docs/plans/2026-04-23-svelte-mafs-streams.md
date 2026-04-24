@@ -516,7 +516,8 @@ Canonical list for conflict detection. If your stream wants to touch a path not 
 |------|-------|---------|
 | `/package.json`, `pnpm-workspace.yaml`, `.gitignore`, `tsconfig.base.json` | S1 | all |
 | `packages/svelte-mafs/package.json` | S1 (add deps via PR to S1 branch if open, else captain merges) | all |
-| `packages/svelte-mafs/tsconfig.json`, `vite.config.ts`, `vitest.config.ts` | S1 | all |
+| `packages/svelte-mafs/tsconfig.json`, `vite.config.ts` | S1 | all |
+| `packages/svelte-mafs/vitest.config.ts` | **first-mover, captain merges** (S2 adds `svelteTesting()` plugin; later streams may extend) | all component streams |
 | `packages/svelte-mafs/src/index.ts` | **shared — append-only, captain serializes** | all |
 | `packages/svelte-mafs/src/test-setup.ts` | S1 | all |
 | `packages/svelte-mafs/src/{vec,math,sampling}.{ts,test.ts}` | S1 | S5 reads sampling |

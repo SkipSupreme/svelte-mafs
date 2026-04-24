@@ -1,0 +1,12 @@
+# Exclude test sources from the published package.
+# `files: ["dist"]` in package.json is a whitelist, but `.npmignore` can
+# further filter within those paths. svelte-package doesn't strip colocated
+# tests on its own as of @sveltejs/package@2.5.7 (the old config.package
+# filter was removed). See CONTRIBUTING for the convention.
+**/*.test.ts
+**/*.test.js
+**/*.test.d.ts
+**/*.test.svelte
+**/test-setup.ts
+**/test-setup.js
+**/test-setup.d.ts
