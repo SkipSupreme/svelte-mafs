@@ -20,3 +20,7 @@ export {
 
 export type { Sample, SampleOptions } from "./sampling.js";
 export { sample } from "./sampling.js";
+
+// Stream 3 — gesture actions (use:drag, use:panZoom)
+export type { DragOptions, PanZoomOptions } from "./gestures/index.js";
+export { drag, panZoom } from "./gestures/index.js";
