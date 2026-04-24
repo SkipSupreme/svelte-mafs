@@ -5,6 +5,14 @@ const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  // Put every committed baseline under tests/e2e/__screenshots__/<project>/
+  // rather than Playwright's default spec-adjacent -snapshots/ folder, and
+  // drop the platform suffix so macOS-generated baselines match the
+  // linux-chromium CI run. Font / subpixel differences across OSes are
+  // absorbed by `expect.toHaveScreenshot.maxDiffPixelRatio` below; if a
+  // future CI run drifts past that threshold, regenerate from CI artifacts
+  // rather than committing platform-specific PNGs per OS.
+  snapshotPathTemplate: "{testDir}/__screenshots__/{projectName}/{arg}{ext}",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

@@ -12,6 +12,15 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test-setup.ts"],
+    // Playwright e2e specs share the .spec.ts extension — exclude the
+    // tests/e2e tree so vitest doesn't try to load them in jsdom and
+    // trip on the `@playwright/test` import.
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.svelte-kit/**",
+      "tests/e2e/**",
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "lcov"],
