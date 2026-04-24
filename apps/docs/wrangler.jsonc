@@ -1,7 +1,7 @@
 {
 	"compatibility_date": "2026-04-24",
 	"compatibility_flags": ["global_fetch_strictly_public", "nodejs_compat"],
-	"name": "svelte-mafs-docs",
+	"name": "learntinker",
 	"main": "@astrojs/cloudflare/entrypoints/server",
 	"assets": {
 		"directory": "./dist",
@@ -9,5 +9,9 @@
 	},
 	"observability": {
 		"enabled": true
-	}
+	},
+	"routes": [
+		{ "pattern": "learntinker.com", "custom_domain": true },
+		{ "pattern": "www.learntinker.com", "custom_domain": true }
+	]
 }
