@@ -197,12 +197,16 @@ describe("panZoom action — pan via pointer drag", () => {
     expect(onPan).not.toHaveBeenCalled();
   });
 
-  it("ignores secondary pointers while one is active", () => {
+  it("second pointer stops pan — onPan no longer fires", () => {
     const onPan = vi.fn();
     const { node } = mount({ pxToUser: affine, onPan });
     node.dispatchEvent(pe("pointerdown", { pointerId: 1, clientX: 100, clientY: 100 }));
+    node.dispatchEvent(pe("pointermove", { pointerId: 1, clientX: 110, clientY: 100 }));
+    onPan.mockClear();
+    // Second finger down → pinch mode takes over; pan is suspended even
+    // though pointer 1 is still tracked.
     node.dispatchEvent(pe("pointerdown", { pointerId: 2, clientX: 200, clientY: 200 }));
-    node.dispatchEvent(pe("pointermove", { pointerId: 2, clientX: 220, clientY: 220 }));
+    node.dispatchEvent(pe("pointermove", { pointerId: 1, clientX: 120, clientY: 100 }));
     expect(onPan).not.toHaveBeenCalled();
   });
 
@@ -257,6 +261,10 @@ describe("panZoom action — lifecycle", () => {
     node.dispatchEvent(pe("pointerdown", { pointerId: 1, clientX: 100, clientY: 100 }));
     node.dispatchEvent(pe("pointermove", { pointerId: 1, clientX: 110, clientY: 100 }));
     expect(onPan).not.toHaveBeenCalled();
+    // Lift pointer 1 before re-enabling — otherwise a new pointerdown would
+    // promote to pinch mode (pointer 1 is still tracked for that purpose,
+    // even though pan is disabled).
+    node.dispatchEvent(pe("pointerup", { pointerId: 1, clientX: 110, clientY: 100 }));
     lifecycle.update?.({ pxToUser: affine, onPan, enabled: { pan: true } });
     node.dispatchEvent(pe("pointerdown", { pointerId: 2, clientX: 100, clientY: 100 }));
     node.dispatchEvent(pe("pointermove", { pointerId: 2, clientX: 110, clientY: 100 }));
@@ -322,5 +330,160 @@ describe("panZoom action — lifecycle", () => {
     expect(() =>
       node.dispatchEvent(pe("pointerup", { pointerId: 1, clientX: 0, clientY: 0 })),
     ).not.toThrow();
+  });
+});
+
+describe("panZoom action — pinch zoom", () => {
+  beforeEach(() => {
+    document.body.replaceChildren();
+  });
+
+  it("fingers spread apart → onZoom fires with factor > 1", () => {
+    const onZoom = vi.fn();
+    const { node } = mount({ pxToUser: identity, onZoom });
+    // Fingers start 100px apart (horizontal).
+    node.dispatchEvent(pe("pointerdown", { pointerId: 1, clientX: 100, clientY: 100 }));
+    node.dispatchEvent(pe("pointerdown", { pointerId: 2, clientX: 200, clientY: 100 }));
+    // Spread to 200px apart.
+    node.dispatchEvent(pe("pointermove", { pointerId: 1, clientX: 50, clientY: 100 }));
+    node.dispatchEvent(pe("pointermove", { pointerId: 2, clientX: 250, clientY: 100 }));
+    expect(onZoom).toHaveBeenCalled();
+    for (const call of onZoom.mock.calls) {
+      expect(call[0]).toBeGreaterThan(1);
+    }
+  });
+
+  it("fingers pinch together → onZoom fires with factor < 1", () => {
+    const onZoom = vi.fn();
+    const { node } = mount({ pxToUser: identity, onZoom });
+    node.dispatchEvent(pe("pointerdown", { pointerId: 1, clientX: 100, clientY: 100 }));
+    node.dispatchEvent(pe("pointerdown", { pointerId: 2, clientX: 300, clientY: 100 }));
+    // Pinch in: 200px → 100px.
+    node.dispatchEvent(pe("pointermove", { pointerId: 1, clientX: 150, clientY: 100 }));
+    node.dispatchEvent(pe("pointermove", { pointerId: 2, clientX: 250, clientY: 100 }));
+    expect(onZoom).toHaveBeenCalled();
+    for (const call of onZoom.mock.calls) {
+      expect(call[0]).toBeLessThan(1);
+    }
+  });
+
+  it("centerPx is the midpoint of the two pointers in page pixels", () => {
+    const onZoom = vi.fn();
+    const { node } = mount({ pxToUser: identity, onZoom });
+    node.dispatchEvent(pe("pointerdown", { pointerId: 1, clientX: 100, clientY: 100 }));
+    node.dispatchEvent(pe("pointerdown", { pointerId: 2, clientX: 300, clientY: 200 }));
+    node.dispatchEvent(pe("pointermove", { pointerId: 1, clientX: 80, clientY: 100 }));
+    // After that move, pointer 1 is at (80, 100) and pointer 2 at (300, 200).
+    // Midpoint = (190, 150).
+    const lastCall = onZoom.mock.calls.at(-1);
+    expect(lastCall?.[1]).toEqual([190, 150]);
+  });
+
+  it("factor is the ratio of successive distances (not cumulative)", () => {
+    const onZoom = vi.fn();
+    const { node } = mount({ pxToUser: identity, onZoom });
+    // Start 100px apart.
+    node.dispatchEvent(pe("pointerdown", { pointerId: 1, clientX: 100, clientY: 0 }));
+    node.dispatchEvent(pe("pointerdown", { pointerId: 2, clientX: 200, clientY: 0 }));
+    // Step 1: spread to 200px → factor = 2.
+    node.dispatchEvent(pe("pointermove", { pointerId: 2, clientX: 300, clientY: 0 }));
+    // Step 2: spread to 400px → factor = 2 (400/200), not 4.
+    node.dispatchEvent(pe("pointermove", { pointerId: 2, clientX: 500, clientY: 0 }));
+    expect(onZoom).toHaveBeenCalledTimes(2);
+    expect(onZoom.mock.calls[0]![0]).toBeCloseTo(2, 6);
+    expect(onZoom.mock.calls[1]![0]).toBeCloseTo(2, 6);
+  });
+
+  it("lifting one finger exits pinch without resuming pan", () => {
+    const onPan = vi.fn();
+    const onZoom = vi.fn();
+    const { node } = mount({ pxToUser: affine, onPan, onZoom });
+    node.dispatchEvent(pe("pointerdown", { pointerId: 1, clientX: 100, clientY: 100 }));
+    node.dispatchEvent(pe("pointerdown", { pointerId: 2, clientX: 200, clientY: 100 }));
+    node.dispatchEvent(pe("pointerup", { pointerId: 2, clientX: 200, clientY: 100 }));
+    onPan.mockClear();
+    onZoom.mockClear();
+    // Pointer 1 still down, but pan does not resume mid-gesture.
+    node.dispatchEvent(pe("pointermove", { pointerId: 1, clientX: 150, clientY: 100 }));
+    expect(onPan).not.toHaveBeenCalled();
+    expect(onZoom).not.toHaveBeenCalled();
+  });
+
+  it("fresh pan works again after both fingers lift", () => {
+    const onPan = vi.fn();
+    const onZoom = vi.fn();
+    const { node } = mount({ pxToUser: affine, onPan, onZoom });
+    node.dispatchEvent(pe("pointerdown", { pointerId: 1, clientX: 100, clientY: 100 }));
+    node.dispatchEvent(pe("pointerdown", { pointerId: 2, clientX: 200, clientY: 100 }));
+    node.dispatchEvent(pe("pointermove", { pointerId: 2, clientX: 220, clientY: 100 }));
+    node.dispatchEvent(pe("pointerup", { pointerId: 2, clientX: 220, clientY: 100 }));
+    node.dispatchEvent(pe("pointerup", { pointerId: 1, clientX: 100, clientY: 100 }));
+    onPan.mockClear();
+    onZoom.mockClear();
+    // New pan gesture.
+    node.dispatchEvent(pe("pointerdown", { pointerId: 3, clientX: 100, clientY: 100 }));
+    node.dispatchEvent(pe("pointermove", { pointerId: 3, clientX: 110, clientY: 100 }));
+    expect(onPan).toHaveBeenCalledWith([1, 0]);
+    expect(onZoom).not.toHaveBeenCalled();
+  });
+
+  it("enabled.zoom=false suppresses pinch (pan continues on first pointer)", () => {
+    const onPan = vi.fn();
+    const onZoom = vi.fn();
+    const { node } = mount({
+      pxToUser: affine,
+      onPan,
+      onZoom,
+      enabled: { zoom: false },
+    });
+    node.dispatchEvent(pe("pointerdown", { pointerId: 1, clientX: 100, clientY: 100 }));
+    node.dispatchEvent(pe("pointermove", { pointerId: 1, clientX: 110, clientY: 100 }));
+    onPan.mockClear();
+    // Second finger arrives, but zoom is disabled → stay in pan mode.
+    node.dispatchEvent(pe("pointerdown", { pointerId: 2, clientX: 200, clientY: 100 }));
+    node.dispatchEvent(pe("pointermove", { pointerId: 1, clientX: 120, clientY: 100 }));
+    expect(onZoom).not.toHaveBeenCalled();
+    expect(onPan).toHaveBeenCalledWith([1, 0]);
+  });
+
+  it("pointercancel on a pinch pointer exits pinch cleanly", () => {
+    const onZoom = vi.fn();
+    const { node } = mount({ pxToUser: identity, onZoom });
+    node.dispatchEvent(pe("pointerdown", { pointerId: 1, clientX: 100, clientY: 0 }));
+    node.dispatchEvent(pe("pointerdown", { pointerId: 2, clientX: 200, clientY: 0 }));
+    node.dispatchEvent(pe("pointercancel", { pointerId: 2 }));
+    onZoom.mockClear();
+    // Pointer 1 still down — no further zoom signals.
+    node.dispatchEvent(pe("pointermove", { pointerId: 1, clientX: 50, clientY: 0 }));
+    expect(onZoom).not.toHaveBeenCalled();
+  });
+
+  it("third pointer is tracked but does not disrupt pinch math", () => {
+    const onZoom = vi.fn();
+    const { node } = mount({ pxToUser: identity, onZoom });
+    node.dispatchEvent(pe("pointerdown", { pointerId: 1, clientX: 100, clientY: 0 }));
+    node.dispatchEvent(pe("pointerdown", { pointerId: 2, clientX: 200, clientY: 0 }));
+    // Third pointer joins far away — first two still drive the math.
+    node.dispatchEvent(pe("pointerdown", { pointerId: 3, clientX: 500, clientY: 500 }));
+    node.dispatchEvent(pe("pointermove", { pointerId: 2, clientX: 300, clientY: 0 }));
+    // Distance went 100 → 200 → factor 2.
+    const lastCall = onZoom.mock.calls.at(-1);
+    expect(lastCall?.[0]).toBeCloseTo(2, 6);
+    // Midpoint uses pointers 1 and 2: ((100+300)/2, 0) = (200, 0).
+    expect(lastCall?.[1]).toEqual([200, 0]);
+  });
+
+  it("destroy() clears pinch state and releases all pointers", () => {
+    const node = document.createElement("div");
+    document.body.appendChild(node);
+    const lifecycle = panZoom(node, { pxToUser: identity, onZoom: vi.fn() });
+    node.dispatchEvent(pe("pointerdown", { pointerId: 1, clientX: 100, clientY: 0 }));
+    node.dispatchEvent(pe("pointerdown", { pointerId: 2, clientX: 200, clientY: 0 }));
+    const release = vi.spyOn(node, "releasePointerCapture");
+    lifecycle.destroy?.();
+    // Both pointers' captures should be released.
+    const releasedIds = release.mock.calls.map((c) => c[0]).sort();
+    expect(releasedIds).toContain(1);
+    expect(releasedIds).toContain(2);
   });
 });
