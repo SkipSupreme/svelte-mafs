@@ -1,0 +1,111 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+
+const GITHUB_URL = 'https://github.com/SkipSupreme/svelte-mafs';
+
+const links = [
+  { href: '/', label: 'Home' },
+  { href: '/getting-started', label: 'Getting Started' },
+  { href: '/api', label: 'API' },
+  { href: '/examples', label: 'Examples' },
+  { href: '/playground', label: 'Playground' },
+  { href: GITHUB_URL, label: 'GitHub', external: true },
+] as const;
+
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isActive = (href: string) =>
+  href === '/' ? path === '/' : path === href || path.startsWith(href + '/');
+---
+
+<header class="site-header">
+  <div class="shell">
+    <a href="/" class="brand" aria-label="svelte-mafs home">
+      <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true" class="brand-mark">
+        <rect x="3" y="3" width="26" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" />
+        <path d="M3 16 H29 M16 3 V29" stroke="currentColor" stroke-width="1" opacity="0.4" />
+        <path d="M5 22 C 10 22, 12 10, 16 10 S 22 22, 27 10" fill="none" stroke="currentColor" stroke-width="1.75" />
+      </svg>
+      <span>svelte-mafs</span>
+    </a>
+
+    <nav aria-label="Primary">
+      <ul class="nav-list">
+        {
+          links.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                aria-current={!('external' in link) && isActive(link.href) ? 'page' : undefined}
+                {...('external' in link && link.external ? { rel: 'noopener', target: '_blank' } : {})}
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <ThemeToggle />
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--site-bg) 92%, transparent);
+    backdrop-filter: saturate(180%) blur(8px);
+    border-bottom: 1px solid var(--site-border);
+  }
+  .shell {
+    max-width: var(--max-shell);
+    margin: 0 auto;
+    padding: 0.75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--site-fg);
+    font-weight: 600;
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+  .brand-mark { color: var(--site-accent); }
+  nav { flex: 1; min-width: 0; }
+  .nav-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    justify-content: flex-end;
+  }
+  .nav-list a {
+    display: inline-block;
+    padding: 0.4rem 0.65rem;
+    border-radius: var(--radius-sm);
+    color: var(--site-fg-muted);
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: color 120ms ease, background-color 120ms ease;
+  }
+  .nav-list a:hover { color: var(--site-fg); background: var(--site-surface); }
+  .nav-list a[aria-current="page"] {
+    color: var(--site-fg);
+    background: var(--site-surface);
+    font-weight: 550;
+  }
+
+  @media (max-width: 640px) {
+    .shell { flex-wrap: wrap; }
+    nav { order: 3; flex-basis: 100%; }
+    .nav-list { justify-content: flex-start; }
+  }
+</style>
