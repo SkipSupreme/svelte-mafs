@@ -38,3 +38,6 @@ export {
   Polygon,
   Vector,
 } from "./display/index.js";
+
+// Stream 5 — Coordinates + Plot namespaces
+export { Coordinates, Plot } from "./display/index.js";
