@@ -44,7 +44,7 @@ function newAuth(database: ReturnType<typeof drizzleAdapter>) {
 beforeEach(() => {
   db = makeTestDb();
   sent = [];
-  auth = newAuth(drizzleAdapter(db.client, { provider: 'sqlite' }));
+  auth = newAuth(drizzleAdapter(db.client, { provider: 'sqlite' })) as unknown as typeof auth;
 });
 
 afterEach(() => {
