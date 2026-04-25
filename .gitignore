@@ -9,3 +9,8 @@ test-results/
 *.log
 .env*
 !.env.example
+.gstack/
+
+/*.png
+/*.jpg
+/*.jpeg
