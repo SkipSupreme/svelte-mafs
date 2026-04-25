@@ -1,0 +1,115 @@
+---
+export const prerender = false;
+import { eq } from 'drizzle-orm';
+import Base from '../layouts/Base.astro';
+import { createAuth, getSession } from '../server/auth';
+import { getDb } from '../server/db';
+import { userProfile } from '../server/schema';
+import { sendWelcomeEmail } from '../server/email';
+
+const env = Astro.locals.runtime.env;
+const auth = createAuth({
+  DB: env.DB,
+  BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET,
+  GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
+  GITHUB_CLIENT_ID: env.GITHUB_CLIENT_ID,
+  GITHUB_CLIENT_SECRET: env.GITHUB_CLIENT_SECRET,
+  RESEND_API_KEY: env.RESEND_API_KEY,
+  PUBLIC_SITE_URL: env.PUBLIC_SITE_URL,
+});
+
+const session = await getSession(auth, Astro.request.headers);
+if (!session) return Astro.redirect('/signin');
+
+const db = getDb(env.DB);
+
+const existing = await db
+  .select()
+  .from(userProfile)
+  .where(eq(userProfile.userId, session.user.id))
+  .get();
+
+let firstTime = !existing;
+
+if (firstTime) {
+  await db.insert(userProfile).values({
+    userId: session.user.id,
+    marketingOptIn: false,
+  });
+  if (env.RESEND_API_KEY) {
+    Astro.locals.runtime.ctx.waitUntil(
+      sendWelcomeEmail(env.RESEND_API_KEY, session.user.email).catch((e) =>
+        console.error('welcome email failed:', e),
+      ),
+    );
+  }
+}
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const optIn = form.get('marketing_opt_in') === 'on';
+  await db
+    .update(userProfile)
+    .set({ marketingOptIn: optIn, onboardedAt: new Date() })
+    .where(eq(userProfile.userId, session.user.id));
+  return Astro.redirect('/courses/ml-math');
+}
+
+if (existing?.onboardedAt) return Astro.redirect('/');
+---
+
+<Base title="Welcome">
+  <section class="welcome">
+    <h1>You're in.</h1>
+    <p class="lede">
+      Tinker is in alpha. One course is live today: <a href="/courses/ml-math">Math for Machine Learning</a>.
+      New modules ship every week.
+    </p>
+    <form method="POST">
+      <label class="opt-in">
+        <input type="checkbox" name="marketing_opt_in" value="on" />
+        <span>Email me when new modules drop. Unsubscribe any time.</span>
+      </label>
+      <button type="submit">Start learning</button>
+    </form>
+  </section>
+</Base>
+
+<style>
+  .welcome {
+    max-width: 520px;
+    margin: 4rem auto;
+    padding: 2rem 1.5rem;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    margin: 0 0 0.75rem;
+  }
+  .lede { color: var(--site-fg-muted); margin: 0 0 2rem; }
+  form { display: flex; flex-direction: column; gap: 1.25rem; }
+  .opt-in {
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+    padding: 1rem;
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    background: var(--site-surface);
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  .opt-in input { margin-top: 0.25rem; }
+  button {
+    align-self: flex-start;
+    padding: 0.7rem 1.4rem;
+    background: var(--site-fg);
+    color: var(--site-bg);
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { transform: translateY(-1px); }
+</style>

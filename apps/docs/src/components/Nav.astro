@@ -1,5 +1,6 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
+import UserMenu from './auth/UserMenu.svelte';
 
 const GITHUB_URL = 'https://github.com/SkipSupreme/svelte-mafs';
 
@@ -46,6 +47,7 @@ const isActive = (href: string) =>
     </nav>
 
     <ThemeToggle />
+    <UserMenu client:load />
   </div>
 </header>
 
