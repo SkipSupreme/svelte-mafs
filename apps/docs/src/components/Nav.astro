@@ -1,5 +1,7 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
+import XpCounter from './nav/XpCounter.svelte';
+import StreakFlame from './nav/StreakFlame.svelte';
 import { createAuth } from '../server/auth';
 
 let user: { name: string; email: string } | null = null;
@@ -24,16 +26,9 @@ try {
 
     <div class="spacer"></div>
 
-    <div class="counters" data-counters hidden>
-      <span class="xp" aria-label="Experience points" data-xp>
-        <span class="xp-bolt" aria-hidden="true">↑</span>
-        <span class="xp-value" data-xp-value>0</span>
-        <span class="xp-label" aria-hidden="true">XP</span>
-      </span>
-      <span class="streak" aria-label="Day streak" data-streak hidden>
-        <span class="streak-num" data-streak-value>0</span>
-        <span class="streak-flame" aria-hidden="true">🔥</span>
-      </span>
+    <div class="counters">
+      <XpCounter client:load initial={0} />
+      <StreakFlame client:load streak={0} />
     </div>
 
     <div class="auth-slot" data-auth-state={user ? 'user' : 'anon'}>
@@ -113,50 +108,8 @@ try {
   .counters {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.5rem;
   }
-  .counters[hidden] { display: none; }
-  .xp, .streak {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.2rem;
-    padding: 0.28rem 0.6rem;
-    border-radius: 999px;
-    font-family: var(--font-game);
-    font-variant-numeric: tabular-nums;
-    font-size: 0.82rem;
-    font-weight: 700;
-    line-height: 1;
-    white-space: nowrap;
-  }
-  .xp {
-    background: color-mix(in srgb, var(--ink-red) 14%, transparent);
-    color: var(--ink-red);
-    position: relative;
-    transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-  .xp.xp-pulse {
-    transform: scale(1.06);
-  }
-  .xp :global(.xp-floater-nav) {
-    position: absolute;
-    top: -0.4rem;
-    right: 0.5rem;
-    font-family: var(--font-game);
-    font-weight: 800;
-    font-size: 0.78rem;
-    color: var(--cta-hover);
-    pointer-events: none;
-    will-change: transform, opacity;
-  }
-  .xp-bolt { font-size: 0.8rem; }
-  .xp-label { opacity: 0.7; font-size: 0.72rem; letter-spacing: 0.08em; }
-  .streak {
-    background: color-mix(in srgb, var(--ink-sun) 18%, transparent);
-    color: color-mix(in srgb, var(--ink-sun) 85%, var(--site-fg));
-  }
-  .streak[hidden] { display: none; }
-  .streak-flame { font-size: 0.9rem; }
 
   .auth-slot {
     display: inline-flex;
@@ -223,108 +176,22 @@ try {
   }
 
   @media (max-width: 480px) {
-    .xp-label { display: none; }
-    .xp, .streak { padding: 0.22rem 0.5rem; font-size: 0.78rem; }
     .user-name, .auth-link { display: none; }
   }
 </style>
 
 <script>
   /**
-   * Live XP + streak readout. Reads localStorage on load, then listens
-   * for `tinker:xp` and `tinker:streak` events from lib/xp so the counter
-   * updates the moment a learner earns the points.
-   *
-   * For returning users from before XP was first-class: if stored XP is 0
-   * but lesson-progress keys exist, seed from step counts so they don't
-   * see an empty counter.
-   */
-  const LS_XP = 'tinker:xp';
-  const LS_STREAK = 'tinker:streak';
-
-  function readInt(key: string, fallback = 0): number {
-    const raw = localStorage.getItem(key);
-    const n = raw == null ? NaN : parseInt(raw, 10);
-    return Number.isFinite(n) ? n : fallback;
-  }
-
-  function seedXpFromLessonProgress(): number {
-    let steps = 0;
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith('tinker:lesson:') && k.endsWith(':unlocked')) {
-        steps += readInt(k, 0);
-      }
-    }
-    return steps;
-  }
-
-  let xp = readInt(LS_XP);
-  if (xp === 0) {
-    const seeded = seedXpFromLessonProgress();
-    if (seeded > 0) {
-      xp = seeded;
-      localStorage.setItem(LS_XP, String(xp));
-    }
-  }
-  let streak = readInt(LS_STREAK);
-
-  const counters = document.querySelector<HTMLElement>('[data-counters]');
-  const xpEl = document.querySelector<HTMLElement>('[data-xp]');
-  const xpVal = document.querySelector<HTMLElement>('[data-xp-value]');
-  const streakEl = document.querySelector<HTMLElement>('[data-streak]');
-  const streakVal = document.querySelector<HTMLElement>('[data-streak-value]');
-
-  function paint() {
-    if (!counters || !xpVal || !streakEl || !streakVal) return;
-    if (xp > 0 || streak > 0) counters.hidden = false;
-    xpVal.textContent = xp.toLocaleString();
-    if (streak > 0) {
-      streakEl.hidden = false;
-      streakVal.textContent = String(streak);
-    }
-  }
-
-  function flashGain(amount: number) {
-    if (!xpEl || amount <= 0) return;
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const float = document.createElement('span');
-    float.className = 'xp-floater-nav';
-    float.textContent = `+${amount}`;
-    xpEl.appendChild(float);
-    float.animate(
-      [
-        { transform: 'translateY(0)', opacity: 1 },
-        { transform: 'translateY(-22px)', opacity: 0 },
-      ],
-      { duration: 720, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', fill: 'forwards' },
-    ).onfinish = () => float.remove();
-    xpEl.classList.add('xp-pulse');
-    setTimeout(() => xpEl.classList.remove('xp-pulse'), 320);
-  }
-
-  paint();
-
-  window.addEventListener('tinker:xp', (e: Event) => {
-    const detail = (e as CustomEvent<{ amount: number; total: number }>).detail;
-    if (!detail) return;
-    xp = detail.total;
-    flashGain(detail.amount);
-    paint();
-  });
-
-  window.addEventListener('tinker:streak', (e: Event) => {
-    const detail = (e as CustomEvent<{ streak: number }>).detail;
-    if (!detail) return;
-    streak = detail.streak;
-    paint();
-  });
-
-  /**
    * Auth hydration. Prerendered pages bake `data-auth-state="anon"` at build
    * time, so a logged-in visitor would otherwise see "Sign in / Sign up".
    * We fetch the session and flip the slot if there's a user. Skipped when
    * the server already rendered "user" (dynamic pages got it right).
+   *
+   * XP + streak listeners moved to components/nav/{XpCounter,StreakFlame}.svelte —
+   * those own live updates via tinker:xp / tinker:streak. Server-side initial
+   * values default to 0 since Astro.locals doesn't carry session XP/streak yet;
+   * server hydration of those values lands when the auth schema grows xp + streak
+   * columns (see plan).
    */
   type SessionResponse = { user?: { name?: string; email: string } };
   const slot = document.querySelector<HTMLElement>('.auth-slot');
