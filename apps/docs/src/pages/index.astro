@@ -4,6 +4,7 @@ import Base from '../layouts/Base.astro';
 import TangentDemo from '../components/demos/TangentDemo.svelte';
 import VectorAddDemo from '../components/demos/VectorAddDemo.svelte';
 import Tinker from '../components/brand/Tinker.svelte';
+import FloatingMath from '../components/brand/FloatingMath.svelte';
 ---
 
 <Base
@@ -14,7 +15,11 @@ import Tinker from '../components/brand/Tinker.svelte';
   <!-- Hero — apple mascot leads, headline left. Onyx band with red glow +
        floating math symbols (Tinker is math-as-play, the mascot says so). -->
   <section class="band band-onyx hero">
-    <!-- Floating math-symbol motifs over the apple. Static positions; ambient
+    <!-- Ambient drifting math-symbol field across the whole hero band.
+         Lives behind .shell content (which has z-index: 1). -->
+    <FloatingMath client:visible />
+
+    <!-- Floating math-symbol motifs clustered over the apple. Static positions; ambient
          drift only when prefers-reduced-motion is OK. -->
     <div class="confetti" aria-hidden="true">
       <span class="sym sym-pi">π</span>
