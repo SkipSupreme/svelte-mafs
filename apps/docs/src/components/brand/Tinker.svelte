@@ -8,6 +8,7 @@
    * click bounce still fires because it's a deliberate user response.
    */
   import { onMount } from 'svelte';
+  import { prefersReducedMotion } from 'svelte/motion';
   import { play } from '../../lib/sound';
   import { burst } from '../../lib/confetti';
 
@@ -49,14 +50,9 @@
   const PET_THRESHOLD = 10;
   const HOVER_TILT_RANGE_DEG = 3;
 
-  let reducedMotion = $state(false);
+  const reducedMotion = $derived(prefersReducedMotion.current);
 
   onMount(() => {
-    try {
-      reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    } catch {
-      /* ignore */
-    }
     try {
       petCount = Number.parseInt(localStorage.getItem(PET_LS_KEY) ?? '0', 10) || 0;
     } catch {
