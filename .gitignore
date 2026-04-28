@@ -9,9 +9,13 @@ test-results/
 *.log
 .env*
 !.env.example
+secret.md
 .gstack/
 .worktrees/
 
 /*.png
 /*.jpg
 /*.jpeg
+.dev.vars
+.context/
+.playwright-mcp/

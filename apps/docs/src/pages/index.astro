@@ -1,190 +1,705 @@
 ---
+export const prerender = true;
 import Base from '../layouts/Base.astro';
+import TangentDemo from '../components/demos/TangentDemo.svelte';
+import VectorAddDemo from '../components/demos/VectorAddDemo.svelte';
+import Tinker from '../components/brand/Tinker.svelte';
 ---
 
 <Base
   title="Tinker"
-  description="Learn math, physics, and computer science the way 3Blue1Brown wishes Brilliant worked. Rigorous, visual, and built for adults who actually want to understand."
+  description="Play with ideas. Learn for real. Grow fast. Mini lessons, instant feedback, and joyful wins for curious kids, teens, and grown-ups."
+  fullWidth
 >
-  <section class="hero">
-    <p class="eyebrow">In development · Coming 2026</p>
-    <h1>Learn by building intuition, not memorizing steps.</h1>
-    <p class="lede">
-      Tinker is a new kind of learning app for math, physics, and computer
-      science — interactive the whole way down, with spaced-repetition that
-      actually tracks your understanding, and visualizations you can drag.
-      For adults who want rigor and intuition in the same product.
-    </p>
+  <!-- Hero — apple mascot leads, headline left. Onyx band with red glow +
+       floating math symbols (Tinker is math-as-play, the mascot says so). -->
+  <section class="band band-onyx hero">
+    <!-- Floating math-symbol motifs over the apple. Static positions; ambient
+         drift only when prefers-reduced-motion is OK. -->
+    <div class="confetti" aria-hidden="true">
+      <span class="sym sym-pi">π</span>
+      <span class="sym sym-int">∫</span>
+      <span class="sym sym-partial">∂</span>
+      <span class="sym sym-infty">∞</span>
+      <span class="sym sym-delta">Δ</span>
+      <span class="sym sym-sigma">∑</span>
+    </div>
 
-    <form class="waitlist" method="POST" action="#" data-waitlist>
-      <label class="sr-only" for="waitlist-email">Email address</label>
-      <input
-        id="waitlist-email"
-        type="email"
-        name="email"
-        placeholder="you@example.com"
-        autocomplete="email"
-        required
-      />
-      <button type="submit">Get on the waitlist</button>
-    </form>
-    <p class="form-note">No spam. One email when there's something real to show.</p>
+    <div class="shell">
+      <div class="hero-grid">
+        <div class="hero-mascot">
+          <!-- Live, clickable Tinker (apple head only — wordmark is cropped
+               out of the source asset so the apple itself reads big).
+               Click to bounce + math-symbol burst. -->
+          <Tinker client:visible size="clamp(220px, 44vw, 480px)" />
+          <!-- Floating XP/celebration moment near the mascot. -->
+          <div class="xp-floater" aria-hidden="true">
+            <span class="xp-amount">+15 XP</span>
+            <span class="xp-msg">Nice thinking!</span>
+            <span class="xp-confetti">
+              <span class="bit b1"></span>
+              <span class="bit b2"></span>
+              <span class="bit b3"></span>
+              <span class="bit b4"></span>
+              <span class="bit b5"></span>
+              <span class="bit b6"></span>
+            </span>
+          </div>
+        </div>
+
+        <div class="hero-copy">
+          <h1 class="display hero-headline">
+            <span class="line"><em class="ink-red">Play</em> with ideas.</span>
+            <span class="line"><em class="ink-coral">Learn</em> for real.</span>
+            <span class="line"><em class="ink-sun">Grow</em> fast.</span>
+          </h1>
+          <p class="lede">
+            Mini lessons, instant feedback, joyful wins. For curious kids, teens,
+            and grown-ups.
+          </p>
+
+          <div class="cta-row">
+            <a href="#try" class="btn btn-primary">Try a lesson →</a>
+            <a href="#waitlist" class="btn btn-ghost">Join the waitlist</a>
+          </div>
+          <ul class="reassurance" aria-label="Why try Tinker">
+            <li><span aria-hidden="true">·</span> No signup to explore</li>
+            <li><span aria-hidden="true">·</span> 5-min interactive lesson</li>
+            <li><span aria-hidden="true">·</span> All ages</li>
+          </ul>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <section class="pitch" aria-labelledby="pitch-heading">
-    <h2 id="pitch-heading">What we're building</h2>
-    <ul class="pitch-grid">
-      <li>
-        <h3>Rigor <em>and</em> intuition</h3>
-        <p>
-          Brilliant builds intuition and stops short. Math Academy builds
-          procedural fluency and feels dry. Tinker pairs draggable,
-          3Blue1Brown-style visualizations with spaced-repetition on a
-          hand-built knowledge graph — both in one product.
-        </p>
-      </li>
-      <li>
-        <h3>Knowledge graph you can trust</h3>
-        <p>
-          Every concept is a node with explicit prerequisites. Mastering an
-          advanced topic trickles credit down the graph, so you never
-          re-review what you've already proven you know.
-        </p>
-      </li>
-      <li>
-        <h3>Adult learners, not kids</h3>
-        <p>
-          No streaks guilt-tripping you. No cartoon characters. No walled
-          garden. Built for self-directed learners — whether you're a dev
-          brushing up linear algebra for ML or an engineer revisiting
-          multivariable calc.
-        </p>
-      </li>
-      <li>
-        <h3>Works offline</h3>
-        <p>
-          Download a course, fly to Calgary, keep learning. Your progress
-          syncs when you're back online. No subscription trap — pay once,
-          learn forever is on the table.
-        </p>
-      </li>
-    </ul>
+  <!-- Lesson tile preview — what you can learn. Cream band so the tiles pop. -->
+  <section class="band band-cream tiles-band">
+    <div class="shell">
+      <p class="kicker kicker-red">What you can tinker with</p>
+      <h2 class="display tiles-headline">
+        Pick a track. <em>Press play.</em>
+      </h2>
+      <div class="tiles">
+        <a href="/courses/ml-math" class="tile tile-open">
+          <div class="tile-chip chip-red">Available now</div>
+          <h3 class="tile-title">Math for ML</h3>
+          <p class="tile-desc">Derivatives → gradients → linear algebra → backprop → train a GPT.</p>
+          <div class="tile-meta">
+            <span class="tile-xp">★ 18 lessons</span>
+            <span class="tile-cta">Open →</span>
+          </div>
+        </a>
+
+        <div class="tile tile-soon">
+          <div class="tile-chip chip-pink">Coming · for kids</div>
+          <h3 class="tile-title">Fractions Through Pizza</h3>
+          <p class="tile-desc">Drag the slices. Share them fairly. Halves, thirds, and the moment fractions click.</p>
+          <div class="tile-meta">
+            <span class="tile-xp">For ages 7–11</span>
+          </div>
+        </div>
+
+        <div class="tile tile-soon">
+          <div class="tile-chip chip-teal">Coming soon</div>
+          <h3 class="tile-title">Vectors as Treasure Maps</h3>
+          <p class="tile-desc">Walk three steps east and four steps north. Now name the arrow that gets you there.</p>
+          <div class="tile-meta">
+            <span class="tile-xp">Pre-algebra ready</span>
+          </div>
+        </div>
+
+        <div class="tile tile-soon">
+          <div class="tile-chip chip-orange">Coming soon</div>
+          <h3 class="tile-title">Why Do Shadows Move?</h3>
+          <p class="tile-desc">A flashlight, a ball, a wall. The thing the sun does every day, but you get to control it.</p>
+          <div class="tile-meta">
+            <span class="tile-xp">For curious anyone</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <section class="status" aria-labelledby="status-heading">
-    <h2 id="status-heading">Where this stands</h2>
-    <p>
-      Actively being built in the open. Source:
-      <a href="https://github.com/SkipSupreme/svelte-mafs" rel="noopener">
-        github.com/SkipSupreme/svelte-mafs
-      </a>.
-      Follow along on the waitlist and I'll ping you when the first wedge
-      (Math for ML) is ready to dogfood.
-    </p>
+  <!-- The "try it" demo. Anchored from hero CTA. -->
+  <section id="try" class="band band-white demo-band">
+    <div class="shell demo-section">
+      <div class="demo-copy">
+        <p class="kicker kicker-red">Try it · no signup</p>
+        <h2 class="display">
+          Drag the dot.
+          <br />
+          Watch the <em>tangent line</em> appear.
+        </h2>
+        <p class="prose-text">
+          That orange line is the slope at the point. Move the dot, the slope
+          changes. That's a derivative. You just did calculus.
+        </p>
+      </div>
+      <div class="demo-stage">
+        <TangentDemo client:visible />
+      </div>
+    </div>
+  </section>
+
+  <!-- Second demo — vectors. Lavender band. -->
+  <section class="band band-lavender">
+    <div class="shell demo-section reverse">
+      <div class="demo-copy">
+        <p class="kicker kicker-sea">Every widget is a lesson</p>
+        <h2 class="display">
+          Vectors add
+          <span class="nowrap"><em>head</em> to <em>tail</em>.</span>
+        </h2>
+        <p class="prose-text">
+          Drag either arrow. The parallelogram appears. That's the proof —
+          not the definition, not the axiom, the actual geometric fact you
+          came here to understand.
+        </p>
+      </div>
+      <div class="demo-stage">
+        <VectorAddDemo client:visible />
+      </div>
+    </div>
+  </section>
+
+  <!-- Manifesto band — kids + adults pivot. -->
+  <section class="band band-butter band-quiet">
+    <div class="shell">
+      <p class="kicker kicker-red">What Tinker is</p>
+      <h2 class="display manifesto">
+        Anything worth learning.
+        <br />
+        Built to <em>play with</em>.
+        <br />
+        For <em>anyone</em> curious.
+      </h2>
+      <p class="prose-text manifesto-sub">
+        Math, ML, and whatever comes next. Starting with the subjects I want to
+        learn, then tracks for my kid, then yours. Same playful tone, same rigor
+        inside. Big kids and little kids welcome.
+      </p>
+    </div>
+  </section>
+
+  <!-- Closing CTA — onyx with green button. -->
+  <section id="waitlist" class="band band-onyx closing">
+    <div class="shell tall">
+      <h2 class="display huge">
+        Ready when<br />
+        <span class="ink-sun-italic">you are.</span>
+      </h2>
+      <p class="lede dark">
+        One email when the first course is ready to play, another at launch.
+        That's it.
+      </p>
+      <form class="waitlist" method="POST" action="#" data-waitlist>
+        <label class="sr-only" for="waitlist-email">Email address</label>
+        <input
+          id="waitlist-email"
+          type="email"
+          name="email"
+          placeholder="you@example.com"
+          autocomplete="email"
+          required
+        />
+        <button type="submit">Join the waitlist</button>
+      </form>
+      <p class="form-note dark">Built in Calgary. Shipping in 2026.</p>
+    </div>
   </section>
 </Base>
 
 <style>
-  .hero {
-    padding: 4rem 0 3rem;
-    max-width: 52rem;
+  .band {
+    width: 100%;
+    padding: clamp(3rem, 7vw, 5.5rem) 1.25rem;
+    position: relative;
+    overflow: hidden;
   }
-  .eyebrow {
+  .band-cream    { background: var(--band-cream); }
+  .band-lavender { background: var(--band-lavender); }
+  .band-butter   { background: var(--band-butter); }
+  .band-white    { background: var(--band-white); }
+  .band-onyx {
+    background:
+      radial-gradient(circle at 25% 30%, color-mix(in srgb, var(--ink-red) 22%, transparent), transparent 55%),
+      radial-gradient(circle at 80% 80%, color-mix(in srgb, var(--ink-coral) 14%, transparent), transparent 55%),
+      var(--band-onyx);
+    color: var(--band-dark-fg);
+  }
+  .band-quiet { padding: clamp(4rem, 9vw, 7rem) 1.25rem; }
+
+  .shell {
+    max-width: var(--max-hero);
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+  .shell.tall { text-align: center; padding: 1rem 0 2rem; }
+
+  /* === Hero === */
+  .hero { padding: clamp(3rem, 8vw, 6.5rem) 1.25rem clamp(3rem, 7vw, 5.5rem); }
+  .hero-grid {
+    /* Apple on the left, copy on the right. Mascot column has a min-width
+       so the cropped apple head reads as a focal point even on narrow
+       laptop widths. */
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) minmax(0, 1.25fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    align-items: center;
+  }
+  @media (max-width: 900px) {
+    .hero-grid {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+    /* Mascot is first in source order, so it naturally stacks above copy
+       on mobile — no `order` override needed. */
+  }
+
+  .hero-headline {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.4rem, 6.5vw, 5rem);
+    line-height: 1;
+    letter-spacing: -0.025em;
+    margin: 0 0 1.4rem;
+    text-wrap: balance;
+  }
+  .hero-headline .line {
+    display: block;
+  }
+  .hero-headline em {
+    font-style: italic;
+    font-weight: 700;
+    /* Per-verb color set via .ink-red/coral/sun spans. */
+  }
+  .ink-red    { color: var(--ink-red); }
+  .ink-coral  { color: var(--ink-coral); }
+  .ink-sun    { color: var(--ink-sun); }
+  .ink-sun-italic {
+    color: var(--ink-sun);
+    font-style: italic;
+  }
+  .nowrap { white-space: nowrap; }
+
+  .lede {
+    font-size: clamp(1.05rem, 1.55vw, 1.25rem);
+    line-height: 1.55;
+    color: color-mix(in srgb, var(--band-dark-fg) 85%, transparent);
+    max-width: 36ch;
+    margin: 0 0 1.75rem;
+  }
+  .lede.dark {
+    color: var(--band-dark-muted);
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 38ch;
+  }
+
+  /* CTA pair */
+  .cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 0 0 1rem;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.95rem 1.6rem;
+    border-radius: var(--radius-pill);
+    font: inherit;
+    font-weight: 700;
+    font-size: 1.02rem;
+    text-decoration: none;
+    line-height: 1;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition: transform 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+  }
+  .btn-primary {
+    background: var(--cta);
+    color: var(--cta-fg);
+    border-color: var(--cta);
+    box-shadow: 0 10px 22px -8px color-mix(in srgb, var(--cta) 70%, transparent);
+  }
+  .btn-primary:hover {
+    background: var(--cta-hover);
+    border-color: var(--cta-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 14px 26px -8px color-mix(in srgb, var(--cta) 80%, transparent);
+  }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-ghost {
+    /* Mixes against the current band-dark-fg so the ghost CTA reads
+       correctly on either theme — dark border on light hero, light border
+       on dark hero. */
+    background: transparent;
+    color: var(--band-dark-fg);
+    border-color: color-mix(in srgb, var(--band-dark-fg) 30%, transparent);
+  }
+  .btn-ghost:hover {
+    background: color-mix(in srgb, var(--band-dark-fg) 6%, transparent);
+    border-color: color-mix(in srgb, var(--band-dark-fg) 55%, transparent);
+  }
+
+  .reassurance {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    font-family: var(--font-game);
+    font-size: 0.82rem;
+    color: color-mix(in srgb, var(--band-dark-fg) 65%, transparent);
+  }
+  .reassurance li { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .reassurance li span { opacity: 0.55; }
+  .reassurance li:first-child span { display: none; }
+
+  /* === Hero mascot ===
+     The interactive <Tinker /> component handles its own glow, idle bob,
+     hover-tilt, click bounce, and reduced-motion fallback. We just give
+     it a positioned container so the XP floater can anchor to it. */
+  .hero-mascot {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 280px;
+  }
+
+  /* Floating math symbols above the apple — Tinker is math-as-play, so the
+     ambient decoration is the alphabet of math itself. Confetti palette
+     (teal/pink/orange) per DESIGN.md. */
+  .confetti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .sym {
+    position: absolute;
+    font-family: var(--font-display), serif;
+    font-style: italic;
+    font-weight: 600;
+    line-height: 1;
+    user-select: none;
+    text-shadow: 0 2px 8px color-mix(in srgb, currentColor 30%, transparent);
+  }
+  .sym-pi      { top: 10%; right: 28%; color: var(--ink-teal);   font-size: 2.4rem; transform: rotate(-12deg); animation: sym-drift 7s ease-in-out infinite; }
+  .sym-int     { top: 4%;  right: 16%; color: var(--ink-pink);   font-size: 2.8rem; transform: rotate(8deg);   animation: sym-drift 8s ease-in-out infinite reverse; }
+  .sym-partial { top: 16%; right: 8%;  color: var(--ink-orange); font-size: 2.2rem; transform: rotate(-4deg);  animation: sym-drift 6.5s ease-in-out infinite; }
+  .sym-infty   { top: 30%; right: 4%;  color: var(--ink-teal);   font-size: 2rem;   transform: rotate(14deg);  animation: sym-drift 9s ease-in-out infinite reverse; }
+  .sym-delta   { top: 4%;  right: 38%; color: var(--ink-orange); font-size: 1.9rem; transform: rotate(-18deg); animation: sym-drift 7.5s ease-in-out infinite; }
+  .sym-sigma   { top: 22%; right: 38%; color: var(--ink-pink);   font-size: 2.1rem; transform: rotate(6deg);   animation: sym-drift 8.5s ease-in-out infinite reverse; }
+
+  @keyframes sym-drift {
+    0%, 100% { translate: 0 0; }
+    50%      { translate: -4px -8px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sym { animation: none; }
+  }
+
+  /* === XP floater === */
+  .xp-floater {
+    position: absolute;
+    bottom: 8%;
+    right: 4%;
+    z-index: 2;
+    background: color-mix(in srgb, var(--ink-sun) 18%, var(--band-onyx));
+    color: var(--ink-sun);
+    border: 1.5px solid color-mix(in srgb, var(--ink-sun) 45%, transparent);
+    border-radius: var(--radius-pill);
+    padding: 0.55rem 1rem;
+    font-family: var(--font-game);
+    font-weight: 700;
+    font-size: 0.92rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    box-shadow: 0 14px 24px -10px color-mix(in srgb, var(--ink-sun) 55%, transparent);
+    animation: xp-pop 4s ease-in-out infinite;
+  }
+  .xp-amount { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+  .xp-msg {
+    color: color-mix(in srgb, var(--ink-sun) 80%, #fff);
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .xp-confetti {
+    position: absolute;
+    inset: -16px -10px -16px -10px;
+    pointer-events: none;
+  }
+  .xp-confetti .bit {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    opacity: 0;
+    animation: xp-burst 4s ease-in-out infinite;
+  }
+  .xp-confetti .b1 { top: -4px;  left: 10%; background: var(--ink-teal);   animation-delay: 0s; }
+  .xp-confetti .b2 { top: -8px;  left: 35%; background: var(--ink-pink);   animation-delay: 0.1s; }
+  .xp-confetti .b3 { top: -2px;  left: 60%; background: var(--ink-orange); animation-delay: 0.2s; }
+  .xp-confetti .b4 { bottom: -4px; left: 20%; background: var(--ink-red); animation-delay: 0.3s; }
+  .xp-confetti .b5 { bottom: -6px; left: 55%; background: var(--ink-teal);   animation-delay: 0.15s; }
+  .xp-confetti .b6 { bottom: -2px; left: 80%; background: var(--ink-pink);   animation-delay: 0.25s; }
+
+  @keyframes xp-pop {
+    0%, 70%, 100% { transform: scale(1); }
+    74%           { transform: scale(1.06); }
+    78%           { transform: scale(1); }
+  }
+  @keyframes xp-burst {
+    0%, 65%, 100% { opacity: 0; transform: translate(0, 0); }
+    70%           { opacity: 1; }
+    85%           { opacity: 0.9; transform: translate(var(--bx, 8px), var(--by, -10px)); }
+    95%           { opacity: 0; transform: translate(calc(var(--bx, 8px) * 1.5), calc(var(--by, -10px) * 1.5)); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .xp-floater { animation: none; }
+    .xp-confetti .bit { display: none; }
+  }
+
+  /* Mobile: shrink XP floater so it doesn't crowd the mascot. */
+  @media (max-width: 600px) {
+    .xp-floater {
+      bottom: 6%;
+      right: 6%;
+      font-size: 0.82rem;
+      padding: 0.45rem 0.85rem;
+    }
+    .xp-msg { display: none; }
+  }
+
+  /* === Lesson tiles === */
+  .tiles-band { padding: clamp(3rem, 6vw, 5rem) 1.25rem; }
+  .kicker {
+    font-family: var(--font-game);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin: 0 0 0.85rem;
+  }
+  .kicker-red { color: var(--ink-red); }
+  .kicker-sea    { color: var(--ink-sea); }
+
+  .tiles-headline {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin: 0 0 1.75rem;
+    text-wrap: balance;
+  }
+  .tiles-headline em {
+    font-style: italic;
+    color: var(--ink-red);
+    font-weight: 700;
+  }
+
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .tile {
+    display: block;
+    background: var(--demo-card);
+    border: 1.5px solid var(--demo-card-border, #e8e8e3);
+    border-radius: 18px;
+    padding: 1.1rem 1.15rem 1.15rem;
+    text-decoration: none;
+    color: var(--site-fg);
+    transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    position: relative;
+  }
+  .tile-open {
+    cursor: pointer;
+  }
+  .tile-open:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--ink-red) 40%, transparent);
+    box-shadow: 0 18px 32px -16px color-mix(in srgb, var(--ink-red) 55%, transparent);
+  }
+  .tile-soon {
+    opacity: 0.92;
+  }
+
+  .tile-chip {
+    display: inline-block;
+    font-family: var(--font-game);
+    font-weight: 700;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    margin: 0 0 0.7rem;
+  }
+  .chip-red { background: color-mix(in srgb, var(--ink-red) 18%, transparent); color: var(--ink-red); }
+  .chip-pink   { background: color-mix(in srgb, var(--ink-pink) 22%, transparent);   color: color-mix(in srgb, var(--ink-pink) 75%, var(--site-fg)); }
+  .chip-teal   { background: color-mix(in srgb, var(--ink-teal) 22%, transparent);   color: color-mix(in srgb, var(--ink-teal) 65%, var(--site-fg)); }
+  .chip-orange { background: color-mix(in srgb, var(--ink-orange) 22%, transparent); color: color-mix(in srgb, var(--ink-orange) 70%, var(--site-fg)); }
+
+  .tile-title {
+    font-family: var(--font-display);
+    font-weight: 650;
+    font-size: 1.2rem;
+    line-height: 1.15;
+    margin: 0 0 0.4rem;
+    letter-spacing: -0.01em;
+  }
+  .tile-desc {
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: var(--site-fg-muted);
+    margin: 0 0 0.85rem;
+  }
+  .tile-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-game);
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: var(--site-fg-muted);
+  }
+  .tile-cta {
+    color: var(--ink-red);
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    font-size: 0.72rem;
-    color: var(--site-accent);
-    margin: 0 0 0.75rem;
-    font-weight: 600;
   }
-  .hero h1 {
-    font-size: clamp(2.25rem, 6vw, 3.75rem);
+
+  /* === Demo sections === */
+  .demo-band { padding: clamp(3rem, 6vw, 5rem) 1.25rem; }
+  .demo-section {
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 1.15fr);
+    gap: clamp(2rem, 5vw, 4.5rem);
+    align-items: center;
+  }
+  .demo-section.reverse {
+    grid-template-columns: minmax(0, 1.15fr) 1fr;
+  }
+  .demo-section.reverse .demo-copy { order: 2; }
+  .demo-section.reverse .demo-stage { order: 1; }
+  @media (max-width: 900px) {
+    .demo-section,
+    .demo-section.reverse { grid-template-columns: 1fr; }
+    .demo-section.reverse .demo-copy,
+    .demo-section.reverse .demo-stage { order: initial; }
+  }
+  .demo-stage { min-width: 0; }
+
+  .display {
+    font-family: var(--font-display);
+    font-weight: 700;
     line-height: 1.05;
     letter-spacing: -0.02em;
     margin: 0 0 1.25rem;
+    font-size: clamp(2rem, 4.5vw, 3.5rem);
+    text-wrap: balance;
   }
-  .lede {
-    font-size: 1.18rem;
-    line-height: 1.55;
+  .display.huge {
+    font-size: clamp(3rem, 9vw, 6.5rem);
+    margin-bottom: 2rem;
+    text-wrap: balance;
+  }
+  .display.manifesto {
+    font-size: clamp(1.75rem, 4.5vw, 3.5rem);
+    font-weight: 600;
+    line-height: 1.15;
+    max-width: 28ch;
+    text-wrap: balance;
+  }
+  .display em {
+    font-style: italic;
+    font-weight: 600;
+    color: var(--ink-red);
+  }
+  .prose-text {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--site-fg);
+    max-width: 36rem;
+    margin: 0;
+  }
+  .manifesto-sub {
+    max-width: 46rem;
+    margin: 1.25rem 0 0;
     color: var(--site-fg-muted);
-    max-width: 44rem;
-    margin: 0 0 2rem;
+    font-size: 1.08rem;
   }
 
+  /* === Closing CTA waitlist === */
+  .closing { text-align: center; }
   .waitlist {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
-    max-width: 32rem;
-    margin: 0 0 0.5rem;
+    max-width: 34rem;
+    margin: 0 auto 0.6rem;
   }
   .waitlist input[type="email"] {
-    flex: 1 1 14rem;
-    padding: 0.75rem 0.9rem;
-    border: 1px solid var(--site-border);
-    border-radius: var(--radius-md);
-    background: var(--site-surface);
-    color: var(--site-fg);
+    /* Theme-aware: --input-bg / --input-border are defined in global.css
+       and flip with the dark/light toggle, so this input no longer
+       hardcodes a white-mix that broke against the warm-cream hero. */
+    flex: 1 1 16rem;
+    padding: 0.95rem 1.15rem;
+    border: 1.5px solid var(--input-border);
+    border-radius: var(--radius-pill);
+    background: var(--input-bg);
+    color: var(--band-dark-fg);
     font: inherit;
+    font-size: 1.02rem;
+  }
+  .waitlist input[type="email"]::placeholder {
+    color: color-mix(in srgb, var(--band-dark-fg) 50%, transparent);
   }
   .waitlist input[type="email"]:focus {
-    outline: 2px solid var(--site-accent);
-    outline-offset: 2px;
+    outline: none;
+    border-color: var(--cta);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--cta) 25%, transparent);
   }
   .waitlist button {
-    padding: 0.75rem 1.1rem;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--site-accent);
-    background: var(--site-accent);
-    color: var(--site-accent-fg);
+    padding: 0.95rem 1.5rem;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--cta);
+    background: var(--cta);
+    color: var(--cta-fg);
     font: inherit;
-    font-weight: 550;
+    font-weight: 700;
+    font-size: 1rem;
     cursor: pointer;
-    transition: transform 120ms ease;
+    transition: transform 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+    white-space: nowrap;
+    box-shadow: 0 6px 16px -4px color-mix(in srgb, var(--cta) 60%, transparent);
   }
-  .waitlist button:hover { transform: translateY(-1px); }
+  .waitlist button:hover {
+    background: var(--cta-hover);
+    border-color: var(--cta-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px -6px color-mix(in srgb, var(--cta) 70%, transparent);
+  }
+  .waitlist button:active { transform: translateY(0); }
+
   .form-note {
-    font-size: 0.82rem;
+    font-size: 0.86rem;
     color: var(--site-fg-muted);
-    margin: 0.25rem 0 0;
+    margin: 0.5rem 0 0;
   }
-
-  .pitch, .status {
-    padding: 2.75rem 0;
-    border-top: 1px solid var(--site-border);
-  }
-  .pitch-grid {
-    list-style: none;
-    padding: 0;
-    margin: 1.5rem 0 0;
-    display: grid;
-    gap: 1.25rem;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  }
-  .pitch-grid li {
-    padding: 1.25rem 1.25rem 1rem;
-    border: 1px solid var(--site-border);
-    border-radius: var(--radius-lg);
-    background: var(--site-surface);
-  }
-  .pitch-grid h3 {
-    font-family: var(--font-body);
-    font-size: 1.02rem;
-    margin: 0 0 0.4rem;
-  }
-  .pitch-grid em {
-    font-style: italic;
-    color: var(--site-accent);
-    font-weight: 600;
-  }
-  .pitch-grid p {
-    margin: 0;
-    color: var(--site-fg-muted);
-    font-size: 0.92rem;
-    line-height: 1.5;
-  }
-
-  .status p { color: var(--site-fg-muted); max-width: var(--max-prose); }
+  .form-note.dark { color: var(--band-dark-muted); }
 
   .sr-only {
     position: absolute;
@@ -198,11 +713,8 @@ import Base from '../layouts/Base.astro';
 </style>
 
 <script>
-  // Waitlist form stub — intercepts submit so the form doesn't 404 on a
-  // non-existent endpoint. When a real provider (Beehiiv / Buttondown /
-  // ConvertKit) is wired up, swap this for a real POST and remove the stub.
-  const form = document.querySelector<HTMLFormElement>('form[data-waitlist]');
-  if (form) {
+  const forms = document.querySelectorAll<HTMLFormElement>('form[data-waitlist]');
+  forms.forEach((form) => {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const input = form.querySelector<HTMLInputElement>('input[type="email"]');
@@ -214,5 +726,5 @@ import Base from '../layouts/Base.astro';
       }
       console.log('[waitlist stub]', input.value);
     });
-  }
+  });
 </script>

@@ -1,11 +1,16 @@
 ---
 import Nav from '../components/Nav.astro';
 import '../styles/global.css';
+// svelte-mafs core.css wires --mafs-fg / --mafs-grid-color / axis palette to
+// our [data-theme="dark"] toggle so widget interiors flip with the rest of
+// the page.
+import 'svelte-mafs/core.css';
 
 interface Frontmatter {
   title?: string;
   description?: string;
   prose?: boolean;
+  fullWidth?: boolean;
 }
 
 export interface Props extends Frontmatter {
@@ -19,6 +24,8 @@ const description =
   fm.description ??
   'Rigorous, visual, spaced-repetition-backed learning for adults.';
 const prose = Astro.props.prose ?? fm.prose ?? false;
+const fullWidth = Astro.props.fullWidth ?? fm.fullWidth ?? false;
+const mainClass = [prose ? 'prose' : '', fullWidth ? 'full-width' : ''].filter(Boolean).join(' ');
 
 const titleWithSuffix = title === 'Tinker' ? title : `${title} · Tinker`;
 ---
@@ -33,8 +40,14 @@ const titleWithSuffix = title === 'Tinker' ? title : `${title} · Tinker`;
     <meta property="og:title" content={titleWithSuffix} />
     <meta property="og:description" content={description} />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="alternate icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" href="/logo-mark.png" />
+    <link rel="apple-touch-icon" href="/logo-mark.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,700;1,9..144,800&family=Inter:wght@400;500;600;700&family=Nunito:ital,wght@0,700;0,800;0,900;1,800&family=Space+Grotesk:wght@500;600;700&display=swap"
+    />
     <title>{titleWithSuffix}</title>
 
     {/* FOUC-free theme init: must run before paint. */}
@@ -53,16 +66,12 @@ const titleWithSuffix = title === 'Tinker' ? title : `${title} · Tinker`;
   <body>
     <a class="skip-link" href="#main">Skip to main content</a>
     <Nav />
-    <main id="main" class={prose ? 'prose' : ''}>
+    <main id="main" class={mainClass}>
       <slot />
     </main>
     <footer class="site-footer">
       <div class="shell">
-        <p>
-          <a href="https://github.com/SkipSupreme/svelte-mafs" rel="noopener">Source</a>
-          <span class="sep" aria-hidden="true">·</span>
-          <span>Tinker · in development · Calgary, AB</span>
-        </p>
+        <p class="copy">© 2026 Tinker — Online learning for everyone. <em>Play. Learn. Grow.</em></p>
       </div>
     </footer>
   </body>
@@ -81,5 +90,11 @@ const titleWithSuffix = title === 'Tinker' ? title : `${title} · Tinker`;
     padding: 0 1.25rem;
   }
   .site-footer p { margin: 0; }
+  .site-footer .copy em {
+    font-style: italic;
+    color: var(--ink-red);
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
   .sep { padding: 0 0.5rem; opacity: 0.6; }
 </style>

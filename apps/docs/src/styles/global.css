@@ -1,25 +1,73 @@
 :root {
   --site-bg: #fdfdfc;
-  --site-fg: #1a1a1a;
-  --site-fg-muted: #5a5a5a;
+  --site-fg: #17181a;
+  --site-fg-muted: #585a60;
   --site-border: #e4e4e0;
   --site-surface: #f5f5f2;
-  --site-accent: #2563eb;
+  --site-accent: #2f6fed;
   --site-accent-fg: #ffffff;
   --site-code-bg: #f5f5f2;
-  --site-code-fg: #1a1a1a;
-  --site-focus: #2563eb;
+  --site-code-fg: #17181a;
+  --site-focus: #2f6fed;
 
-  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-  --font-display: ui-serif, Georgia, "Times New Roman", serif;
+  /* Pastel full-bleed section bands (Brilliant-inspired). */
+  --band-white: #fdfdfc;
+  --band-cream: #faf6ef;
+  --band-lavender: #ecebfb;
+  --band-mint: #e6f3e8;
+  --band-sky: #e6eff8;
+  --band-butter: #fbf2dc;
+  /* `--band-dark` and `--band-dark-fg`/`-muted` are theme-aware now: in
+     light mode they read as a warm pink-cream "premium" surface so the
+     hero and closing-CTA bands obey the toggle. In dark mode they fall
+     back to near-black with light text. */
+  --band-dark: #fff4ec;
+  --band-dark-fg: #17181a;
+  --band-dark-muted: #585a60;
+
+  /* CTA — kelly green pill. */
+  --cta: #22c55e;
+  --cta-hover: #16a34a;
+  --cta-fg: #0a1a10;
+
+  /* Saturated "ink" accents for decorative math inside headlines.
+     --ink-red is the primary brand color (apple). Replaces the old --ink-violet
+     after the 2026-04-24 owl→apple pivot; purple is the AI slop color. */
+  --ink-red:    #e6396a;
+  --ink-coral:  #ff6a4d;
+  --ink-sun:    #f2b400;
+  --ink-sea:    #2a9fd6;
+  /* Confetti palette (from the mascot logo). Used on celebration surfaces. */
+  --ink-teal:   #4ecdc4;
+  --ink-pink:   #ff4f9e;
+  --ink-orange: #ff9f43;
+
+  /* "Onyx" hero surface — theme-aware so the hero + closing CTA follow the
+     light/dark toggle. Light mode: warm pink-cream that pairs with the
+     red mascot. Dark mode: near-black (overridden below). */
+  --band-onyx:  #fff4ec;
+
+  /* Surfaces for widgets + inputs that sit on top of band backgrounds. */
+  --demo-card: #ffffff;
+  --demo-card-border: transparent;
+  --demo-stage: var(--band-white);
+  --input-bg: #ffffff;
+  --input-border: var(--site-border);
+
+  --font-body:     "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:     ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --font-display:  "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
+  --font-wordmark: "Nunito", "Fraunces", ui-sans-serif, system-ui, sans-serif;
+  --font-game:     "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
 
   --max-prose: 68ch;
   --max-shell: 1120px;
+  --max-hero: 1200px;
 
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
+  --radius-pill: 999px;
 }
 
 :root[data-theme="dark"] {
@@ -28,11 +76,41 @@
   --site-fg-muted: #9a9a98;
   --site-border: #27272a;
   --site-surface: #18181a;
-  --site-accent: #60a5fa;
+  --site-accent: #8aa7f6;
   --site-accent-fg: #0e0f10;
   --site-code-bg: #16171a;
   --site-code-fg: #ededec;
-  --site-focus: #60a5fa;
+  --site-focus: #8aa7f6;
+
+  /* Pastel bands in dark mode: hold onto a hint of each hue so the sections
+     still read as distinct, but sit on a near-black base for long reads. */
+  --band-white:    #0f1012;
+  --band-cream:    #171410;
+  --band-lavender: #151429;
+  --band-mint:     #0f1a13;
+  --band-sky:      #0e1620;
+  --band-butter:   #1a1610;
+  --band-dark:     #08090b;
+  --band-dark-fg:    #f2f2ef;
+  --band-dark-muted: #9ea0a6;
+
+  /* Ink accents bump toward higher lightness for AA contrast on dark. */
+  --ink-red:    #ff7095;
+  --ink-coral:  #ff8a74;
+  --ink-sun:    #f5c745;
+  --ink-sea:    #5db4e0;
+  --ink-teal:   #6de0d7;
+  --ink-pink:   #ff7bbd;
+  --ink-orange: #ffb873;
+
+  --band-onyx:  #08090b;
+
+  /* Widget + input surfaces lift above the band to feel "lit". */
+  --demo-card: #1d1e22;
+  --demo-card-border: #2a2b30;
+  --demo-stage: #141519;
+  --input-bg: #1d1e22;
+  --input-border: #2a2b30;
 
   color-scheme: dark;
 }
@@ -74,6 +152,26 @@ main {
 
 main.prose {
   max-width: calc(var(--max-prose) + 2.5rem);
+}
+
+/* Full-bleed pages (landing, lessons) escape the site's max-shell and
+   padding so their section bands can reach edge-to-edge. Band colors +
+   ink accents are theme-aware (see the :root and [data-theme="dark"]
+   blocks above) so the whole page follows the user's toggle. */
+main.full-width {
+  max-width: none;
+  padding: 0;
+  background: var(--band-white);
+  color: var(--site-fg);
+}
+main.full-width .band-dark {
+  /* `--band-dark*` are theme-aware (light: warm cream + dark text, dark:
+     near-black + light text), so the closing-CTA band follows the user's
+     theme toggle. We still scope the fg overrides locally so any nested
+     prose inherits the band-correct text color. */
+  color: var(--band-dark-fg);
+  --site-fg: var(--band-dark-fg);
+  --site-fg-muted: var(--band-dark-muted);
 }
 
 h1,
@@ -176,4 +274,14 @@ li + li { margin-top: 0.25rem; }
   :root {
     scroll-behavior: smooth;
   }
+}
+
+/* Defensive: svelte-mafs MovablePoint focus indicator. CSS `outline` on an
+   SVG <circle> renders in the element's user-space after the viewBox scale,
+   producing giant blue rectangles around each draggable dot. Force-disable
+   the outline regardless of which package version ships the bug. */
+.mafs-movable-point:focus,
+.mafs-movable-point:focus-visible {
+  outline: none !important;
+  outline-offset: 0 !important;
 }

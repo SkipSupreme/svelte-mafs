@@ -7,6 +7,14 @@
 		"directory": "./dist",
 		"binding": "ASSETS"
 	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "tinker",
+			"database_id": "9ec67997-699d-48b5-a9d0-3ec23b2503bb",
+			"migrations_dir": "./migrations"
+		}
+	],
 	"observability": {
 		"enabled": true
 	},

@@ -106,8 +106,15 @@
 
   .mafs-movable-point:focus,
   .mafs-movable-point:focus-visible {
-    outline: 2px solid var(--mafs-blue, #3b82f6);
-    outline-offset: 2px;
+    /* CSS `outline` on an SVG <circle> renders in the element's user-space
+       coordinate system after the viewBox scale, so a "2px" outline becomes
+       ~2 user units — huge blue rectangles around each MovablePoint. Use an
+       SVG-native `stroke` with `vector-effect: non-scaling-stroke` so the
+       focus ring stays one constant px regardless of viewBox zoom. */
+    outline: none;
+    stroke: var(--mafs-blue, #3b82f6);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
   }
 
   .mafs-movable-point:active {

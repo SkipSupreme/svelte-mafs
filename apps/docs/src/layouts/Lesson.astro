@@ -1,0 +1,548 @@
+---
+import Base from './Base.astro';
+import TinkerHop from '../components/celebrate/TinkerHop.svelte';
+import 'katex/dist/katex.min.css';
+
+interface Props {
+  slug: string;
+  title: string;
+  summary: string;
+  estimatedMinutes: number;
+  module: string;
+  moduleHref?: string;
+}
+const { slug, title, summary, estimatedMinutes, module, moduleHref } = Astro.props;
+const moduleLabel = module.replace(/-/g, ' ');
+---
+
+<Base title={title} description={summary} fullWidth>
+  <div class="lesson-shell" data-lesson-slug={slug}>
+    <header class="lesson-header">
+      <div class="shell">
+        <p class="lesson-module">
+          {moduleHref ? <a href={moduleHref}>{moduleLabel}</a> : moduleLabel}
+          {' · '}{estimatedMinutes} min
+        </p>
+        <h1 class="lesson-title">{title}</h1>
+        <p class="lesson-summary">{summary}</p>
+        <div class="progress-track" role="progressbar"
+             aria-label="Lesson progress"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
+             data-progress-track>
+          <div class="progress-fill" data-progress-fill></div>
+          <span class="progress-label" data-progress-label>0 / 0</span>
+        </div>
+      </div>
+    </header>
+
+    <article class="lesson-body">
+      <div class="shell">
+        <slot />
+
+        <div class="lesson-complete" data-lesson-complete>
+          <div class="lc-mascot">
+            <TinkerHop client:idle level="lesson" size={120} />
+          </div>
+          <div class="lc-text">
+            <p class="lc-eyebrow">Lesson complete</p>
+            <h2 class="lc-headline">Nice tinkering.</h2>
+            <p class="lc-sub" data-lesson-complete-xp>+20 XP</p>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <footer class="lesson-footer">
+      <div class="shell">
+        <button type="button" class="reset-btn" data-reset>Reset progress</button>
+      </div>
+    </footer>
+  </div>
+</Base>
+
+<style>
+  .lesson-shell {
+    /* Lesson chrome follows the global theme toggle. Colors resolve from
+       :root (light) or :root[data-theme="dark"] so a single user toggle
+       themes prose, header, step dividers, and the inline widgets together. */
+    --lesson-fg: var(--site-fg);
+    --lesson-fg-muted: var(--site-fg-muted);
+    --lesson-surface: var(--demo-card);
+    --lesson-border: var(--site-border);
+    --lesson-violet: var(--ink-red);
+    --lesson-coral:  var(--ink-coral);
+    --lesson-sea:    var(--ink-sea);
+    color: var(--lesson-fg);
+    background: var(--band-white);
+  }
+
+  .lesson-header {
+    padding: clamp(2.5rem, 5vw, 4rem) 1.25rem 1.5rem;
+    background: var(--band-cream);
+    border-bottom: 1px solid var(--lesson-border);
+  }
+  .lesson-header .shell { max-width: 780px; margin: 0 auto; }
+  .lesson-module {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--lesson-violet);
+    margin: 0 0 0.75rem;
+  }
+  .lesson-module a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1.5px solid transparent;
+    transition: border-color 160ms ease;
+  }
+  .lesson-module a:hover {
+    border-bottom-color: currentColor;
+  }
+  .lesson-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2rem, 4.5vw, 3.25rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.75rem;
+    text-wrap: balance;
+  }
+  .lesson-summary {
+    font-size: 1.1rem;
+    line-height: 1.5;
+    color: var(--lesson-fg-muted);
+    margin: 0 0 1.5rem;
+    max-width: 60ch;
+  }
+
+  .progress-track {
+    position: relative;
+    height: 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--lesson-fg) 8%, transparent);
+    overflow: hidden;
+  }
+  .progress-fill {
+    position: absolute;
+    inset: 0 100% 0 0;
+    background: var(--cta);
+    transition: right 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .progress-label {
+    position: absolute;
+    right: 0;
+    top: 10px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--lesson-fg-muted);
+  }
+
+  .lesson-body {
+    padding: clamp(1rem, 3vw, 2.5rem) 1.25rem 3rem;
+  }
+  .lesson-body .shell { max-width: 780px; margin: 0 auto; }
+
+  .lesson-footer {
+    padding: 2rem 1.25rem 3rem;
+    border-top: 1px solid var(--lesson-border);
+  }
+  .lesson-footer .shell {
+    max-width: 780px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .reset-btn {
+    background: none;
+    border: 1px solid var(--lesson-border);
+    color: var(--lesson-fg-muted);
+    padding: 0.5rem 0.9rem;
+    border-radius: var(--radius-md);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .reset-btn:hover { background: var(--lesson-surface); color: var(--lesson-fg); }
+
+  /* --- Step content styling --- */
+  :global(.lesson-shell .step) {
+    position: relative;
+    padding: 1.75rem 0 2rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--lesson-fg) 8%, transparent);
+    transition: opacity 360ms ease;
+  }
+  :global(.lesson-shell .step:last-of-type) { border-bottom: 0; }
+  :global(.lesson-shell .step-title) {
+    font-family: var(--font-display);
+    font-weight: 650;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    letter-spacing: -0.015em;
+    margin: 0 0 1rem;
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+  :global(.lesson-shell .step-body) {
+    font-size: 1.08rem;
+    line-height: 1.65;
+  }
+  :global(.lesson-shell .step-body p) { margin: 0 0 1.1rem; }
+  :global(.lesson-shell .step-body p:last-child) { margin-bottom: 0; }
+  :global(.lesson-shell .step-body em) { font-style: italic; }
+  :global(.lesson-shell .step-body strong) { font-weight: 650; }
+  :global(.lesson-shell .step-body .katex-display) { margin: 1.5rem 0; }
+
+  /* Locked / unlocked states. `.step--locked` hides the content below the
+     advance gate; the step itself remains in flow so the progress bar is
+     accurate. */
+  :global(.lesson-shell .step--locked) {
+    opacity: 0.2;
+    pointer-events: none;
+    filter: blur(3px);
+    user-select: none;
+    max-height: 4rem;
+    overflow: hidden;
+  }
+  :global(.lesson-shell .step--locked .step-advance),
+  :global(.lesson-shell .step--locked .check-form) { display: none; }
+
+  :global(.lesson-shell .step--completed .step-advance),
+  :global(.lesson-shell .step--completed .check-form) { display: none; }
+
+  :global(.lesson-shell .step-advance) {
+    margin-top: 1.5rem;
+  }
+  :global(.lesson-shell .continue-btn) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.7rem 1.15rem;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--cta);
+    background: var(--cta);
+    color: var(--cta-fg);
+    font: inherit;
+    font-weight: 650;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background-color 140ms ease, transform 140ms ease;
+  }
+  :global(.lesson-shell .continue-btn:hover) {
+    background: var(--cta-hover);
+    border-color: var(--cta-hover);
+    transform: translateY(-1px);
+  }
+  :global(.lesson-shell .continue-btn:disabled) {
+    background: color-mix(in srgb, var(--lesson-fg) 10%, transparent);
+    border-color: transparent;
+    color: var(--lesson-fg-muted);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* StepCheck form. */
+  :global(.lesson-shell .check-form) {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+  }
+  :global(.lesson-shell .check-label) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+  }
+  :global(.lesson-shell .check-prompt) { color: var(--lesson-fg-muted); }
+  :global(.lesson-shell .check-input) {
+    padding: 0.65rem 0.85rem;
+    border: 1.5px solid var(--lesson-border);
+    border-radius: var(--radius-md);
+    background: var(--lesson-surface);
+    font: inherit;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    width: 7.5rem;
+  }
+  :global(.lesson-shell .check-input:focus) {
+    outline: none;
+    border-color: var(--cta);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--cta) 22%, transparent);
+  }
+  :global(.lesson-shell .check-feedback) {
+    width: 100%;
+    margin: 0;
+    font-size: 0.92rem;
+    min-height: 1.2em;
+  }
+  :global(.lesson-shell .check-feedback.ok)    { color: var(--cta-hover); }
+  :global(.lesson-shell .check-feedback.bad)   { color: var(--ink-coral); }
+  :global(.lesson-shell .check-hint) {
+    width: 100%;
+    margin: 0;
+    padding: 0.6rem 0.85rem;
+    background: color-mix(in srgb, var(--ink-sun) 20%, transparent);
+    border-left: 3px solid var(--ink-sun);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    font-size: 0.92rem;
+    color: var(--lesson-fg);
+  }
+
+  /* Done state for the last step. */
+  :global(.lesson-shell .step.is-final .step-advance) { display: none; }
+
+  /* Final celebration after the last gate. Hidden until the script
+     reveals it on lesson complete; reveal also dispatches
+     `tinker:celebrate` so the embedded TinkerHop plays. */
+  :global(.lesson-shell .lesson-complete) {
+    display: none;
+    margin-top: 2.5rem;
+    padding: 1.75rem 1.5rem;
+    border-radius: var(--radius-lg);
+    background: var(--band-mint);
+    border: 1px solid color-mix(in srgb, var(--cta-hover) 35%, transparent);
+    align-items: center;
+    gap: 1.25rem;
+    position: relative;
+    overflow: hidden;
+  }
+  :global(.lesson-shell .lesson-complete.is-visible) {
+    display: flex;
+    animation: lesson-complete-in 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @keyframes lesson-complete-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  :global(.lesson-shell .lesson-complete .lc-mascot) {
+    flex-shrink: 0;
+  }
+  :global(.lesson-shell .lesson-complete .lc-text) {
+    min-width: 0;
+  }
+  :global(.lesson-shell .lesson-complete .lc-eyebrow) {
+    font-family: var(--font-game);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.75rem;
+    color: var(--cta-hover);
+    margin: 0 0 0.4rem;
+  }
+  :global(.lesson-shell .lesson-complete .lc-headline) {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 3vw, 1.9rem);
+    margin: 0 0 0.3rem;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+  }
+  :global(.lesson-shell .lesson-complete .lc-sub) {
+    font-family: var(--font-game);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--cta-hover);
+    margin: 0;
+  }
+  /* Green sweep overlay that pulses across on completion. */
+  :global(.lesson-shell .lesson-complete.is-visible)::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--cta) 35%, transparent) 50%,
+      transparent 100%
+    );
+    animation: green-sweep 720ms cubic-bezier(0.2, 0.8, 0.2, 1) 80ms 1;
+    pointer-events: none;
+  }
+  @keyframes green-sweep {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(100%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.lesson-shell .lesson-complete.is-visible) { animation: none; }
+    :global(.lesson-shell .lesson-complete.is-visible)::before { display: none; }
+  }
+</style>
+
+<script>
+  import { play } from '../lib/sound';
+  import { burst } from '../lib/confetti';
+  import { awardXp, vibrate, XP_AWARD } from '../lib/xp';
+
+  type CheckData = { answer: number; tolerance: number };
+
+  const FEEDBACK_OK = "Nice — that's right.";
+  const FEEDBACK_FAR = "Not quite. Re-read the previous step and try again.";
+  const FEEDBACK_CLOSE = "Close — check your precision.";
+
+  function initLesson(root: HTMLElement) {
+    const slug = root.dataset.lessonSlug ?? 'unknown';
+    const storageKey = `tinker:lesson:${slug}:unlocked`;
+    const completionKey = `tinker:lesson:${slug}:completed`;
+
+    const steps = Array.from(root.querySelectorAll<HTMLElement>('[data-step]'));
+    steps.forEach((step, i) => step.dataset.index = String(i));
+
+    const total = steps.length;
+    const fill = root.querySelector<HTMLElement>('[data-progress-fill]');
+    const label = root.querySelector<HTMLElement>('[data-progress-label]');
+    const track = root.querySelector<HTMLElement>('[data-progress-track]');
+    const completeCard = root.querySelector<HTMLElement>('[data-lesson-complete]');
+
+    const saved = Number.parseInt(localStorage.getItem(storageKey) ?? '0', 10);
+    let unlocked = Number.isFinite(saved) ? Math.max(0, Math.min(saved, total)) : 0;
+    let lessonCompleteFired = localStorage.getItem(completionKey) === '1';
+
+    function persist() {
+      localStorage.setItem(storageKey, String(unlocked));
+    }
+
+    function render() {
+      steps.forEach((step, i) => {
+        step.classList.toggle('step--locked', i > unlocked);
+        step.classList.toggle('step--completed', i < unlocked);
+        step.classList.toggle('step--active', i === unlocked);
+      });
+      const pct = Math.round((unlocked / total) * 100);
+      if (fill) fill.style.right = `${100 - pct}%`;
+      if (label) label.textContent = `${unlocked} / ${total}`;
+      if (track) track.setAttribute('aria-valuenow', String(pct));
+      if (completeCard) {
+        completeCard.classList.toggle('is-visible', unlocked >= total && total > 0);
+      }
+    }
+
+    function maybeFireLessonComplete() {
+      if (lessonCompleteFired) return;
+      if (unlocked < total || total === 0) return;
+      lessonCompleteFired = true;
+      try { localStorage.setItem(completionKey, '1'); } catch { /* ignore */ }
+      play('chime');
+      vibrate(50);
+      awardXp(XP_AWARD.lessonComplete, `lesson:${slug}`);
+      // Big confetti from the celebration card.
+      if (completeCard) {
+        burst(completeCard, { count: 22, spread: 1.5 });
+      }
+      window.dispatchEvent(
+        new CustomEvent('tinker:celebrate', { detail: { level: 'lesson' } }),
+      );
+      // Scroll to the celebration card so the user sees the moment.
+      setTimeout(() => {
+        completeCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 240);
+    }
+
+    function advance(fromIndex: number) {
+      if (fromIndex !== unlocked) return;
+      unlocked = Math.min(total, unlocked + 1);
+      persist();
+      render();
+      // Step-advance award. The XP for "correct" is awarded separately by
+      // the StepCheck handler before advance() runs, so this fires for
+      // both regular continue clicks and post-check advance.
+      awardXp(XP_AWARD.stepAdvance, `step:${slug}:${fromIndex}`);
+      const nextStep = steps[unlocked];
+      if (nextStep) {
+        // Let the CSS transition settle a beat before scrolling so the
+        // unlocked step is already rendered at full opacity.
+        setTimeout(() => {
+          nextStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 120);
+      }
+      maybeFireLessonComplete();
+    }
+
+    // Wire "Continue" buttons in regular steps.
+    steps.forEach((step) => {
+      const cont = step.querySelector<HTMLButtonElement>('[data-continue]');
+      if (cont) {
+        cont.addEventListener('click', () => {
+          play('tick');
+          advance(Number(step.dataset.index));
+        });
+      }
+    });
+
+    // Wire StepCheck forms.
+    steps.forEach((step) => {
+      if (!step.hasAttribute('data-check')) return;
+      const form = step.querySelector<HTMLFormElement>('[data-check-form]');
+      const input = step.querySelector<HTMLInputElement>('[data-check-input]');
+      const feedback = step.querySelector<HTMLElement>('[data-check-feedback]');
+      const hintEl = step.querySelector<HTMLElement>('[data-check-hint]');
+      const submitBtn = step.querySelector<HTMLButtonElement>('[data-check-submit]');
+      if (!form || !input || !feedback) return;
+      const data: CheckData = {
+        answer: Number(step.dataset.answer),
+        tolerance: Number(step.dataset.tolerance ?? '0.01'),
+      };
+      let attempts = 0;
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const raw = input.value.trim().replace(/,/g, '.');
+        const parsed = Number.parseFloat(raw);
+        if (!Number.isFinite(parsed)) {
+          feedback.className = 'check-feedback bad';
+          feedback.textContent = 'Enter a number.';
+          return;
+        }
+        const delta = Math.abs(parsed - data.answer);
+        if (delta <= data.tolerance) {
+          feedback.className = 'check-feedback ok';
+          feedback.textContent = FEEDBACK_OK;
+          input.disabled = true;
+          play('ding');
+          vibrate(20);
+          if (submitBtn) {
+            burst(submitBtn, { count: attempts === 0 ? 8 : 5 });
+          }
+          const xpAmount = attempts === 0 ? XP_AWARD.correctFirstTry : XP_AWARD.correctRetry;
+          awardXp(xpAmount, `check:${slug}:${step.dataset.index}`);
+          setTimeout(() => advance(Number(step.dataset.index)), 520);
+        } else {
+          attempts += 1;
+          feedback.className = 'check-feedback bad';
+          feedback.textContent = delta < 5 * data.tolerance ? FEEDBACK_CLOSE : FEEDBACK_FAR;
+          if (attempts >= 2 && hintEl) {
+            hintEl.hidden = false;
+          }
+          input.select();
+        }
+      });
+    });
+
+    // Reset progress.
+    const resetBtn = root.querySelector<HTMLButtonElement>('[data-reset]');
+    resetBtn?.addEventListener('click', () => {
+      if (!confirm('Start this lesson from the beginning?')) return;
+      unlocked = 0;
+      lessonCompleteFired = false;
+      persist();
+      try { localStorage.removeItem(completionKey); } catch { /* ignore */ }
+      // Re-enable any disabled StepCheck inputs.
+      root.querySelectorAll<HTMLInputElement>('[data-check-input]').forEach((i) => {
+        i.disabled = false;
+        i.value = '';
+      });
+      root.querySelectorAll<HTMLElement>('[data-check-feedback]').forEach((el) => {
+        el.className = 'check-feedback';
+        el.textContent = '';
+      });
+      render();
+      steps[0]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    render();
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-lesson-slug]').forEach(initLesson);
+</script>

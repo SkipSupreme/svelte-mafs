@@ -1,0 +1,108 @@
+---
+export const prerender = true;
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Not found" description="That page isn't here." fullWidth>
+  <section class="band band-white missing">
+    <div class="shell">
+      <p class="eyebrow">404</p>
+      <h1 class="display">
+        That page
+        <span class="underline-ink">isn't here</span>.
+      </h1>
+      <p class="lede">
+        Probably a bad link, or a page that moved. Here's the way home.
+      </p>
+      <p class="links">
+        <a class="btn" href="/">Back to Tinker</a>
+        <a class="btn btn-ghost" href="/courses/ml-math">See the curriculum</a>
+      </p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .band {
+    width: 100%;
+    padding: clamp(4rem, 10vw, 8rem) 1.25rem;
+    background: var(--band-white);
+  }
+  .shell {
+    max-width: var(--max-hero);
+    margin: 0 auto;
+  }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--ink-coral);
+    margin: 0 0 1rem;
+  }
+  .display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    margin: 0 0 1.5rem;
+  }
+  .underline-ink {
+    position: relative;
+    white-space: nowrap;
+    color: var(--ink-red);
+    font-style: italic;
+  }
+  .underline-ink::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0.05em;
+    height: 0.12em;
+    background: var(--ink-coral);
+    border-radius: 999px;
+    transform: skewX(-8deg);
+    opacity: 0.75;
+  }
+  .lede {
+    font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+    line-height: 1.5;
+    color: var(--site-fg-muted);
+    max-width: 42ch;
+    margin: 0 0 2rem;
+  }
+  .links {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin: 0;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.85rem 1.35rem;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--cta);
+    background: var(--cta);
+    color: var(--cta-fg);
+    font: inherit;
+    font-weight: 650;
+    text-decoration: none;
+    transition: transform 140ms ease, background-color 140ms ease;
+  }
+  .btn:hover {
+    background: var(--cta-hover);
+    border-color: var(--cta-hover);
+    transform: translateY(-1px);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--site-fg);
+    border-color: var(--site-border);
+  }
+  .btn-ghost:hover {
+    background: var(--site-surface);
+    border-color: var(--site-fg);
+    transform: none;
+  }
+</style>

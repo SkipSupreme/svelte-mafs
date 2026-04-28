@@ -1,0 +1,32 @@
+---
+title: Machine Learning, Backpropagation & AI — The Math
+subtitle: Zero to training a tiny transformer in your browser.
+summary: A single continuous thread from pre-algebra to training your own character-level GPT. Every concept exists because you'll eventually need it to run `loss.backward()`.
+status: alpha
+heroEndpoint: Train your own 200k-parameter transformer on tiny Shakespeare. In your browser. Built from math you derived yourself.
+arcs:
+  - id: arc-0-foundations
+    title: Foundations
+    description: Safety floor. Skippable via diagnostic — anyone who can already factor a quadratic starts in calculus.
+    modules: [m0-diagnostic, m1-pre-algebra, m2-algebra]
+  - id: arc-1-prereq-math
+    title: Prerequisite Math
+    description: Trig, calculus, linear algebra, probability, information theory. Every module ends with how it plugs into a transformer.
+    modules: [m3-trigonometry, m4-precalc, m5-calculus, m6-multivariable, m7-linear-algebra, m8-probability, m9-information-theory]
+  - id: arc-2-ml-foundations
+    title: Machine Learning Foundations
+    description: Optimization, neural networks, backpropagation from scratch, training dynamics. The keystone arc — where micrograd gets built live.
+    modules: [m10-optimization, m11-neural-networks, m12-backpropagation, m13-training-dynamics]
+  - id: arc-3-transformers
+    title: Sequence Models & Transformers
+    description: Bigrams, RNNs, attention, the transformer block. By the end of this arc you've built a transformer architecture in-browser.
+    modules: [m14-sequence-models, m15-attention, m16-transformer-block]
+  - id: arc-4-capstone
+    title: Capstone — Build & Train
+    description: Tokenization, sampling, and a real training run that produces a model you keep.
+    modules: [m17-tokenization-sampling, m18-capstone]
+---
+
+This course is one giant computational graph in reverse. The final node is `loss.backward()` inside a character-level GPT. Every module you'll take is a parent node — something the final artifact depends on.
+
+The bet is that math taught this way sticks. Every lesson ends with **"Where this shows up in the transformer"** so you always know what you're climbing toward.
