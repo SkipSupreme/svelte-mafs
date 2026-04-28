@@ -285,3 +285,48 @@ li + li { margin-top: 0.25rem; }
   outline: none !important;
   outline-offset: 0 !important;
 }
+
+/* ─────────────────────────────────────────────────────────
+   Alive layer — keyframes
+   Each pairs with an animation declaration consumed by celebrate.ts or
+   a Svelte component. There is no global reduced-motion gate here:
+   ambient consumers (sparkle-flicker, drift-y/x, tinker-z-rise) gate
+   themselves at use site via a scoped @media rule or the
+   prefersReducedMotion rune. Deliberate user-response keyframes
+   (halo-pulse, sweep-green, wrong-shake, flame-flicker) intentionally
+   keep firing under reduced-motion per DESIGN.md §Mascot Interactivity.
+   ───────────────────────────────────────────────────────── */
+
+@keyframes sparkle-flicker {
+  0%, 100% { opacity: 0; }
+  50%      { opacity: 1; }
+}
+
+@keyframes tinker-z-rise {
+  0%   { transform: translateY(0)    scale(1);   opacity: 0; }
+  20%  {                                          opacity: 1; }
+  100% { transform: translateY(-28px) scale(0.9); opacity: 0; }
+}
+
+@keyframes flame-flicker {
+  0%, 100% { filter: brightness(1)   ; transform: scale(1); }
+  30%      { filter: brightness(1.35); transform: scale(1.08); }
+  60%      { filter: brightness(1.1) ; transform: scale(1.02); }
+}
+
+@keyframes sweep-green {
+  0%   { background-position: -100% 0; }
+  100% { background-position:  200% 0; }
+}
+
+@keyframes halo-pulse {
+  0%   { transform: scale(0.9); opacity: 0; }
+  40%  { transform: scale(1.0); opacity: 0.85; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+@keyframes wrong-shake {
+  0%, 100%       { transform: translateX(0); }
+  16%, 50%, 83%  { transform: translateX(-6px); }
+  33%, 66%       { transform: translateX(6px); }
+}
