@@ -383,6 +383,8 @@ const moduleLabel = module.replace(/-/g, ' ');
   const FEEDBACK_FAR = "Not quite. Re-read the previous step and try again.";
   const FEEDBACK_CLOSE = "Close — check your precision.";
 
+  const STUCK_MS = 30_000;
+
   function initLesson(root: HTMLElement) {
     const slug = root.dataset.lessonSlug ?? 'unknown';
     const storageKey = `tinker:lesson:${slug}:unlocked`;
@@ -458,6 +460,7 @@ const moduleLabel = module.replace(/-/g, ' ');
           nextStep.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 120);
       }
+      armActiveStuckTimer();
       maybeFireLessonComplete();
     }
 
@@ -473,6 +476,9 @@ const moduleLabel = module.replace(/-/g, ' ');
     });
 
     // Wire StepCheck forms.
+    type StuckHandle = { arm: () => void; clear: () => void };
+    const stuckHandles = new Map<HTMLElement, StuckHandle>();
+
     steps.forEach((step) => {
       if (!step.hasAttribute('data-check')) return;
       const form = step.querySelector<HTMLFormElement>('[data-check-form]');
@@ -486,6 +492,36 @@ const moduleLabel = module.replace(/-/g, ' ');
         tolerance: Number(step.dataset.tolerance ?? '0.01'),
       };
       let attempts = 0;
+
+      // Stuck timer: emits tinker:stuck after 30s of no submit.
+      // Soft-fails when hint is empty (open Q2 in alive-layer design doc).
+      const stepHint = step.dataset.hint?.trim();
+      let stuckTimer: number | null = null;
+      let armed = false;
+      function startStuckTimer(hint: string | undefined) {
+        if (!hint) return;
+        if (stuckTimer !== null) clearTimeout(stuckTimer);
+        stuckTimer = window.setTimeout(() => {
+          window.dispatchEvent(
+            new CustomEvent('tinker:stuck', { detail: { hint } }),
+          );
+          stuckTimer = null;
+        }, STUCK_MS);
+      }
+      function clearStuckTimer() {
+        if (stuckTimer !== null) {
+          clearTimeout(stuckTimer);
+          stuckTimer = null;
+        }
+      }
+      stuckHandles.set(step, {
+        arm: () => {
+          if (armed) return;
+          armed = true;
+          startStuckTimer(stepHint);
+        },
+        clear: clearStuckTimer,
+      });
 
       form.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -501,6 +537,7 @@ const moduleLabel = module.replace(/-/g, ' ');
           feedback.className = 'check-feedback ok';
           feedback.textContent = FEEDBACK_OK;
           input.disabled = true;
+          clearStuckTimer();
           // Route through orchestrator: sound + burst + haptic + XP + halo + announce.
           // Orchestrator hard-codes correctFirstTry XP by design (alive-layer §3).
           if (submitBtn) {
@@ -521,11 +558,23 @@ const moduleLabel = module.replace(/-/g, ' ');
           if (attempts >= 2 && hintEl) {
             hintEl.hidden = false;
           }
+          clearStuckTimer();
           // Localized shake + announce. No haptic/sound on wrong by design.
           void celebrateWrong(input);
           input.select();
         }
       });
+    });
+
+    // Arm the stuck timer for the currently-active check step (if any),
+    // and clear all on pagehide.
+    function armActiveStuckTimer() {
+      const active = steps[unlocked];
+      if (!active) return;
+      stuckHandles.get(active)?.arm();
+    }
+    window.addEventListener('pagehide', () => {
+      stuckHandles.forEach((h) => h.clear());
     });
 
     // Reset progress.
@@ -550,6 +599,7 @@ const moduleLabel = module.replace(/-/g, ' ');
     });
 
     render();
+    armActiveStuckTimer();
   }
 
   document.querySelectorAll<HTMLElement>('[data-lesson-slug]').forEach(initLesson);

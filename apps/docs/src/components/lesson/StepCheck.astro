@@ -17,6 +17,7 @@ const { title, answer, tolerance = 0.01, prompt = 'answer', hint } = Astro.props
   data-check
   data-answer={answer}
   data-tolerance={tolerance}
+  data-hint={hint}
 >
   {title && <h2 class="step-title">{title}</h2>}
   <div class="step-body">
