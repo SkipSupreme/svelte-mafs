@@ -24,6 +24,10 @@
     alt?: string;
     /** Source image. Defaults to the approved Tinker logo. */
     src?: string;
+    /** Server-passed: render the birthday party hat. */
+    birthday?: boolean;
+    /** Server-passed: render one tiny grad-cap badge per completed course (cap at 5). */
+    completedCourses?: number;
   }
 
   let {
@@ -32,6 +36,8 @@
     tilt = -3,
     alt = 'Tinker the apple, the mascot of Tinker',
     src = '/logo-mark.png',
+    birthday = false,
+    completedCourses = 0,
   }: Props = $props();
 
   const sizeCss = $derived(typeof size === 'number' ? `${size}px` : size);
@@ -173,6 +179,31 @@
       <path d="M0,-9 L2,-2 L9,0 L2,2 L0,9 L-2,2 L-9,0 L-2,-2 Z" transform="translate(286, 100)" />
     </g>
   </svg>
+  {#if eggs.sunglasses}
+    <svg class="acc acc-sunglasses" viewBox="0 0 432 477" aria-hidden="true">
+      <g transform="translate(140, 200)">
+        <rect x="0"  y="0" width="60" height="36" rx="14" fill="#1a1a1a" />
+        <rect x="92" y="0" width="60" height="36" rx="14" fill="#1a1a1a" />
+        <rect x="58" y="14" width="36" height="6"            fill="#1a1a1a" />
+      </g>
+    </svg>
+  {/if}
+
+  {#if birthday}
+    <svg class="acc acc-hat" viewBox="0 0 432 477" aria-hidden="true">
+      <polygon points="180,40 250,40 215,-30" fill="var(--ink-pink)" />
+      <circle cx="215" cy="-30" r="8" fill="var(--ink-orange)" />
+    </svg>
+  {/if}
+
+  {#each Array.from({ length: Math.min(completedCourses, 5) }) as _, i (i)}
+    <svg class="acc acc-grad" viewBox="0 0 432 477" aria-hidden="true">
+      <g transform="translate({90 + i * 50}, 380)">
+        <rect x="0"  y="6"  width="34" height="6" fill="#1a1a1a" />
+        <polygon points="-4,6 38,6 17,-4" fill="#1a1a1a" />
+      </g>
+    </svg>
+  {/each}
   {#if sleeping && !reducedMotion}
     <span class="tinker-z" aria-hidden="true">z</span>
   {/if}
@@ -276,6 +307,15 @@
     height: 100%;
     pointer-events: none;
     z-index: 2;
+  }
+
+  .acc {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 4;
   }
   .tinker-sparkles .sp {
     fill: var(--c);
