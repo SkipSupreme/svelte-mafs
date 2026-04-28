@@ -1,0 +1,102 @@
+---
+title: The Chain Rule
+module: m5-calculus
+summary: When functions nest, their rates multiply. That multiplication is what trains every neural network.
+estimatedMinutes: 16
+order: 2
+prereqs:
+  - what-is-a-derivative
+conceptsCovered:
+  - function-composition
+  - chain-rule
+  - backpropagation-intuition
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import ChainRuleComposition from '../../components/demos/ChainRuleComposition.svelte';
+
+<Step title="Drag x. Watch two rates become one.">
+The composition $(\sin x)^2$ is two jobs in a row: first $\sin$, then square. Drag $x$ on the widget below. The left readouts show the *inner* rate ($g'(x) = \cos x$) and the *outer* rate ($f'(u) = 2u$, evaluated at $u = \sin x$). The right readout shows their *product* — which is the actual rate of the whole composition.
+
+<ChainRuleComposition client:visible />
+
+Two things to notice:
+
+- The total rate is the inner rate times the outer rate. Always.
+- When the inner rate hits zero (at $x = \pi/2$, where $\cos x = 0$), the total rate goes to zero too. The chain is only as strong as any link that hits zero.
+
+That product rule — *multiply rates along a chain of compositions* — is the most important formula in differential calculus, and not by coincidence the mechanism by which every neural network in the world is trained.
+</Step>
+
+<Step title="Functions that eat functions">
+When you write $(\sin x)^2$, you're doing two jobs in a row. First, take $x$, pass it to $\sin$; call the result $u$. Then take $u$, square it.
+
+$$
+x \;\longrightarrow\; \boxed{\;\sin\;} \;\longrightarrow\; u \;\longrightarrow\; \boxed{\;(\cdot)^2\;} \;\longrightarrow\; \text{output}
+$$
+
+We call this **composition** and write it $f(g(x))$ or $(f \circ g)(x)$, where $g$ runs first (the inner function) and $f$ runs second (the outer). In our case $g(x) = \sin(x)$ and $f(u) = u^2$.
+
+The derivative problem: nudge $x$ by a tiny amount. How does the final output change? *Both* functions are amplifying (or dampening) that nudge. The output's sensitivity to $x$ depends on **both** rates at once.
+</Step>
+
+<Step title="A simpler case first — watch the rates multiply">
+Forget $\sin$ for a second. Pick $g(x) = 3x$ (a simple stretch) and $f(u) = u^2$.
+
+The composition is $f(g(x)) = (3x)^2 = 9x^2$, which we *already* know how to differentiate:
+
+$$
+\frac{d}{dx}\, 9x^2 \;=\; 18x.
+$$
+
+Now try it the long way, using both rates:
+
+- $g'(x) = 3$ (the inner rate — a tripler stays a tripler).
+- $f'(u) = 2u$, so at $u = g(x) = 3x$, $\;f'(g(x)) = 2 \cdot 3x = 6x$.
+- Multiply them: $\;6x \cdot 3 = 18x.$
+
+Same answer. The rates **multiplied**. Not a coincidence — the whole game.
+</Step>
+
+<Step title="The chain rule">
+For a composition $f(g(x))$, the derivative is:
+
+$$
+(f \circ g)'(x) \;=\; f'\!\big(g(x)\big) \cdot g'(x)
+$$
+
+Read it left to right: *the rate of the outer function, evaluated at the inner function's output, times the rate of the inner function at $x$.*
+
+The nicknames — **chain rule**, because you multiply along a chain of rates — will haunt you. Get comfortable.
+</Step>
+
+<StepCheck
+  title="Your turn"
+  prompt="(f∘g)'(2) = "
+  answer={36}
+  tolerance={0.1}
+  hint="g'(x) = 3. f'(u) = 2u, so f'(g(x)) = 2·(3x) = 6x. Multiply: 18x. At x=2 that's 36."
+>
+Let $g(x) = 3x$ and $f(u) = u^2$.
+
+**Compute $(f \circ g)'(2)$.**
+</StepCheck>
+
+<Step title="Why this IS backpropagation">
+Here is the secret the rest of this course is organized around.
+
+A neural network is a **long** function composition. The input goes through a layer, then another layer, then another, then a softmax, then a loss function. The output — the loss — is
+
+$$
+L \;=\; \mathrm{loss}\big(\mathrm{softmax}\big(W_n \cdots \mathrm{relu}(W_2 \,\mathrm{relu}(W_1 x)) \cdots\big)\big).
+$$
+
+To train it, we need the rate of the loss with respect to every single parameter $W_i$. And the chain rule says the way to find it is:
+
+> Walk the chain from output back to input, multiplying local rates as you go.
+
+That walk is called **backpropagation**. Every deep learning framework is, under the hood, a really efficient implementation of the chain rule. `loss.backward()` in PyTorch is the chain rule applied — a few million times — across a graph of operations.
+
+In Module 12 we'll build this ourselves, from one `+` node at a time. But the idea you just practised — **rates multiply through compositions** — is the whole thing. You now know how neural networks learn. The rest is plumbing.
+</Step>

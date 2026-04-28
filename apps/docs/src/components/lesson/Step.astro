@@ -1,0 +1,16 @@
+---
+interface Props {
+  title?: string;
+}
+const { title } = Astro.props;
+---
+
+<section class="step" data-step>
+  {title && <h2 class="step-title">{title}</h2>}
+  <div class="step-body">
+    <slot />
+  </div>
+  <div class="step-advance">
+    <button type="button" class="continue-btn" data-continue>Continue</button>
+  </div>
+</section>

@@ -1,0 +1,139 @@
+---
+title: Two ways to keep weights small (and what they really mean)
+module: m13-training-dynamics
+summary: L2, L1, and dropout — framed as priors and as expected-value contracts. Two completely different stories that solve overlapping problems.
+estimatedMinutes: 14
+order: 2
+prereqs:
+  - when-your-model-memorizes
+conceptsCovered:
+  - l2-weight-decay
+  - gaussian-prior-mle
+  - l1-vs-l2
+  - dropout
+  - inverted-dropout-scaling
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+
+<Step title="Regularization is bigger than λ-times-norm-squared">
+A lot of people who took a machine-learning course will tell you "regularization means L2." It does not. Regularization is *anything that biases search toward simpler hypotheses or constrains the hypothesis space*. Weight decay is one item under that umbrella. So is dropout. So is data augmentation. So is early stopping. So is the noise that mini-batch SGD injects for free.
+
+In this lesson we cover two — weight decay and dropout — because they both give the network a smaller effective capacity than the parameter count would suggest, and they do it for completely different reasons.
+</Step>
+
+<Step title="Weight decay = L2">
+The naive idea: add a penalty to the loss that grows with the size of the weights. Pay a tax on big weights and gradient descent will keep them small.
+
+$$
+\mathcal{L}_{\text{total}}(w) \;=\; \mathcal{L}_{\text{data}}(w) \;+\; \frac{\lambda}{2}\,\lVert w \rVert_2^2.
+$$
+
+Differentiate with respect to $w$ and the gradient picks up an extra $\lambda w$ term. The training rule becomes
+
+$$
+w_{t+1} \;=\; (1 - \eta\lambda)\,w_t \;-\; \eta\,\nabla \mathcal{L}_{\text{data}}(w_t).
+$$
+
+That $(1 - \eta\lambda)$ factor is why this is also called *weight decay*: every step, weights shrink by a tiny multiplicative factor before the data gradient gets to push them around.
+</Step>
+
+<Step title="L2 has a Bayesian story">
+There is a deeper reason L2 works, and it isn't "small weights are nicer." It is that minimizing the L2-regularized loss is *exactly* maximum-a-posteriori estimation under a Gaussian prior on weights.
+
+Start from $w_{\text{MAP}} = \arg\max_w p(w \mid \mathcal{D})$. By Bayes, $p(w \mid \mathcal{D}) \propto p(\mathcal{D} \mid w)\,p(w)$. Take negative log:
+
+$$
+-\log p(w \mid \mathcal{D}) \;=\; -\log p(\mathcal{D} \mid w) \;-\; \log p(w) \;+\; C.
+$$
+
+Pick a Gaussian prior $w \sim \mathcal{N}(0,\, \sigma^2 I)$. Then $-\log p(w) = \tfrac{1}{2\sigma^2}\lVert w \rVert_2^2 + C'$. Match it term-for-term against the regularized loss and you get
+
+$$
+\lambda \;=\; \frac{1}{\sigma^2}.
+$$
+
+A *narrower* prior (you believe weights are tightly clustered around zero) means $\sigma^2$ is small, which means $\lambda$ is *large*. Strong shrinkage corresponds to a confident prior. They are reciprocals.
+
+Regularization is not a hack you bolt onto the loss. It is the prior the modeler is asserting about the world.
+</Step>
+
+<StepCheck
+  title="Prior to penalty"
+  prompt="λ = "
+  answer={4}
+  tolerance={0.01}
+  hint="λ = 1/σ². With σ² = 0.25, λ = 1/0.25 = 4."
+>
+You believe weights should sit tightly around zero, with prior variance $\sigma^2 = 0.25$. **What is the corresponding L2 strength $\lambda$?**
+</StepCheck>
+
+<Step title="L1 picks corners; L2 picks circles">
+Same recipe, different prior. If you swap the Gaussian prior for a Laplace prior, $-\log p(w) = \tfrac{1}{b}\sum_i \lvert w_i \rvert$, and you've derived L1:
+
+$$
+\mathcal{L}_{\text{L1}}(w) \;=\; \mathcal{L}_{\text{data}}(w) \;+\; \lambda \sum_i \lvert w_i \rvert.
+$$
+
+The geometric difference is the whole reason L1 is used. The prior's level sets — the points of equal prior density — are *circles* for the Gaussian and *diamonds* for the Laplace. When the gradient of the data loss meets a constraint surface, it tends to land on whichever feature of the surface sticks out the most. The diamond has corners, and the corners sit on the axes. So L1's MAP solution tends to push individual coordinates of $w$ all the way to zero.
+
+That is *sparsity*. L2 shrinks all weights uniformly; L1 zeroes some out completely. The corners did the work.
+</Step>
+
+<Step title="AdamW: the decoupling fix">
+A subtlety worth flagging once: when you use Adam, its per-parameter step rescaling interacts badly with adding $\lambda w$ to the gradient. The penalty effectively gets divided by Adam's running second-moment estimate, so heavily-updated weights get shrunk *less* than lightly-updated ones — which is the opposite of what you want.
+
+The fix is *decoupled weight decay*: subtract $\eta \lambda w$ directly from the parameter, after Adam's adaptive step. That's AdamW. We will use AdamW with $\lambda \approx 0.1$ when we train the transformer. This is the only correct way to combine adaptive optimizers with weight decay.
+</Step>
+
+<Step title="Dropout: the radical idea">
+The other technique. At training time, take every activation in a layer and zero it out independently with probability $p$. Then continue forward as if those neurons didn't exist for this step. The next step you sample a fresh random mask. The next step, again.
+
+The effect is that no single neuron can rely on any specific other neuron being there. Co-adaptation between units — where one neuron quietly compensates for another — gets discouraged because the compensator might vanish at any moment.
+
+Dropout is *not* "make the network smaller." All neurons are present at inference. Dropout is *noise injection*: the model has to find a solution that is robust to random subnetworks of itself.
+</Step>
+
+<Step title="Why scaling matters: the expected-value contract">
+Now the part that trips everybody up. Suppose a neuron normally outputs $a = 4$. Apply dropout with probability $p = 0.25$ of dropping. During training, the *expected* output is
+
+$$
+\mathbb{E}[\tilde a] \;=\; (1 - p)\cdot a \;=\; 0.75 \times 4 \;=\; 3.
+$$
+
+But during inference there's no dropout. The output is 4. Train and test see different distributions of activations; the rest of the network was tuned for the train-time scale.
+
+The standard fix is *inverted dropout*: at training time, multiply each surviving activation by $1/(1-p)$. Now
+
+$$
+\mathbb{E}[\tilde a] \;=\; (1 - p)\cdot \frac{a}{1 - p} \;=\; a.
+$$
+
+Train-time and inference-time expectations match, and inference doesn't have to do anything weird. Every modern framework defaults to inverted dropout.
+
+In code:
+
+```python
+mask = (torch.rand_like(a) > p).float()
+a = a * mask / (1.0 - p)   # training only; eval skips this entirely
+```
+</Step>
+
+<StepCheck
+  title="Inverted dropout"
+  prompt="scaled value = "
+  answer={6.25}
+  tolerance={0.01}
+  hint="Scale factor is 1/(1−p) = 1/0.8 = 1.25. So 5.0 × 1.25 = 6.25."
+>
+A neuron outputs $a = 5.0$ and survives a dropout step with $p = 0.2$. **What is its scaled value during training under inverted dropout?**
+</StepCheck>
+
+<Step title="Why dropout and L2 are not the same thing">
+They both regularize. They are not interchangeable.
+
+L2 shrinks all weights uniformly — every coordinate of $w$ pays the same multiplicative tax per step. Dropout's regularization is *adaptive*: it punishes co-adapted features (neurons that rely on others to compensate) much more than independently useful ones. In linear models, dropout can be shown to correspond to a *data-dependent* L2 penalty proportional to the input variance. Plain L2 is data-independent.
+
+In practice you use both. The transformer block in this course will apply dropout to the attention output and to the MLP output, and AdamW will apply weight decay across all projection matrices.
+</Step>

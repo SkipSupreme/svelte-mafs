@@ -1,0 +1,145 @@
+---
+title: Jacobians and the Multivariable Chain Rule
+module: m6-multivariable
+summary: When a function returns multiple numbers, stack its gradients into a grid — that's the Jacobian. Compose two functions and their Jacobians multiply. Neural networks are exactly this, about a hundred times in a row.
+estimatedMinutes: 20
+order: 4
+prereqs:
+  - local-models-and-saddles
+conceptsCovered:
+  - vector-valued-function
+  - jacobian
+  - multivar-chain-rule
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import ChainRulePaths from '../../components/demos/ChainRulePaths.svelte';
+
+<Step title="Functions that return vectors">
+So far, $f$ has eaten tuples but returned a single number. Now make the output a tuple too.
+
+A **vector-valued function** $\mathbf{F}: \mathbb{R}^n \to \mathbb{R}^m$ eats an $n$-tuple and returns an $m$-tuple. You can write it as $m$ separate scalar functions stacked up:
+
+$$
+\mathbf{F}(x, y) \;=\; \bigl( F_1(x, y),\; F_2(x, y),\; \dots,\; F_m(x, y) \bigr).
+$$
+
+Concrete example: $\mathbf{F}(x, y) = (x^2 - y,\; x y)$. Two inputs, two outputs.
+
+A neural-network layer is exactly this — a vector-in, vector-out function. Every layer.
+</Step>
+
+<Step title="The Jacobian, as a stack of gradients">
+Each of the $m$ output components $F_i$ has its own gradient: an $n$-tuple of partials. Stack those $m$ gradients into a grid:
+
+$$
+J_{\mathbf{F}}(\mathbf{x}) \;=\; \begin{pmatrix}
+  \dfrac{\partial F_1}{\partial x_1} & \cdots & \dfrac{\partial F_1}{\partial x_n} \\[0.4em]
+  \vdots & \ddots & \vdots \\[0.4em]
+  \dfrac{\partial F_m}{\partial x_1} & \cdots & \dfrac{\partial F_m}{\partial x_n}
+\end{pmatrix}.
+$$
+
+This is the **Jacobian matrix**. It has $m$ rows (one per output) and $n$ columns (one per input). Row $i$ is the gradient of $F_i$, written sideways.
+
+**Convention pledge** (this matters and we're picking a side): *numerator layout* — rows indexed by the output, columns indexed by the input. Some textbooks use the transpose. Don't mix.
+
+For $f: \mathbb{R}^n \to \mathbb{R}$ (scalar output), the Jacobian is a single row: $1 \times n$. That row *is* the gradient, written sideways. Gradient and Jacobian aren't different animals; the gradient is the Jacobian of a scalar-output function.
+</Step>
+
+<StepCheck
+  title="Fill in a Jacobian"
+  prompt="J_11 at (1, 2) = "
+  answer={2}
+  tolerance={0.01}
+  hint="F_1 = x² − y. ∂F_1/∂x = 2x. At x = 1."
+>
+For $\mathbf{F}(x, y) = (x^2 - y,\; x y)$, compute $J_{1,1}$ (row 1, column 1) at the point $(1, 2)$.
+</StepCheck>
+
+<StepCheck
+  title="And another entry"
+  prompt="J_22 at (1, 2) = "
+  answer={1}
+  tolerance={0.01}
+  hint="F_2 = xy. ∂F_2/∂y = x. At x = 1."
+>
+Same $\mathbf{F}$. Now compute $J_{2,2}$ (row 2, column 2) at $(1, 2)$.
+</StepCheck>
+
+<Step title="The multivariable chain rule — one output">
+Take a composed function. Input $t$ goes through a curve $\mathbf{r}(t)$ in 2D, output of that curve gets fed into a scalar function $f$. In symbols, $z(t) = f(\mathbf{r}(t))$.
+
+We want $dz/dt$. Multivariable version of the chain rule: differentiate $f$ along the curve's path.
+
+$$
+\frac{d}{dt} f(\mathbf{r}(t)) \;=\; \nabla f(\mathbf{r}(t)) \cdot \mathbf{r}'(t).
+$$
+
+Read it: the rate at which the scalar $f$ changes along the curve equals the gradient of $f$ dotted with the curve's velocity. The gradient says "which direction increases $f$ fastest, and how fast." $\mathbf{r}'(t)$ says "which direction you're actually going." Dot product them to get "how fast $f$ actually changes given your actual motion."
+
+This is also where last lesson's promised proof lives: if $\mathbf{r}(t)$ stays on a level set, $f(\mathbf{r}(t))$ is constant, so $dz/dt = 0$, which forces $\nabla f \cdot \mathbf{r}'(t) = 0$. Gradient perpendicular to tangent. Proven.
+</Step>
+
+<StepCheck
+  title="Move on a circle, watch the height"
+  prompt="dz/dt = "
+  answer={0}
+  tolerance={0.01}
+  hint="z = x² + y² stays at 1 when (x, y) = (cos t, sin t). A constant function has derivative zero."
+>
+Let $z = x^2 + y^2$ where $x = \cos t$ and $y = \sin t$. Compute $dz/dt$.
+
+(No decimals — the answer is an integer.)
+</StepCheck>
+
+<Step title="The chain rule in full generality, as a graph.">
+Compose two vector-valued functions: $\mathbf{x} \xrightarrow{\mathbf{g}} \mathbf{y} \xrightarrow{f} z$. The chain rule says **the Jacobian of the composition is the product of the Jacobians**:
+
+$$
+J_{f \circ \mathbf{g}}(\mathbf{x}) \;=\; J_f(\mathbf{g}(\mathbf{x})) \cdot J_{\mathbf{g}}(\mathbf{x}).
+$$
+
+Entry-by-entry:
+
+$$
+\frac{\partial z}{\partial x_j} \;=\; \sum_{i} \frac{\partial z}{\partial y_i}\, \frac{\partial y_i}{\partial x_j}.
+$$
+
+For each input $x_j$, sum — over all the intermediate variables $y_i$ — the products of "how $z$ depends on $y_i$" times "how $y_i$ depends on $x_j$." **Sum over paths, multiply along edges.**
+
+The widget below makes this literal. Click edges to highlight partials, or press a button to assemble the chain-rule sum for $\partial z / \partial x$ or $\partial z / \partial y$ as a sum over the two paths from input to output.
+
+<ChainRulePaths client:visible />
+
+The shape of the formula *is* the shape of the graph. If you've ever drawn a computation graph, this is exactly what you were tracing.
+</Step>
+
+<StepCheck
+  title="Chain something small"
+  prompt="(f∘g)′(1) = "
+  answer={3}
+  tolerance={0.01}
+  hint="g(x) = (x, x²) so J_g = (1, 2x)ᵀ. f(u,v) = u + v so J_f = (1, 1). Product at x = 1: (1)(1) + (1)(2) = 3."
+>
+Let $\mathbf{g}(x) = (x,\; x^2)$ and $f(u, v) = u + v$. Compute $\dfrac{d}{dx}(f \circ \mathbf{g})(x)$ at $x = 1$.
+
+Try it two ways — compose first and differentiate, or multiply the Jacobians. Same answer.
+</StepCheck>
+
+<Step title="Shape hygiene">
+A tip that will save you weeks of debugging later: when you compute a Jacobian or a chain-rule product, **look at the shape first**. Does the result have the shape it should?
+
+Rule of thumb: differentiating an $m$-output function with respect to $n$ inputs gives you an $m \times n$ grid. If your answer's shape doesn't match, you've got a bug before checking any numbers.
+
+In ML frameworks, shape errors are the single most common bug. Track the shapes, always.
+</Step>
+
+<Step title="Teaser: what this unlocks">
+Every neural network is a long composition: input → linear layer → nonlinearity → linear layer → ... → loss. Dozens of functions in series. The derivative of the loss with respect to any parameter, by the chain rule, is a long product of Jacobians.
+
+But here's the twist we'll develop in the next lesson: we never compute the full Jacobians. We multiply them onto a *row vector* (the gradient of the loss), working from the output backward to the input. That multiplication — row times matrix — is called a **vector–Jacobian product**, and it is exactly what `loss.backward()` computes.
+
+Next lesson pulls that thread.
+</Step>

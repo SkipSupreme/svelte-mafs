@@ -1,0 +1,139 @@
+---
+title: Dot product — the alignment number
+module: m7-linear-algebra
+summary: A single number that tells you how much two arrows point the same way. Two formulas compute it. The ML world runs on it.
+estimatedMinutes: 14
+order: 2
+prereqs:
+  - vectors
+conceptsCovered:
+  - dot-product-as-alignment
+  - dot-product-algebraic
+  - dot-product-geometric
+  - cosine-similarity
+  - attention-preview
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import DotProductPlayground from '../../components/demos/DotProductPlayground.svelte';
+
+<Step title="Drag the arrows. Watch one number.">
+Two arrows. Drag either tip. The big number is the **dot product**. We'll define it in a moment. First, just play.
+
+<DotProductPlayground client:visible />
+
+Three things to find:
+
+- Make the number as **big and positive** as you can.
+- Make it **exactly zero**.
+- Make it **negative**.
+
+You don't need the formula to do this. Your hands will figure it out.
+</Step>
+
+<Step title="What you just felt.">
+The dot product is a single number that scores **how much two arrows point the same way**.
+
+- Pointing the same direction → big positive.
+- Perpendicular → zero.
+- Pointing opposite → negative.
+
+That's the entire conceptual content of this lesson. Everything below is two ways to compute it, and one place it shows up that should make you sit up straight.
+</Step>
+
+<Step title="Compute it the algebraic way.">
+The recipe: multiply matching components, sum the products.
+
+$$
+\mathbf{u} \cdot \mathbf{v} \;=\; \sum_{i=1}^{n} u_i v_i.
+$$
+
+For $\mathbf{u} = [3, 4]$ and $\mathbf{v} = [4, 0]$: $3 \cdot 4 + 4 \cdot 0 = 12$. That's the whole computation in any dimension — same recipe whether you've got 2 numbers or 2,048.
+
+Notice the arithmetic agrees with what your hands already told you: when components share a sign, they contribute positively. When they cancel, the sum drops toward zero. When they oppose, the sum goes negative. The formula is just the bookkeeping for the alignment-feeling you already have.
+</Step>
+
+<StepCheck
+  title="Compute one."
+  prompt="[3,4] · [4,0] = "
+  answer={12}
+  tolerance={0.01}
+>
+Compute $[3, 4] \cdot [4, 0]$.
+</StepCheck>
+
+<Step title="Compute it the geometric way.">
+Here's the second formula, and it's the surprising one.
+
+$$
+\mathbf{u} \cdot \mathbf{v} \;=\; |\mathbf{u}|\, |\mathbf{v}|\, \cos\theta
+$$
+
+where $\theta$ is the angle between the arrows. This is the *same number* the algebraic recipe gives — for any two vectors, every time. An arithmetic sum of products equals a product of lengths times a cosine. That's a serious claim and worth a second of suspicion.
+
+Reopen the playground with the decomposition turned on. Drag the arrows. The bottom row computes $|\mathbf{u}| \cdot |\mathbf{v}| \cdot \cos\theta$ and it always agrees with $\mathbf{u} \cdot \mathbf{v}$ at the top. Same number, two formulas.
+
+<DotProductPlayground client:visible showDecomposition />
+
+Why care that they agree? Because they unlock different super-powers:
+
+- **Algebraic** is how you compute. Cheap, scales to any dimension.
+- **Geometric** is how you *think*. The cosine factor tells you the dot product is "alignment, scaled by lengths."
+</Step>
+
+<StepCheck
+  title="Predict, then check."
+  prompt="dot product = "
+  answer={0}
+  tolerance={0.001}
+  hint="cos(90°) = 0. Anything times zero is zero, no matter how long the vectors are."
+>
+Two unit-length arrows, perpendicular to each other ($\theta = 90°$). **Without computing components**, what's their dot product?
+
+Trust the geometric formula. It's faster than the algebraic one when you can see the angle.
+</StepCheck>
+
+<Step title="Unit length flips it into a similarity score.">
+Here's the move that powers half of machine learning.
+
+If $\mathbf{u}$ and $\mathbf{v}$ are both **unit length** (length 1), the geometric formula collapses:
+
+$$
+\mathbf{u} \cdot \mathbf{v} \;=\; \cos\theta.
+$$
+
+A number between $-1$ and $+1$. **+1 = same direction. 0 = perpendicular. −1 = opposite.** That's a similarity score, ready to use.
+
+Embed words as unit vectors → dot products are word similarities. Embed sentences as unit vectors → dot products are sentence similarities. Embed images, audio, anything → dot products are similarities. This is what every "find me the nearest documents" search engine does. It's what every recommendation feed does after the first ten years of feature engineering.
+
+When vectors aren't unit length, the raw dot product mixes "alignment" with "magnitude" — long vectors win even when they're only vaguely aligned. Divide by $|\mathbf{u}| |\mathbf{v}|$ to recover $\cos\theta$ on its own. That ratio has a name — **cosine similarity** — and it's the same idea wearing the formal clothes.
+</Step>
+
+<StepCheck
+  title="Negative space."
+  prompt="[1,2,3] · [1,0,-1] = "
+  answer={-2}
+  tolerance={0.01}
+  hint="1·1 + 2·0 + 3·(−1) = 1 + 0 − 3 = −2. Negative dot product means net opposed."
+>
+Compute $[1, 2, 3] \cdot [1, 0, -1]$.
+
+Then read the sign. Positive means net aligned. Negative means net opposed. What does the sign tell you about these two vectors?
+</StepCheck>
+
+<Step title="This is what attention is.">
+The reason this lesson exists in a course about transformers:
+
+Pick up any attention layer in any transformer. At its core is
+
+$$
+\text{scores} \;=\; X W_q\, (X W_k)^\top.
+$$
+
+Strip away the learned projections $W_q, W_k$ (pretend they're identity for a second). What's left is $X X^\top$ — a matrix whose $(i, j)$ entry is the dot product of row $i$ with row $j$.
+
+If the rows of $X$ are vector representations of tokens, that matrix is a **table of pairwise alignments**. Every cell is "how similar is token $i$ to token $j$." That table, after a row-wise softmax, *is* the attention matrix. The learned projections, the softmax, the $\sqrt{d}$ scaling — those are all engineering refinements. The core operation is the move you spent this lesson learning to feel with your hands.
+
+**Attention is pairwise dot products.** You've earned that sentence now. The rest of the module is going to make it dance.
+</Step>

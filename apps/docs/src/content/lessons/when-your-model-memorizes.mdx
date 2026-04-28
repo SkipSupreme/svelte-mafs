@@ -1,0 +1,108 @@
+---
+title: When your model memorizes the training set
+module: m13-training-dynamics
+summary: Train and validation curves are diagnostic instruments. Learn to read them — and learn why touching the test set is a sin.
+estimatedMinutes: 12
+order: 1
+conceptsCovered:
+  - overfitting-underfitting
+  - bias-variance
+  - train-val-test-split
+  - generalization-gap
+  - loss-curve-pathologies
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+
+<Step title="A 5-parameter and a 5000-parameter polynomial walk into a bar">
+Twenty noisy points on a roughly-quadratic curve. Fit a degree-2 polynomial to them — three parameters, intercept included. The fit is approximate. Some points sit above the curve, some below. It misses on purpose. Three parameters cannot memorize twenty points; there isn't enough wiggle room.
+
+Now fit a degree-19 polynomial to the same twenty points. It hits every one. It contorts itself between them with bumps and dips that exist only because they happen to fall between data points. It is *perfect* on the training set.
+
+Ask each fit to predict point twenty-one. Which one is closer?
+
+The boring quadratic.
+
+That is the entire module in one paragraph.
+</Step>
+
+<Step title="Bias and variance: the two ways to be wrong">
+The expected squared error of a model on test data, averaged over which training set you happened to draw, decomposes into three pieces:
+
+$$
+\mathbb{E}\!\left[(y - \hat{f}(x))^2\right] \;=\; \sigma^2 \;+\; \text{bias}^2 \;+\; \text{variance}.
+$$
+
+- **$\sigma^2$** — irreducible noise in the data itself. You cannot fix this without better data.
+- **bias** — how wrong your model class is on average. A linear model trying to fit a parabola has high bias before noise gets anywhere near it.
+- **variance** — how much your fit jumps when you swap in a different training set. A degree-19 polynomial has huge variance: twenty fresh noisy points produce a wildly different curve.
+
+Simple model: high bias, low variance. Flexible model: low bias, high variance. The whole sport is finding a sweet spot in between.
+</Step>
+
+<Step title="Two failure modes, both bad">
+**Underfitting.** Train loss is high, validation loss is high. Your model is too dumb to fit the data. Make it bigger, train it longer, give it richer features.
+
+**Overfitting.** Train loss is low, validation loss is high. Your model fit the training set plus the noise that came stapled to it. Add regularization, get more data, or stop training earlier.
+
+The diagnosis lives in the *gap*. If train error is 0.05 and validation error is 0.50, the model memorized something it shouldn't have. The gap *is* the diagnosis.
+</Step>
+
+<StepCheck
+  title="Generalization gap"
+  prompt="gap = "
+  answer={0.45}
+  tolerance={0.001}
+  hint="Generalization gap = val_loss − train_loss."
+>
+Train loss = 0.05. Validation loss = 0.50. **What is the generalization gap?**
+</StepCheck>
+
+<Step title="Three jobs, three sets">
+You need three disjoint subsets of your data, each doing a different job:
+
+- **Training set.** Fits the model's parameters. The optimizer sees these examples; gradients come from them.
+- **Validation set.** Picks hyperparameters and architectures. You train ten models with different learning rates and pick the best validation loss. The *model* never learns from these examples directly. *You* do.
+- **Test set.** Reports the final number. You touch it once, at the end. You never let it touch your decision-making before that.
+
+If you peek at the test set every time you re-train, you have turned it into a second validation set. Now you have nothing left to honestly report.
+</Step>
+
+<Step title="The cardinal sin">
+A team reports 92% test accuracy on a public benchmark. Sounds great.
+
+After publication, somebody finds out they ran 50 different learning-rate schedules and reported the best one. Each run was scored on the test set. They picked the maximum.
+
+The 92% is no longer an unbiased estimate of generalization. It is the *maximum* of 50 noisy estimates. With enough runs you can hit 92% by luck on a model that genuinely averages 87. The reported number is a lottery winner.
+
+The fix is not elaborate. Lock your hyperparameter sweep to the validation set. Touch the test set once, after everything is decided. Treat it like a sealed envelope.
+</Step>
+
+<StepCheck
+  title="The split"
+  prompt="test = "
+  answer={1500}
+  tolerance={0}
+  hint="15% of 10,000."
+>
+You have 10,000 labeled examples and want a 70/15/15 split. **How many examples go in the test set?**
+</StepCheck>
+
+<Step title="The shape of failure">
+Train and validation curves over training steps tell you exactly what's going wrong. Five canonical shapes you should recognize on sight:
+
+1. **Clean fit.** Both curves drop, both plateau, the gap stays small. Ship it.
+2. **Overfitting fork.** Train keeps dropping; validation bottoms out and starts *climbing*. The fork point is where you should have stopped — that's early stopping.
+3. **Plateau.** Both curves stop dropping at a high value. Underfitting, or an optimization problem (too small a learning rate, too small a model, dead activations).
+4. **Divergence spike.** Loss is dropping; suddenly it shoots up to a huge number, often NaN. Learning rate too high, missing warmup, exploded gradient.
+5. **Dead curve.** Loss never moves from its initial value. The network is not learning at all. Almost always bad initialization, or the wrong loss for the problem.
+
+Read curves the way a doctor reads a chart. The shape tells you what the bug is, before you've even looked at code.
+</Step>
+
+<Step title="What you'll do with this">
+You will train a tiny char-level transformer later in this course. You will watch its train and validation loss in real time. The next four lessons hand you the tools — regularization, initialization, normalization, residuals — that turn each of the failure shapes above back into a clean fit.
+
+Recognizing the failure shape *while it is happening* is the diagnostic skill. The rest of this module is the toolbox.
+</Step>

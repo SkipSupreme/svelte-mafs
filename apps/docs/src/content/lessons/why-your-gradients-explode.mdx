@@ -1,0 +1,110 @@
+---
+title: Why your gradients explode
+module: m13-training-dynamics
+summary: Initialization is not folklore. It falls out of one line of variance algebra — and it's the difference between a network that trains and a network that sits dead at step zero.
+estimatedMinutes: 15
+order: 3
+prereqs:
+  - ways-to-keep-weights-small
+conceptsCovered:
+  - weight-init-symmetry
+  - variance-preservation
+  - xavier-glorot-init
+  - he-kaiming-init
+  - residual-init-scaling
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+
+<Step title="A network that won't move">
+Build a 10-layer MLP. 200 hidden units per layer. Tanh activations. Initialize every weight from $\mathcal{N}(0, 1)$ — a "reasonable" looking standard-normal sample. Now feed in a batch of unit-variance inputs.
+
+By layer 2 or 3, every tanh is pinned at $\pm 1$. By layer 10, every neuron is fully saturated — derivatives are essentially zero everywhere. Now run backprop. The gradient is the chain of all those tiny derivatives multiplied together. It vanishes. The optimizer cannot move parameters whose gradient is numerically zero. The loss does nothing. Your network is dead, and the loss curve looks like the "dead curve" pathology from the previous lesson.
+
+There is no error message. No NaN. The optimizer ran "successfully." It just produced no learning. And the bug is one number: the standard deviation of the initial weights.
+
+Why does it matter so much? Algebra.
+</Step>
+
+<Step title="Variance through one linear layer">
+A linear layer computes $z = \sum_{i=1}^{n} w_i x_i$, where the $x_i$ are i.i.d. with mean 0 and variance $\sigma_x^2$, and the $w_i$ are i.i.d. with mean 0 and variance $\sigma_w^2$, all independent.
+
+Compute the variance of $z$. Independence lets us drop cross-covariance terms:
+
+$$
+\text{Var}(z) \;=\; \sum_{i=1}^n \text{Var}(w_i x_i) \;=\; \sum_{i=1}^n \mathbb{E}[w_i^2]\,\mathbb{E}[x_i^2] \;=\; n\,\sigma_w^2\,\sigma_x^2.
+$$
+
+So $\text{Var}(z) = n \cdot \text{Var}(W) \cdot \text{Var}(x)$. The variance of the output of one layer is $n$ times the variance of the inputs, scaled by the variance of the weights.
+
+That extra factor of $n$ is what kills you. With $\sigma_w^2 = 1$ (the bad init we started with) and $n = 200$, every layer multiplies variance by 200. After ten layers, variance is $200^{10}$. Tanh saturates; gradients die.
+</Step>
+
+<Step title="The variance-preservation rule">
+You want activations to keep roughly the same scale, layer after layer. So pick the variance of the weights to *kill* the factor of $n$:
+
+$$
+\sigma_w^2 \;=\; \frac{1}{n}.
+$$
+
+Now $\text{Var}(z) = n \cdot \tfrac{1}{n} \cdot \text{Var}(x) = \text{Var}(x)$. Activation variance is preserved across the layer. Stack ten and the input still looks like the input.
+
+This is **Xavier initialization** in its simplest form (also called Glorot, after Xavier Glorot). The forward-only version is $\sigma_w^2 = 1/n_{\text{in}}$. The symmetric version, which considers both forward and backward variance preservation, is $\sigma_w^2 = 2/(n_{\text{in}} + n_{\text{out}})$. Either works; modern libraries default to the symmetric form.
+</Step>
+
+<StepCheck
+  title="Xavier in numbers"
+  prompt="Var(W) = "
+  answer={0.00390625}
+  tolerance={0.0001}
+  hint="Forward-only Xavier: Var(W) = 1/n_in = 1/256."
+>
+A fully-connected layer has 256 inputs and a tanh nonlinearity. Using Xavier (forward-only) initialization, **what is $\text{Var}(W)$?** (Answer to four decimal places is fine.)
+</StepCheck>
+
+<Step title="Why Xavier breaks for ReLU">
+The variance derivation assumed activations had mean 0. Tanh roughly does — it's symmetric around the origin. But ReLU is *not* symmetric. ReLU zeros out everything below zero. Half the inputs, in expectation, go to zero. So the actual variance of the output of a ReLU layer is *half* what the linear analysis predicts.
+
+If you use Xavier with ReLU, you've lost half your variance per layer, and your activations decay toward zero exponentially with depth. Same kind of failure, opposite direction.
+
+The fix is to compensate. Double the weight variance to make up for what ReLU eats:
+
+$$
+\sigma_w^2 \;=\; \frac{2}{n_{\text{in}}}.
+$$
+
+This is **He initialization** (also called Kaiming, after Kaiming He). It is the default for any layer followed by a ReLU or ReLU variant — which means it is the default for almost everything you'll build.
+</Step>
+
+<StepCheck
+  title="He in numbers"
+  prompt="Var(W) = "
+  answer={0.00390625}
+  tolerance={0.0001}
+  hint="He init: Var(W) = 2/n_in = 2/512."
+>
+A fully-connected layer has 512 inputs and a ReLU nonlinearity. Using He initialization, **what is $\text{Var}(W)$?**
+</StepCheck>
+
+<Step title="Why you can't initialize to zero">
+You might think "if random matters, what about all-zeros? It's symmetric, deterministic, easy."
+
+It does not work. If every weight is zero (or any constant), every neuron in a layer computes the same output. Forward pass: identical activations. Backward pass: identical gradients. Update: identical step. The neurons stay identical *forever*. You haven't built a hidden layer of $n$ neurons; you've built one neuron $n$ times, and the layer collapses to a single effective unit.
+
+This is *symmetry breaking*: randomness exists not for any deep statistical reason but because two neurons that start the same and see the same gradients will always be the same. Random init kicks the network out of that symmetry on the first step.
+</Step>
+
+<Step title="The transformer's initialization, exactly">
+Modern transformers add one more wrinkle. Even with He init in each individual layer, the *residual stream* — the running sum $x + F_1(x) + F_2(x) + \dots$ — has variance that grows with depth. The fix from the GPT-2 paper, used by every nanoGPT-shaped codebase since:
+
+$$
+\sigma_W \;=\; \frac{0.02}{\sqrt{2 N_{\text{layers}}}}
+$$
+
+applied to the *output projection* of each residual sub-block. (The factor of 2 is because each transformer block has two residual additions: one around attention, one around the MLP.) Everything else in the network uses standard $\mathcal{N}(0, 0.02^2)$.
+
+This is what `c_proj.weight` in a nanoGPT codebase is doing when it scales by $1/\sqrt{2N}$: it's keeping the variance of the residual stream constant with depth, regardless of how many blocks you stack.
+
+Initialization is one line of variance algebra. It is also the difference between a 12-layer transformer that converges and one that sits at chance forever.
+</Step>

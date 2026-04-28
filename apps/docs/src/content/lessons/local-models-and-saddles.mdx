@@ -1,0 +1,124 @@
+---
+title: Local Linear Models and Saddle Points
+summary: Some critical points are bowls. Some are caps. Some are neither — saddles, where the function goes up in one direction and down in another. In high dimensions, saddles are everywhere.
+module: m6-multivariable
+estimatedMinutes: 16
+order: 3
+prereqs:
+  - the-gradient
+conceptsCovered:
+  - tangent-plane-linearization
+  - critical-point
+  - hessian-intuition
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import SaddleScanner from '../../components/demos/SaddleScanner.svelte';
+
+<Step title="Pick a function shape. Fire a ray. What is this?">
+$f(x, y) = a\, x^2 + b\, y^2$. The signs of $a$ and $b$ decide what's happening at the origin. The ray slider sweeps a direction $\theta$; the right panel plots $f$ along that ray.
+
+<SaddleScanner client:visible />
+
+Three shapes worth finding:
+
+1. Both $a$ and $b$ **positive**. Every ray you fire shows the function climbing away from zero. **Local minimum.**
+2. Both **negative**. Every ray shows it falling. **Local maximum.**
+3. Opposite signs (one positive, one negative). Some rays climb, some fall. There's no consistent "down" or "up." **Saddle.**
+
+The first two cases have analogues you've seen in 1D (a parabola opens up or opens down). The saddle is new — it has no single-variable counterpart, and it's the case that matters most for ML.
+</Step>
+
+<Step title="The 1D recall">
+Single-variable calculus told you: near a point $a$, a smooth function looks linear. Formally,
+
+$$
+f(a + h) \;\approx\; f(a) + f'(a)\, h
+$$
+
+when $h$ is small. The derivative $f'(a)$ is the slope of the line that best matches $f$ at $a$. Zoom in far enough and the curve becomes that line.
+
+That's *the* local linear model in 1D. Now we generalize.
+</Step>
+
+<Step title="The tangent plane (2D linearization)">
+For $f(x, y)$ near a point $(a, b)$:
+
+$$
+f(x, y) \;\approx\; f(a, b) + f_x(a, b)\,(x - a) + f_y(a, b)\,(y - b).
+$$
+
+Same shape, two variables instead of one. The right-hand side is a **plane** — tilted by the partial derivatives, anchored at the height $f(a, b)$. Near $(a, b)$, the surface is indistinguishable from that plane.
+
+Using the gradient notation from the last lesson:
+
+$$
+f(\mathbf{x}) \;\approx\; f(\mathbf{a}) + \nabla f(\mathbf{a}) \cdot (\mathbf{x} - \mathbf{a}).
+$$
+
+This is *the* local linear model. Every step of gradient descent trusts this approximation for one tiny $\epsilon$, then reapproximates at the new point. Unreasonably effective.
+</Step>
+
+<StepCheck
+  title="Linearize something"
+  prompt="f(1.03, 1.98) ≈ "
+  answer={4.04}
+  tolerance={0.01}
+  hint="At (1, 2): f = 1·4 = 4, f_x = y² = 4, f_y = 2xy = 4. Linear approx: 4 + 4(0.03) + 4(−0.02) = 4 + 0.12 − 0.08."
+>
+For $f(x, y) = x y^2$, use linearization at $(1, 2)$ to approximate $f(1.03, 1.98)$.
+
+(Two decimal places.)
+</StepCheck>
+
+<Step title="Critical points">
+A **critical point** is a point where the gradient is zero: $\nabla f(\mathbf{p}) = \mathbf{0}$.
+
+In 1D, $f'(a) = 0$ meant "flat spot" — a candidate for a local min or max. In 2D it means the same thing, except "flat" now means flat in *every* direction simultaneously. No direction is uphill; no direction is downhill.
+
+Three shapes a 2D flat spot can take:
+
+- A **local minimum** (bowl).
+- A **local maximum** (cap).
+- A **saddle** — up in some directions, down in others.
+
+You found all three in step 1. Now formalize.
+</Step>
+
+<Step title="The second-derivative test">
+Compute the Hessian discriminant at the critical point:
+
+$$
+D \;=\; f_{xx}\, f_{yy} \,-\, f_{xy}^{\,2}
+$$
+
+Then:
+
+- $D > 0$ and $f_{xx} > 0$: **local minimum** (both axes curve up).
+- $D > 0$ and $f_{xx} < 0$: **local maximum** (both curve down).
+- $D < 0$: **saddle** (directions disagree).
+- $D = 0$: the test is inconclusive. Probe by hand.
+
+The matrix of second partials $\begin{pmatrix} f_{xx} & f_{xy} \\ f_{yx} & f_{yy} \end{pmatrix}$ is called the **Hessian**. We'll meet it as a matrix in Module 7. For now: sign of $D$, sign of $f_{xx}$. That's the test.
+</Step>
+
+<StepCheck
+  title="Classify by the numbers"
+  prompt="D at origin = "
+  answer={-12}
+  tolerance={0.01}
+  hint="f = x² − 3y². f_xx = 2, f_yy = −6, f_xy = 0. D = (2)(−6) − 0² = −12."
+>
+For $f(x, y) = x^2 - 3 y^2$, compute the discriminant $D = f_{xx} f_{yy} - f_{xy}^{\,2}$ at the origin.
+
+The sign of your answer tells you what kind of critical point it is.
+</StepCheck>
+
+<Step title="Why saddles matter for ML">
+Intuition from one or two variables says: most flat spots are minima. Bowl, cap, occasional saddle. **In high dimensions this stops being true.** In dimensions ~millions — which is where neural-network loss functions live — saddles **dominate**. True local minima are rare; flat regions where the gradient is nearly zero but the function is actually a saddle are common.
+
+This is why plain gradient descent can feel slow: it's not stuck at a real minimum, it's crawling through a high-dimensional saddle where the gradient is small in most directions and only a tiny sub-space escapes. Modules 10 and 11 cover the tricks for dealing with this — momentum, Adam, learning-rate schedules. All of them are about detecting and escaping saddles.
+
+For now the single takeaway: **$\nabla f = \mathbf{0}$ doesn't mean "you won."** It means "stop and look more carefully."
+</Step>

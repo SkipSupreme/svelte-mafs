@@ -1,0 +1,135 @@
+---
+title: loss.backward() is a Vector–Jacobian Product
+module: m6-multivariable
+summary: A neural network is a long function composition. Its derivative is a long product of Jacobians. We never build those Jacobians — we multiply them onto a row vector from right to left. That walk is backprop.
+estimatedMinutes: 20
+order: 5
+prereqs:
+  - jacobians-and-chaining
+conceptsCovered:
+  - loss-as-scalar-function
+  - jacobian-vector-product
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import JvpPlayground from '../../components/demos/JvpPlayground.svelte';
+
+<Step title="Forward or reverse: pick a direction.">
+Below is a 2-to-2 function $\mathbf{F}(x, y) = (x^2 + y,\; xy)$. The Jacobian at the marked base point $\mathbf{p}$ is
+
+$$
+J = \begin{bmatrix}\, 2x & 1 \,\\\, y & x \,\end{bmatrix}.
+$$
+
+<JvpPlayground client:visible />
+
+Two modes:
+
+- **Forward (JVP)**: drag the input tangent on the left. The widget computes the output tangent as $J \cdot d\mathbf{v}$ on the right.
+- **Reverse (VJP)**: drag the output cotangent on the right. The widget computes the input cotangent as $J^\top \cdot \mathbf{w}$ on the left.
+
+Same Jacobian, opposite direction of action. The pedagogy of this whole lesson is in that toggle.
+</Step>
+
+<Step title="The loss, as a function">
+A neural network has parameters: weights $w_1, \dots, w_P$ and biases. Collectively, $\mathbf{w} \in \mathbb{R}^P$ — a single tuple with one entry per parameter.
+
+For a given training example, the network produces a prediction, compares it to the target, and outputs a single number: the loss. So the loss is a function
+
+$$
+L: \mathbb{R}^P \longrightarrow \mathbb{R}.
+$$
+
+Many inputs (millions for a real model). One output (a scalar).
+
+Training means: nudge $\mathbf{w}$ in the direction that reduces $L$. The direction that reduces $L$ fastest is $-\nabla L$. Training is: compute $\nabla L$, step against it, repeat.
+
+The only real question: **how do you compute $\nabla L$ when $L$ is the composition of thirty operations, each itself a vector-valued function?**
+</Step>
+
+<Step title="A net is a composition">
+The network as a chain:
+
+$$
+L \;=\; \ell \,\circ\, f_k \,\circ\, f_{k-1} \,\circ\, \cdots \,\circ\, f_2 \,\circ\, f_1
+$$
+
+where $f_i$ is the $i$-th layer (linear + nonlinearity) and $\ell$ is the final loss function. The input is the example's features; the output is one number.
+
+By the chain rule, the Jacobian of $L$ with respect to the parameters is the product of all those layer Jacobians:
+
+$$
+J_L \;=\; J_\ell \cdot J_{f_k} \cdot J_{f_{k-1}} \cdots J_{f_2} \cdot J_{f_1}.
+$$
+
+$L$ has one output, so $J_L$ is a $1 \times P$ row — which is exactly $\nabla L$, written sideways.
+</Step>
+
+<Step title="The trick: don't materialize the Jacobians">
+If each layer's Jacobian were $10{,}000 \times 10{,}000$ and you multiplied them all together, you'd be moving giant matrices for nothing. You don't need the product matrix. You only need its top row — the gradient.
+
+Here's the move. The leftmost factor, $J_\ell$, is a $1 \times n$ *row* (because $\ell$ is scalar-output). When you multiply a $1 \times n$ row by an $n \times m$ matrix, you get a $1 \times m$ row. That row is a **vector–Jacobian product** (VJP):
+
+$$
+\text{row} \;\times\; J \;=\; \text{row}.
+$$
+
+Instead of building the full layer Jacobian and multiplying the next one in, you keep a row around and shrink/resize it by VJP-ing it with each layer's Jacobian from right to left. You work left-to-right in the *expression*, but consuming layers right-to-left from the *graph's perspective* — output first, input last.
+
+That's why it's called the **backward pass**. At the end, the row you have is $\nabla L$. Every entry is a $\partial L / \partial w_i$. `loss.backward()` walks exactly this path and writes those numbers into `parameter.grad`.
+</Step>
+
+<Step title="Forward mode vs reverse mode">
+Two ways to walk a chain of Jacobians. You played with both:
+
+- **Forward (JVP)**: multiply from the *right*. Push a tangent vector $\mathbf{v}$ from the input side through each layer. Good when $n$ (inputs) is small.
+- **Reverse (VJP)**: multiply from the *left*. Pull a cotangent from the output side back through each layer. Good when $m$ (outputs) is small. Perfect for scalar-output losses.
+
+A neural-network loss has $m = 1$ output and $P \approx$ millions of inputs. Reverse mode wins by a factor of $P$. That's why deep learning frameworks all use reverse-mode autodiff, and why `.backward()` exists on the scalar loss tensor, not on individual parameters.
+</Step>
+
+<Step title="Work a real example by hand">
+Let's do one. Loss $L(w, b) = (wx + b - y)^2$, for a fixed training example $x = 2$, $y = 5$. Evaluate at $(w, b) = (1, 1)$.
+
+Forward pass:
+- $\hat y = wx + b = 1 \cdot 2 + 1 = 3$.
+- Error $e = \hat y - y = 3 - 5 = -2$.
+- Loss $L = e^2 = 4$.
+
+Backward pass (chain rule, walked from the loss outward):
+- $\dfrac{\partial L}{\partial e} = 2e = -4$.
+- $\dfrac{\partial L}{\partial \hat y} = -4 \cdot 1 = -4$.
+- $\dfrac{\partial L}{\partial w} = -4 \cdot x = -4 \cdot 2 = -8$.
+- $\dfrac{\partial L}{\partial b} = -4 \cdot 1 = -4$.
+
+So $\nabla L = (-8, -4)$. Each coordinate was computed by multiplying "the gradient so far" (a single number at this scale, because $L$ is scalar) by the local partial at one edge. At scale, those scalars become rows and the partials become layer Jacobians — but the algorithm is identical.
+
+This is, literally, every time `loss.backward()` runs.
+</Step>
+
+<StepCheck
+  title="Compute ∂L/∂w"
+  prompt="∂L/∂w = "
+  answer={-8}
+  tolerance={0.01}
+  hint="Forward: ŷ = wx + b = 3, error e = −2. Then ∂L/∂w = 2e · x = 2(−2)(2)."
+>
+Same loss with $x = 2$, $y = 5$, $(w, b) = (1, 1)$. Confirm $\dfrac{\partial L}{\partial w}$.
+</StepCheck>
+
+<StepCheck
+  title="And ∂L/∂b"
+  prompt="∂L/∂b = "
+  answer={-4}
+  tolerance={0.01}
+  hint="∂L/∂b = 2e · 1 = 2(−2)."
+>
+Same setup. Confirm $\dfrac{\partial L}{\partial b}$.
+</StepCheck>
+
+<Step title="Where this lands">
+You just did, by hand, what `loss.backward()` does for a network of two parameters. In Module 12 we'll build **micrograd** — a tiny scalar autograd engine that walks a computation graph and fills in `.grad` fields using exactly this procedure. Then Module 13 upgrades it to tensors, Module 15 wires it through an attention layer, and Module 18 uses all of it to train a character-level transformer in your browser.
+
+The algorithm is already known to you. Everything else is bookkeeping at scale.
+</Step>

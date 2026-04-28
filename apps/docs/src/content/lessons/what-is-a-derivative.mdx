@@ -1,0 +1,118 @@
+---
+title: What is a derivative?
+module: m5-calculus
+summary: A curve has a different slope at every point. Finding that slope means cheating with a secant, then taking the cheat to its limit.
+estimatedMinutes: 12
+order: 1
+conceptsCovered:
+  - slope-at-a-point
+  - secant-line
+  - limit-definition
+  - derivative-as-function
+  - power-rule-glimpsed
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import SecantToTangent from '../../components/demos/SecantToTangent.svelte';
+import TangentDemo from '../../components/demos/TangentDemo.svelte';
+
+<Step title="Find the slope of this curve at the dot.">
+No, really. Try.
+
+<SecantToTangent client:visible startH={1.4} hideReadouts />
+
+You can't. Not with the rise-over-run trick you learned at twelve — that needs *two* points, and there's only one. The curve has a slope at the dot (your eye believes it; the dot is climbing) but the tool you have for measuring slope refuses to apply.
+
+This is the whole problem. The rest of the lesson is one trick for getting around it. The trick starts with cheating.
+</Step>
+
+<Step title="Push h to zero. Watch what happens.">
+Same widget, slightly different. Now there are two points: $P$ on the curve, and a second point $Q$ a distance $h$ away. The line through them has a slope you *can* measure — rise over run, same as ever. Drag $h$ down.
+
+<SecantToTangent client:visible enforceH={0} celebrateOnZero />
+
+Slide $h$ all the way to $0$. The two points land on each other. The line collapses. The slope readout breaks.
+
+That's the wall. We can't actually put both points on the same spot — that's $0 / 0$, which is undefined and a little rude. But notice what happens *just before* the wall: the slope readout settles on a number. It's heading somewhere specific.
+
+We're going to live in that *just before*.
+</Step>
+
+<Step title="Name what you just did">
+That line you were dragging through two points on a curve — pick a fancy word for it. It's called a **secant line**. Its slope, for a function $f$ at a point $x$, looks like:
+
+$$
+\text{secant slope} \;=\; \frac{f(x + h) \;-\; f(x)}{h}.
+$$
+
+That's just rise over run. The rise is "how much $f$ changed" between $x$ and $x + h$. The run is $h$. Nothing new — only a name for the move you've been making with your finger.
+
+The trick is what we do with $h$ next.
+</Step>
+
+<StepCheck
+  title="Shrink the gap"
+  prompt="slope → "
+  answer={2}
+  tolerance={0.2}
+  hint="Drag the h slider toward 0.01. Read the secant slope. Round to a whole number."
+>
+$P$ is at $(1, 1)$ on $y = x^2$. Drag $h$ down toward zero. The secant line gets shorter and shorter. Its slope settles.
+
+**What number does the slope settle on?**
+</StepCheck>
+
+<Step title="That's the derivative.">
+You just found the slope of $y = x^2$ at the single point $x = 1$. It's $2$. You found it by *limiting* — watching where the secant slope was heading as $h$ shrank, without ever letting $h$ actually land on zero.
+
+The fancy name for "slope of a curve at one point" is the **derivative**. The trick you used is the *definition*:
+
+$$
+f'(x) \;=\; \lim_{h \to 0} \; \frac{f(x + h) \;-\; f(x)}{h}.
+$$
+
+Read it left to right: the derivative of $f$ at $x$ is what the secant slope approaches as the second point slides into the first. We never actually divide by zero. We watch where things are *heading*. Limits are the polite name for that move.
+</Step>
+
+<StepCheck
+  title="Without the slider this time."
+  prompt="f'(3) = "
+  answer={6}
+  tolerance={0.01}
+  hint="If you redid the slider trick at x=2 instead of x=1, you'd get 4. At x=3, you'd get 6. The pattern: f'(x) = 2x for f(x) = x²."
+>
+You found $f'(1) = 2$ for $f(x) = x^2$ by sliding $h$ to zero.
+
+If you redid the trick at $x = 2$, you'd get $4$. At $x = 3$, you'd get $6$. There's a pattern, and you can probably already see it.
+
+**What is $f'(3)$ for $f(x) = x^2$?** No widget this time — just the pattern.
+</StepCheck>
+
+<Step title="The derivative is a function.">
+This is the moment it stops being about *one slope at one point* and becomes the engine of calculus.
+
+The derivative isn't a number. It's a *function* — a new function, $f'(x)$, that hands you back the slope at any $x$ you ask. For $f(x) = x^2$, the derivative function is $f'(x) = 2x$. For $f(x) = \sin(x)$, the derivative function is something you're about to discover.
+
+Drag the dot. The coral line is the tangent. The readout shows the slope wherever you are.
+
+<TangentDemo client:visible />
+
+What's the slope doing as you sweep across? Climbing where the sine is climbing, zero at the peaks and troughs, going negative on the way down. The curve the slope traces *is* $\cos(x)$. Sine and cosine hand off to each other through differentiation. This is the kind of identity that makes physicists cry tears of joy. Welcome to the club.
+</Step>
+
+<StepCheck
+  title="One you haven't seen."
+  prompt="f'(2) = "
+  answer={12}
+  tolerance={0.5}
+  hint="Same trick. Imagine sliding h to zero on f(x) = x³ at x = 2. Or guess the pattern from f'(x) = 2x for x²: maybe f'(x) for x³ is 3x²?"
+>
+You found $f'(x) = 2x$ for $x^2$ by limit-shrinking. The trick doesn't care which curve you point it at.
+
+For $f(x) = x^3$ — **what's the slope at $x = 2$?**
+
+Drag the secant in your head. Or use the widget if your head isn't up for it today.
+
+<SecantToTangent client:visible fn="cubic" startP={2} />
+</StepCheck>

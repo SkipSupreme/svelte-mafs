@@ -1,0 +1,113 @@
+---
+title: Momentum — Gradient Descent with a Memory
+module: m10-optimization
+summary: Teach gradient descent to remember its past moves. Persistent directions amplify; oscillating ones cancel. Ravines stop being slow.
+estimatedMinutes: 18
+order: 3
+prereqs:
+  - batches-and-noise
+conceptsCovered:
+  - exponential-moving-average
+  - momentum-update
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import LossLandscapeNavigator from '../../components/demos/LossLandscapeNavigator.svelte';
+
+<Step title="The problem we're trying to fix">
+Module 10 Lesson 1 showed you the ravine problem. In a loss landscape like $f(x, y) = \tfrac{1}{2} x^2 + 50 y^2$, vanilla SGD zig-zags across the $y$-axis (bouncing, because curvature is high there) while crawling along the $x$-axis (slow, because curvature is low). It spends almost all its energy on the axis that doesn't matter.
+
+The fix is so simple it's almost cheating. Give gradient descent a short-term memory. The gradient at step $t$ is a fresh observation; blend it with the running average of past gradients and use the blend as your step direction.
+</Step>
+
+<Step title="Exponential moving average — a 60-second refresher">
+An **exponential moving average** (EMA) of a scalar sequence $x_1, x_2, \ldots$ is
+
+$$
+\bar{y}_t \;=\; \beta \, \bar{y}_{t-1} \;+\; (1 - \beta)\, x_t.
+$$
+
+At each step, take $\beta$ (typically 0.9 or 0.99) fraction of the previous average and add the new observation weighted by $1 - \beta$. Older observations decay exponentially: the weight of $x_{t-k}$ in $\bar{y}_t$ is $(1-\beta)\beta^k$.
+
+The **effective window** — how far back the average "remembers" — is roughly $1/(1-\beta)$. $\beta = 0.9$ remembers about the last 10 observations; $\beta = 0.99$ about the last 100; $\beta = 0.999$ about the last 1000.
+</Step>
+
+<StepCheck
+  title="EMA by hand"
+  prompt="effective window at β = 0.99 = "
+  answer={100}
+  tolerance={0}
+  hint="Effective window ≈ 1 / (1 − β) = 1 / 0.01 = 100."
+>
+For an EMA with $\beta = 0.99$, what is the approximate effective window?
+</StepCheck>
+
+<Step title="The momentum update">
+Now apply the EMA idea to gradients. Keep a **velocity** vector $\mathbf{v}$ that is an EMA of past gradients:
+
+$$
+\mathbf{v}_t \;=\; \beta\, \mathbf{v}_{t-1} \;+\; \nabla L(\mathbf{w}_t).
+$$
+
+*(Note: this form doesn't include the $(1-\beta)$ factor. It's the convention used in most ML libraries for momentum, and it means the effective step size becomes $\eta \cdot 1/(1-\beta)$ along persistent directions, amplifying them. Sue the conventions, they all work.)*
+
+Then update weights using the velocity instead of the raw gradient:
+
+$$
+\mathbf{w}_{t+1} \;=\; \mathbf{w}_t \;-\; \eta\, \mathbf{v}_t.
+$$
+
+What this does: along the ravine's **steep, oscillating** axis, the gradient flips sign every step. Successive $\mathbf{v}$ updates partially cancel, and the velocity along that axis stays small. Along the ravine's **shallow, persistent** axis, the gradient has the same sign every step. Successive updates *add*, and the velocity compounds.
+
+Result: momentum naturally **damps oscillations and accelerates consistent motion**. It is the exact right tool for ravines.
+</Step>
+
+<StepCheck
+  title="Momentum by hand"
+  prompt="v_3 = "
+  answer={2.71}
+  tolerance={0.02}
+  hint="v₀ = 0. v₁ = 0.9·0 + 1 = 1. v₂ = 0.9·1 + 1 = 1.9. v₃ = 0.9·1.9 + 1 = 2.71."
+>
+With $\beta = 0.9$, $\mathbf{v}_0 = 0$, and gradient history $g_1 = g_2 = g_3 = 1$ along one axis, compute $\mathbf{v}_3$ using $\mathbf{v}_t = \beta \mathbf{v}_{t-1} + g_t$.
+</StepCheck>
+
+<Step title="Race it yourself">
+Pull up the navigator. Pick the **narrow ravine**. Drag the start point off-axis — somewhere like $(1.8, 0.5)$. Set $\eta = 0.02$. Run SGD. Watch it zig-zag.
+
+Now switch to **SGD + momentum** with $\beta = 0.9$. Hit Reset, then Run. Watch it glide.
+
+<LossLandscapeNavigator client:visible />
+
+You'll see: the momentum trajectory overshoots a bit at first (it accumulates too much velocity in the wrong direction), then settles into a fast, smooth descent. That's the behavior you want.
+
+Try $\beta = 0.5$ (short memory, mild damping) vs $\beta = 0.95$ (long memory, aggressive acceleration) and feel the difference. There's no single right $\beta$; you tune it per problem.
+</Step>
+
+<Step title="What β actually controls">
+Pedagogical warning: **$\beta = 0.9$ does NOT mean "90% of the update is the previous update."** It means "90% of the velocity is the previous velocity, plus the new gradient." The recursion is on velocity, not on position.
+
+One consequence: along a direction where the gradient is constant, the velocity approaches $g / (1 - \beta)$ in the limit. So the effective step along that direction is $\eta \cdot g / (1 - \beta)$, which for $\beta = 0.9$ is $10 \eta g$ — ten times the vanilla SGD step. That's where the "acceleration" comes from.
+
+Along a direction where the gradient flips sign every step, the velocity is dominated by cancellation. It stays small. That's where the "damping" comes from.
+</Step>
+
+<Step title="The formal convergence story">
+For a quadratic loss with Hessian eigenvalues in $[\lambda_\min, \lambda_\max]$:
+
+- **Vanilla GD** converges for $\eta < 2 / \lambda_\max$. Effective rate along the slowest direction: $1 - \eta \lambda_\min$. For condition number $\kappa = \lambda_\max / \lambda_\min = 100$, you crawl.
+- **Momentum** converges for $\eta < (2 + 2\beta) / \lambda_\max$. It raises the ceiling on $\eta$ by a factor of $\approx 20$ for $\beta = 0.9$. *And* it changes the effective rate: the slowest direction's contraction improves from $1 - \eta \lambda_\min$ to roughly $1 - \sqrt{\eta \lambda_\min}$. That square root is the theorem — momentum gives you asymptotically better conditioning.
+
+You don't need the proof. You need the picture: momentum turns the ravine from "nearly uncrossable" into "merely narrow."
+
+Distill's *Why Momentum Really Works* by Gabriel Goh is the canonical visual write-up. Read it when you want more.
+</Step>
+
+<Step title="Limitations of plain momentum">
+Momentum fixes the zig-zag along curvature-axis pairs. But it uses *one* learning rate for all parameters.
+
+In a neural network, different parameters live at different gradient scales. The weights of an embedding table that sees the word "the" get nudged by large gradients every step; the weights of an embedding that sees a rare word get tiny gradients rarely. A single $\eta$ forces you to choose: big enough for the rare gradients (diverges on "the"), or small enough for "the" (crawls on the rare word).
+
+The fix is **per-parameter adaptive step sizes**. That's what RMSProp does. Then combine momentum and RMSProp and you have Adam. Next lesson.
+</Step>

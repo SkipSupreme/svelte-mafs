@@ -1,0 +1,42 @@
+---
+interface Props {
+  title?: string;
+  answer: number;
+  tolerance?: number;
+  /** Short label or units for the input (e.g. "slope", "= ?") */
+  prompt?: string;
+  /** Optional revealed after a wrong answer */
+  hint?: string;
+}
+const { title, answer, tolerance = 0.01, prompt = 'answer', hint } = Astro.props;
+---
+
+<section
+  class="step step-check"
+  data-step
+  data-check
+  data-answer={answer}
+  data-tolerance={tolerance}
+>
+  {title && <h2 class="step-title">{title}</h2>}
+  <div class="step-body">
+    <slot />
+  </div>
+  <form class="check-form" data-check-form>
+    <label class="check-label">
+      <span class="check-prompt">{prompt}</span>
+      <input
+        type="text"
+        inputmode="decimal"
+        autocomplete="off"
+        spellcheck="false"
+        class="check-input"
+        data-check-input
+        aria-describedby={hint ? 'check-hint' : undefined}
+      />
+    </label>
+    <button type="submit" class="continue-btn" data-check-submit>Check</button>
+    <p class="check-feedback" data-check-feedback aria-live="polite"></p>
+    {hint && <p class="check-hint" id="check-hint" data-check-hint hidden>{hint}</p>}
+  </form>
+</section>

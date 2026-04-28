@@ -1,0 +1,51 @@
+---
+interface Props {
+  body: string;
+  moduleTitle: string;
+}
+const { body, moduleTitle } = Astro.props;
+---
+
+<aside class="endgame" aria-label={`Where ${moduleTitle} shows up in the transformer`}>
+  <p class="kicker">
+    <span class="spark" aria-hidden="true">⚡</span>
+    Where this shows up in the transformer
+  </p>
+  <p class="body">{body}</p>
+</aside>
+
+<style>
+  .endgame {
+    margin: 2.5rem 0 0;
+    padding: 1.25rem 1.5rem;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--ink-sun) 12%, transparent);
+    border-left: 4px solid var(--ink-sun);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+  }
+  .kicker {
+    margin: 0 0 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: color-mix(in srgb, var(--ink-sun) 80%, var(--site-fg));
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .spark { font-size: 0.95rem; }
+  .body {
+    margin: 0;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 1.15rem;
+    line-height: 1.4;
+    color: var(--site-fg);
+  }
+
+  :root[data-theme="dark"] .endgame {
+    background: color-mix(in srgb, var(--ink-sun) 8%, transparent);
+  }
+</style>

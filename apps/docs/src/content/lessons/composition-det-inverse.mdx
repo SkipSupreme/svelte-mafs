@@ -1,0 +1,143 @@
+---
+title: Composition, Determinants, and Inverses
+module: m7-linear-algebra
+summary: Multiplying matrices = composing transformations. The determinant is the area factor. The inverse is the transformation that undoes — and it exists exactly when no space has been crushed.
+estimatedMinutes: 22
+order: 4
+prereqs:
+  - matrix-as-transformation
+conceptsCovered:
+  - matmul-as-composition
+  - matmul-noncommutative
+  - determinant-2d
+  - determinant-zero
+  - inverse-matrix
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import MatrixDraggable from '../../components/demos/MatrixDraggable.svelte';
+
+<Step title="Multiplication as composition">
+If $A$ is a transformation and $B$ is another transformation, then $AB$ is the transformation "first do $B$, then do $A$." Read right-to-left, like function composition $f(g(x))$.
+
+$$
+(AB)\mathbf{x} \;=\; A(B\mathbf{x}).
+$$
+
+The right-to-left order matters — it's the same convention as function composition from Module 5. It trips people up at first, because you write $AB$ but you apply $B$ first. Own it.
+</Step>
+
+<Step title="The columns of AB">
+Given the column picture, there's a clean way to compute $AB$. Each column of $AB$ is $A$ applied to the corresponding column of $B$.
+
+$$
+AB \;=\; \bigl[\; A\,\mathbf{b}_1 \;\big|\; A\,\mathbf{b}_2 \;\big|\; \cdots \;\bigr].
+$$
+
+If $B$ sends $\hat{\imath}$ to $\mathbf{b}_1$, then $AB$ sends $\hat{\imath}$ to $A\mathbf{b}_1$ — because "$A$ after $B$" first maps $\hat{\imath}$ to $\mathbf{b}_1$ via $B$, then maps $\mathbf{b}_1$ to $A\mathbf{b}_1$ via $A$. Column-picture all the way down.
+
+The row-times-column formula $(AB)_{ij} = \sum_k A_{ik} B_{kj}$ gives the same answer. Same pattern as last lesson: column picture for meaning, rows for computation.
+</Step>
+
+<StepCheck
+  title="Multiply two matrices"
+  prompt="entry at row 1, col 2 = "
+  answer={-1}
+  tolerance={0}
+  hint="Column 2 of the product is A·[−1, 0]. For A = [[1,1],[0,1]], A·[−1, 0] = [−1, 0]. First entry is −1."
+>
+Compute $\begin{bmatrix}1 & 1 \\ 0 & 1\end{bmatrix} \cdot \begin{bmatrix}0 & -1 \\ 1 & 0\end{bmatrix}$.
+
+Give the entry at row 1, column 2 of the product.
+</StepCheck>
+
+<Step title="AB ≠ BA">
+Matrix multiplication is **not commutative**. In general $AB \ne BA$, and for most pairs of transformations the results are genuinely different.
+
+Try "rotate 90° then shear" versus "shear then rotate 90°" — the two sequences produce visibly different final shapes. Composition cares about order because the *order in which you apply transformations* matters.
+
+On the widget below, stack two transformations by eye. $R = $ 90° rotation, $S = $ shear. Do $R$ first then $S$; undo, do $S$ first then $R$. Not the same.
+
+<MatrixDraggable initialA={1} initialB={1} initialC={1} initialD={0} client:visible />
+
+This is the matrix $S \cdot R = \begin{bmatrix}1 & 1 \\ 0 & 1\end{bmatrix} \begin{bmatrix}0 & -1 \\ 1 & 0\end{bmatrix} = \begin{bmatrix}1 & -1 \\ 1 & 0\end{bmatrix}$ — the one from the StepCheck above.
+</Step>
+
+<Step title="Determinant — the signed area factor">
+Take any 2×2 matrix $A$. Apply it to the unit square. The result is a parallelogram. Its **signed area** is called the determinant of $A$:
+
+$$
+\det A \;=\; ad - bc \;=\; \text{signed area of the parallelogram spanned by the columns}.
+$$
+
+"Signed" means: positive if the transformation preserves orientation, negative if it flips (a reflection, for example). A pure rotation has determinant $+1$. A reflection across an axis has determinant $-1$. A matrix that stretches the plane by a factor of 3 in both directions has determinant $9$.
+
+Drag the columns on the widget above and watch the `det` readout. When the orientation flips, the color of the unit-square shape flips too. That's the sign doing its work.
+</Step>
+
+<StepCheck
+  title="Compute a determinant"
+  prompt="det = "
+  answer={5}
+  tolerance={0}
+  hint="ad − bc = 3·2 − 1·1 = 6 − 1 = 5."
+>
+Compute $\det\begin{bmatrix}3 & 1 \\ 1 & 2\end{bmatrix}$.
+</StepCheck>
+
+<Step title="Det = 0 means collapse">
+When $\det A = 0$, the parallelogram flattens. The two columns lie on the same line; their span is 1-dimensional; the transformation has squashed 2D space into a line (or, if both columns are zero, into a single point).
+
+Four equivalent statements — memorize the equivalence, not four separate facts:
+
+- $\det A = 0$.
+- The columns of $A$ are linearly dependent.
+- The transformation's output span is lower-dimensional than its input.
+- $A$ has no inverse.
+
+Drag your widget columns onto the same line. All four things happen at once. The determinant hits zero, the rank badge reads 1, the unit-square shape degenerates to a segment, and — as the next step will show — no inverse exists because information has been destroyed.
+</Step>
+
+<Step title="Inverse as undoing">
+The **inverse** of $A$, written $A^{-1}$, is the transformation that undoes $A$. Apply $A$ then $A^{-1}$ — you're back where you started.
+
+$$
+A \cdot A^{-1} \;=\; A^{-1} \cdot A \;=\; I.
+$$
+
+If $A$ rotates by 30°, $A^{-1}$ rotates by $-30°$. If $A$ scales by 2, $A^{-1}$ scales by $1/2$. Every invertible transformation has a unique "undo" operation.
+
+But: if $A$ squashes space — say, it projects every point onto the $x$-axis — there is no undo. Points that used to live at different $y$-values got sent to the same place. You can't recover information that was thrown away. That's why **$A^{-1}$ exists if and only if $\det A \ne 0$**.
+
+The formula for 2×2 inverses (drop it in if you need to compute one):
+
+$$
+\begin{bmatrix}a & b \\ c & d\end{bmatrix}^{-1} \;=\; \frac{1}{ad - bc}\begin{bmatrix}d & -b \\ -c & a\end{bmatrix}.
+$$
+
+Note the $ad - bc$ in the denominator — it's the determinant again. When it's zero, the formula blows up. That's the algebra telling you what the geometry already said.
+</Step>
+
+<StepCheck
+  title="Inverse of a diagonal"
+  prompt="entry at row 1, col 1 = "
+  answer={0.5}
+  tolerance={0.01}
+  hint="For a diagonal matrix [[2, 0], [0, 3]], the inverse is [[1/2, 0], [0, 1/3]]. Entry (1,1) is 1/2."
+>
+Given $A = \begin{bmatrix}2 & 0 \\ 0 & 3\end{bmatrix}$, find $A^{-1}$.
+
+Give the entry at row 1, column 1 of the inverse. (Decimal form.)
+</StepCheck>
+
+<Step title="The whole chain, in one picture">
+Here's the collapse of the four ideas into one widget state. On `MatrixDraggable`, drag the two columns onto the same line. Simultaneously:
+
+- The unit-square polygon flattens to a line segment.
+- The `det` readout hits $0$.
+- The `rank` badge flips from 2 to 1.
+- An inverse can no longer exist.
+
+Four words for one situation. That's linear algebra being economical.
+</Step>

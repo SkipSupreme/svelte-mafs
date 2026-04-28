@@ -1,0 +1,130 @@
+---
+title: The Gradient — every partial, bundled into one arrow
+module: m6-multivariable
+summary: Pack all your partials into a tuple. That tuple is a direction — specifically, the direction things get worse fastest. Or better fastest, depending on the sign.
+estimatedMinutes: 16
+order: 2
+prereqs:
+  - partial-derivatives
+conceptsCovered:
+  - gradient-vector
+  - directional-derivative
+  - steepest-ascent
+  - gradient-perp-level
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import GradientCompass from '../../components/demos/GradientCompass.svelte';
+
+<Step title="Find the direction the function climbs fastest.">
+The contour plot below shows $f(x, y) = x^2 + 2 y^2$. Drag $\mathbf{p}$ anywhere. Then rotate the coral arrow $\mathbf{u}$ — your "direction of travel."
+
+The right panel plots $D_\mathbf{u} f$ — the *rate of change of $f$ when you walk in direction $\mathbf{u}$* — as a function of $\theta$. As you rotate, that rate traces a curve.
+
+<GradientCompass client:visible />
+
+Three things to find:
+
+1. Rotate $\mathbf{u}$ until the rate is **at its peak**. There's exactly one direction per point that's "steepest uphill."
+2. Rotate $\mathbf{u}$ to the **opposite direction**. The rate is the negative of the peak — that's "steepest downhill."
+3. Rotate to **perpendicular** of either. The rate is zero — you're walking along a contour, the function isn't changing.
+
+Press **snap to ∇f** on the widget to align $\mathbf{u}$ with the special "peak" direction. Note its name. We're going to call that direction the gradient and spend the rest of the lesson explaining it.
+</Step>
+
+<Step title="The definition">
+For $f: \mathbb{R}^n \to \mathbb{R}$, the **gradient** is the tuple of all partial derivatives:
+
+$$
+\nabla f(\mathbf{x}) \;=\; \left(\, \frac{\partial f}{\partial x_1},\; \frac{\partial f}{\partial x_2},\; \dots,\; \frac{\partial f}{\partial x_n} \,\right).
+$$
+
+The symbol $\nabla$ is called "nabla" or just "del." It means "compute every partial and stack them into a tuple."
+
+For $f(x, y) = x^2 + y^2$: $\dfrac{\partial f}{\partial x} = 2x$, $\dfrac{\partial f}{\partial y} = 2y$, so $\nabla f = (2x, 2y)$.
+
+(For our widget's function $f = x^2 + 2y^2$, the gradient is $(2x, 4y)$. That's the violet arrow you saw in the input plane.)
+</Step>
+
+<Step title="The gradient lives where the inputs live">
+This matters and the instinct is usually wrong, so we labour it for one sentence.
+
+$f$ has 2 inputs and 1 output. Its **graph** is a surface in 3D. Its **gradient** is a vector in 2D — it has the same number of components as the input. The gradient is NOT an arrow on the tilted surface. It lives *in the input plane*, next to the contour lines.
+
+In higher dimensions this never looks right: a neural-network loss has millions of inputs and one output. The gradient is a vector in millions of dimensions. There's no surface to draw. Contour-space reasoning is the only thing that scales.
+</Step>
+
+<Step title="Directional derivative — what the cosine curve was">
+For a unit vector $\mathbf{u}$ (meaning $|\mathbf{u}| = 1$), the **rate of change of $f$ in the direction $\mathbf{u}$**, starting at point $\mathbf{p}$, is
+
+$$
+D_{\mathbf{u}} f(\mathbf{p}) \;=\; \nabla f(\mathbf{p}) \cdot \mathbf{u}.
+$$
+
+Dot product the gradient with your unit direction. The number you get is the slope of $f$ along that direction at that point.
+
+The cosine you watched on the right side of the widget *is* this dot product, plotted as $\theta$ rotates. From the geometric form $\nabla f \cdot \mathbf{u} = |\nabla f| \cos\theta$:
+
+- **Same direction** as $\nabla f$ ($\theta = 0$): rate is $|\nabla f|$, the maximum.
+- **Perpendicular** to $\nabla f$: rate is $0$, walking along the contour.
+- **Opposite** to $\nabla f$: rate is $-|\nabla f|$, the minimum.
+
+You never have to redo the limit definition. One gradient, evaluated once, answers the rate in *every* direction.
+</Step>
+
+<StepCheck
+  title="Direct hit"
+  prompt="D_u T at (3, 2) = "
+  answer={-10}
+  tolerance={0.05}
+  hint="T(x, y) = 100 − x² − 2y². ∇T = (−2x, −4y). At (3, 2): ∇T = (−6, −8). Dot with (3/5, 4/5): (−6)(3/5) + (−8)(4/5)."
+>
+Room temperature is $T(x, y) = 100 - x^2 - 2 y^2$. You're at $(3, 2)$ and walk in the direction $\mathbf{u} = (3/5, 4/5)$ (already a unit vector — check: $9/25 + 16/25 = 1$).
+
+How fast does the temperature change per unit step?
+</StepCheck>
+
+<Step title="Steepest ascent — the slogan">
+Two facts, bolted together, form one of the most important statements in calculus:
+
+> The gradient $\nabla f$ at a point tells you **which direction** increases the function fastest, and **how fast** it increases in that direction.
+
+- Direction: $\nabla f / |\nabla f|$ (normalize to get a unit vector).
+- Rate in that direction: $|\nabla f|$.
+- Direction of steepest *descent*: $-\nabla f / |\nabla f|$.
+
+Machine learning is powered by one sentence: *to reduce a loss, step a small amount in the direction $-\nabla L$.* That's gradient descent. You now know why it works and why it's the right direction.
+</Step>
+
+<StepCheck
+  title="How fast does it climb?"
+  prompt="max rate at (1, 2) = "
+  answer={4.472}
+  tolerance={0.02}
+  hint="∇f = (2x, 2y). At (1, 2): (2, 4). Max rate = |∇f| = √(4 + 16) = √20."
+>
+For $f(x, y) = x^2 + y^2$, what is the maximum rate of increase at $(1, 2)$?
+
+(Decimal to 3 places.)
+</StepCheck>
+
+<Step title="Gradient ⊥ level curve">
+One more geometric fact, the one that makes contours useful as a visual. **The gradient at $\mathbf{p}$ is perpendicular to the level curve through $\mathbf{p}$.**
+
+One-line proof. Let $\mathbf{r}(t)$ trace a curve that stays on a level set — i.e., $f(\mathbf{r}(t)) = c$ for all $t$. Differentiate both sides with respect to $t$. The right side is a constant, so $d/dt = 0$. The left side, by a chain rule we'll formalize next module, is $\nabla f(\mathbf{r}(t)) \cdot \mathbf{r}'(t)$. So $\nabla f \cdot \mathbf{r}'(t) = 0$ — the gradient is perpendicular to the tangent direction of any curve sitting on a level set.
+
+Visually: in a topographic map, the gradient points straight uphill, crossing contour lines at right angles. You'll never see a gradient arrow go *along* a contour. It always goes *across* one, at 90°.
+</Step>
+
+<StepCheck
+  title="Check the perpendicularity"
+  prompt="∇f · t at (3, 4) = "
+  answer={0}
+  tolerance={0.01}
+  hint="f = x² + y², so ∇f = (2x, 2y) = (6, 8) at (3, 4). Dot with t = (−4, 3): (6)(−4) + (8)(3) = −24 + 24 = 0."
+>
+For $f(x, y) = x^2 + y^2$, the level curve through $(3, 4)$ is the circle $x^2 + y^2 = 25$. A tangent direction to that circle at $(3, 4)$ is $\mathbf{t} = (-4, 3)$.
+
+Compute $\nabla f(3, 4) \cdot \mathbf{t}$.
+</StepCheck>

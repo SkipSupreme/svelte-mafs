@@ -1,0 +1,140 @@
+---
+title: The tricks that make depth possible
+module: m13-training-dynamics
+summary: Residual connections, learning-rate warmup, gradient clipping. The three things that turn a 12-layer transformer from "diverges in 200 steps" into "converges cleanly."
+estimatedMinutes: 16
+order: 5
+prereqs:
+  - normalize-what-exactly
+conceptsCovered:
+  - residual-connection
+  - gradient-flow-through-residuals
+  - pre-ln-vs-post-ln
+  - residual-init-scaling
+  - lr-warmup
+  - gradient-clipping
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+
+<Step title="The degradation problem">
+Around 2014–2015, papers kept reporting the same uncomfortable result. You'd train a 20-layer network on ImageNet. It worked. You'd add more layers — 30, 50, 56 — and the loss got *worse*. Not just worse on the test set: worse on the *training* set. Adding capacity to the model was making it dumber.
+
+Predict before you read further: what should happen if you take a working 20-layer network and stack 36 more identity-like layers on top? Surely the network can learn to make the extra layers do nothing useful and recover the 20-layer performance.
+
+It can't. The optimizer can't *find* the identity mapping in those extra layers. By the time gradient information has flowed back through 36 more layers of saturating nonlinearities, it's noise. The deeper network is harder to optimize than the shallower one, even though the shallower one is technically a special case of it.
+
+This is the *degradation problem*, and the fix that solves it is one of the simplest ideas in deep learning.
+</Step>
+
+<Step title="Residuals: y = x + F(x)">
+Instead of asking each block to compute the output directly, ask it to compute the *correction* you should add to the input:
+
+$$
+y \;=\; x \;+\; F(x;\, \theta).
+$$
+
+The block has an explicit identity path (the bare $x$) plus a correction path ($F(x)$). If the correction is useless, $F$ can learn to output zero — easy — and the block reduces to the identity. If the correction is useful, $F$ learns it. Either way, the optimizer doesn't have to reconstruct an identity from scratch through layers of nonlinearity.
+
+This is the structural change that lets you go from 30 layers to 150 layers without the degradation problem. Everything modern, including the transformer, is built on it.
+</Step>
+
+<Step title="The gradient identity (one line; the whole point)">
+Backprop through a residual block:
+
+$$
+\frac{\partial L}{\partial x} \;=\; \frac{\partial L}{\partial y}\,\bigl(I \;+\; \tfrac{\partial F}{\partial x}\bigr).
+$$
+
+The identity matrix in there is the entire reason this works.
+
+At initialization, the residual block's $F$ is small (especially with the GPT-2 init scaling from the previous lesson — its output projection is initialized near zero). So $\partial F/\partial x \approx 0$, and
+
+$$
+\frac{\partial L}{\partial x} \;\approx\; \frac{\partial L}{\partial y}.
+$$
+
+Gradient passes through *unattenuated*. It doesn't matter how saturated the nonlinearity inside $F$ is, doesn't matter how deep the stack is. The identity term guarantees the gradient never has to multiply through $F$ to reach earlier layers. Vanishing gradients can no longer kill you.
+
+Residuals are not "letting the network ignore layers." They are *gradient highways*. The Jacobian on the shortcut is the identity, and backprop cannot break that.
+</Step>
+
+<Step title="Pre-LN beats post-LN, full stop">
+There are two places you can put the LayerNorm. The original Transformer paper put it *after* the residual addition:
+
+$$
+\text{post-LN:}\qquad y \;=\; \text{LN}(x \;+\; F(x)).
+$$
+
+Modern transformers (GPT-2, GPT-3, LLaMA, every paper since 2019) put it *inside* the residual branch, before $F$:
+
+$$
+\text{pre-LN:}\qquad y \;=\; x \;+\; F(\text{LN}(x)).
+$$
+
+Pre-LN is unambiguously better. The original post-LN architecture required learning-rate warmup just to *not diverge* in the first 200 steps, and even then it became progressively harder to train as depth increased. Pre-LN trains stably without warmup at much greater depth. The reason: post-LN normalizes the residual stream itself, breaking the variance-bound argument; pre-LN keeps the residual stream pristine and only normalizes what flows into the sub-block.
+
+We will use pre-LN for the transformer in this course. Unconditionally.
+</Step>
+
+<StepCheck
+  title="Residual init scaling"
+  prompt="σ_W = "
+  answer={0.00408}
+  tolerance={0.0001}
+  hint="σ = 0.02 / √(2·N_layers) = 0.02 / √(24) ≈ 0.00408."
+>
+A 12-layer transformer has two residual additions per block (attention + MLP). Following the GPT-2 prescription with base std 0.02, **what std should the output projections of each residual sub-block be initialized with?** Answer to four decimal places is fine.
+</StepCheck>
+
+<Step title="Adam's early instability, and why warmup is principled">
+Adam keeps a running estimate of the second moment of each parameter's gradient — call it $\hat v_t$ — and divides each step by $\sqrt{\hat v_t}$. This adaptive rescaling is most of why Adam works.
+
+For small $t$, that estimate is built from very few gradient samples. Its variance is high. The per-parameter step sizes are unreliable. If a noisy gradient at step 5 happens to be much larger than typical, Adam interprets that as "this parameter has high gradient variance" and dampens future steps for it — even though the original signal was just noise.
+
+The fix is to take small steps until the statistics stabilize. *Linear warmup* ramps the learning rate from zero to its peak over the first $t_{\text{warmup}}$ steps:
+
+$$
+\eta_t \;=\; \eta_{\max} \cdot \min\!\left(\frac{t}{t_{\text{warmup}}},\; 1\right).
+$$
+
+After that the LR usually decays — cosine, linear, or 1/√t schedules are all reasonable. Warmup is not folklore; it is what you do when your second-moment estimator is still unreliable.
+</Step>
+
+<StepCheck
+  title="Where on the warmup ramp"
+  prompt="η = "
+  answer={0.00015}
+  tolerance={0.000005}
+  hint="At step 50 of a 200-step warmup, you're 25% of the way up. So η = 0.25 × 6e-4 = 1.5e-4."
+>
+We use 200 steps of linear warmup with peak learning rate $\eta_{\max} = 6 \times 10^{-4}$. **What is the learning rate at step 50?** Express as a decimal — for example, 0.00015 for $1.5 \times 10^{-4}$.
+</StepCheck>
+
+<Step title="Gradient clipping: the seatbelt, not the brakes">
+Sometimes a gradient comes back enormous — orders of magnitude bigger than usual. A single such step can push your weights so far from a good region that loss diverges and you cannot recover. The pragmatic guardrail is *gradient clipping*: if the global gradient norm exceeds some threshold $\tau$, rescale the gradient down to that threshold.
+
+$$
+g \;\leftarrow\; g \cdot \min\!\left(1,\; \frac{\tau}{\lVert g \rVert_2}\right).
+$$
+
+A typical value is $\tau = 1.0$ for transformers. This is a *symptom-fix*, not a cure. Exploding gradients are usually caused by something more fundamental: bad init, a missing normalization layer, a recurrent dynamic with eigenvalues greater than 1. Clipping is the seatbelt. The seatbelt does not fix bad driving; it just keeps a single bad moment from killing you.
+
+Use it. But do not assume that adding it has solved your problem if you needed it.
+</Step>
+
+<Step title="Putting it all together">
+The transformer block we will train later in this course looks like this, conceptually:
+
+```
+x = x + Attention(LayerNorm(x))
+x = x + MLP(LayerNorm(x))
+```
+
+Pre-LN inside each branch. Identity shortcut on the outside. Output projections initialized with std = 0.02/√(2·N_layers) so the residual stream stays bounded with depth. AdamW with weight decay around 0.1, linear warmup over the first couple hundred steps, cosine decay after that. Gradient clipping at norm 1.0.
+
+Every line of that comes from this module. None of it is optional polish. Without residuals the gradient dies in the deeper layers; without LayerNorm the activations drift and saturate; without the scaled init the residual stream's variance grows with depth; without warmup AdamW's first step is unreliable; without clipping a single bad batch can take you out.
+
+You now have the toolbox. The next module starts the descent into actual sequence modeling.
+</Step>

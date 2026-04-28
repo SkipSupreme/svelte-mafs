@@ -1,0 +1,149 @@
+---
+title: Per-parameter Steps — RMSProp, and then Adam
+module: m10-optimization
+summary: Build Adam in pieces. Start with momentum. Add a per-parameter adaptive step via an EMA of squared gradients. Add bias correction for the cold start. Now you have the optimizer that trains transformers.
+estimatedMinutes: 20
+order: 4
+prereqs:
+  - momentum
+conceptsCovered:
+  - rmsprop-update
+  - bias-correction
+  - adam-update
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import AdamInternalsInspector from '../../components/demos/AdamInternalsInspector.svelte';
+
+<Step title="Different parameters, different gradient scales">
+A neural network has millions of parameters. Not all of them want the same learning rate.
+
+Consider a word-embedding table. The row for "the" gets nudged every time "the" appears in a training example — hundreds of times per batch. Its gradient is big and frequent. The row for "gazpacho" gets nudged maybe once per epoch. Its gradient is small and rare.
+
+A single global $\eta$ forces a compromise. Big enough for "gazpacho" to move? Too big for "the" — training diverges. Small enough for "the" to be stable? "Gazpacho" never learns.
+
+You need a **per-parameter** step size that shrinks for parameters with big gradients and grows for parameters with small ones.
+</Step>
+
+<Step title="RMSProp — divide by the running RMS">
+The idea: for each parameter $i$, keep an EMA of the *squared* gradient component $g_i^2$. The square root of that EMA is a rough estimate of how big $|g_i|$ typically is. Divide the update by it.
+
+Let $s_t$ be a vector holding the EMA of squared gradients elementwise:
+
+$$
+s_t \;=\; \beta_2\, s_{t-1} \;+\; (1 - \beta_2)\, g_t^{\odot 2}
+$$
+
+where $g_t^{\odot 2}$ is elementwise squaring and $\beta_2 \approx 0.999$ is a second momentum coefficient (longer memory than the $\beta$ for velocity — squared-gradient statistics are noisy and benefit from more smoothing).
+
+Then the update is
+
+$$
+\mathbf{w}_{t+1} \;=\; \mathbf{w}_t \;-\; \eta \, \frac{g_t}{\sqrt{s_t} + \varepsilon}.
+$$
+
+The $\varepsilon$ ($\sim 10^{-8}$) avoids division by zero. The division is elementwise. Each parameter's step is automatically scaled by its own recent gradient magnitude.
+</Step>
+
+<StepCheck
+  title="RMSProp update"
+  prompt="s_2 = "
+  answer={0.4}
+  tolerance={0.05}
+  hint="s₁ = 0.9·0 + 0.1·4 = 0.4. s₂ = 0.9·0.4 + 0.1·0 = 0.36 (or 0.4 with a different convention)."
+>
+With $\beta_2 = 0.9$, $s_0 = 0$, and gradient sequence $g_1 = 2$, $g_2 = 0$, compute $s_2$.
+
+(Use the $(1 - \beta_2)$-weighted convention: $s_t = 0.9 s_{t-1} + 0.1 g_t^2$.)
+</StepCheck>
+
+<Step title="Now add momentum back — that's Adam, almost">
+Adam combines both: **momentum** on the gradient itself (smoothed direction) *and* **RMSProp** (adaptive per-parameter scale).
+
+$$
+m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t
+$$
+
+$$
+v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^{\odot 2}
+$$
+
+$m$ is the momentum (EMA of gradients). $v$ is the RMSProp (EMA of squared gradients). The tentative update:
+
+$$
+\mathbf{w}_{t+1} \;=\; \mathbf{w}_t \;-\; \eta \, \frac{m_t}{\sqrt{v_t} + \varepsilon}.
+$$
+
+This is *almost* Adam. There's a subtle problem at the start of training.
+</Step>
+
+<Step title="The cold-start problem, made visible.">
+$m_t$ and $v_t$ both start at zero. At step 1, $m_1 = (1 - \beta_1) g_1 = 0.1 g_1$ for $\beta_1 = 0.9$. That's ten times too small. The momentum estimate is **biased toward zero** for the first few steps — the EMA hasn't had time to accumulate.
+
+Same for $v$, which is worse: $\beta_2 = 0.999$, so $v$ is biased for thousands of steps.
+
+Below: scrub the step counter $t$. The first two bars are the **raw** $m_t$ and $v_t$ — they crawl up from zero. The third and fourth are the **bias-corrected** versions: 1 from step 1, exactly. The whole job of bias correction is to make those bars unit-scale immediately.
+
+<AdamInternalsInspector client:visible />
+
+Watch the raw $v_t$ in particular when $\beta_2 = 0.999$. It takes hundreds of steps just to look reasonable. Without correction, Adam's adaptive denominator would be wildly wrong for the entire start of training.
+</Step>
+
+<Step title="Bias correction — the fix">
+For an EMA with decay $\beta$ and zero init, the **bias-corrected** estimate is
+
+$$
+\hat{m}_t \;=\; \frac{m_t}{1 - \beta_1^t}, \qquad \hat{v}_t \;=\; \frac{v_t}{1 - \beta_2^t}.
+$$
+
+At step 1, $1 - \beta_1^1 = 0.1$, so $\hat{m}_1 = m_1 / 0.1 = g_1$. Perfect — the corrected estimate is the true observation.
+
+At step 100, $1 - 0.9^{100}$ is essentially 1. The correction becomes a no-op. As the EMA "warms up," the correction fades.
+
+$v$ with $\beta_2 = 0.999$ takes much longer to warm up — thousands of steps — so bias correction matters there for much longer.
+</Step>
+
+<StepCheck
+  title="Bias-corrected first step"
+  prompt="m̂_1 = "
+  answer={0.1}
+  tolerance={0.001}
+  hint="m_1 = 0.1·0.1 = 0.01. m̂_1 = 0.01 / 0.1 = 0.1 = g_1."
+>
+With $\beta_1 = 0.9$, $m_0 = 0$, and $g_1 = 0.1$, compute the bias-corrected $\hat{m}_1$.
+</StepCheck>
+
+<Step title="Adam — the whole thing">
+Bolt it all together. At each step $t$:
+
+1. Compute the gradient $g_t$.
+2. Update momentum: $m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t$.
+3. Update variance: $v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^{\odot 2}$.
+4. Bias-correct: $\hat{m}_t = m_t / (1 - \beta_1^t)$, $\hat{v}_t = v_t / (1 - \beta_2^t)$.
+5. Update weights: $\mathbf{w}_{t+1} = \mathbf{w}_t - \eta \, \hat{m}_t / (\sqrt{\hat{v}_t} + \varepsilon)$.
+
+Default hyperparameters: $\beta_1 = 0.9$, $\beta_2 = 0.999$, $\varepsilon = 10^{-8}$, $\eta = 10^{-3}$. These work out of the box on an astonishing range of problems. The reason: bias correction makes each coordinate's effective step $\approx \eta \cdot \mathrm{sign}(g_i)$ early in training, *regardless of gradient magnitude*. Adam has automatic unit-step behavior.
+</Step>
+
+<Step title="Adam isn't always best">
+You'll see "just use Adam" as default advice. That's mostly right. But it's worth knowing when it's wrong.
+
+On certain convex tasks and some computer-vision architectures, plain SGD with momentum consistently generalizes better than Adam, even when Adam's training loss is lower. Wilson et al. 2017 gave a famous linearly-separable classification example where Adam converges to a solution with ~50% test error while SGD achieves zero.
+
+The hand-wave: Adam's adaptive per-parameter scaling changes the geometry and can converge to sharper minima that generalize worse. For transformers — the focus of this course — Adam (or its sibling AdamW) is essentially always the right choice. For vision ResNets, SGD+momentum often wins.
+
+Default to Adam. Know that "default" isn't "always."
+</Step>
+
+<Step title="One more twist: AdamW">
+Adam with weight decay — the $-\eta \lambda \mathbf{w}$ regularizer that shrinks weights toward zero — has a subtle bug. If you add the decay to the *gradient* (as $g \leftarrow g + \lambda w$), then Adam's adaptive denominator $\sqrt{\hat{v}}$ rescales it, and the effective regularization becomes per-parameter — large-gradient parameters get less regularization, small-gradient parameters get more. Almost always the opposite of what you want.
+
+**AdamW** (Loshchilov & Hutter, 2017) fixes this by applying the decay *outside* the adaptive step:
+
+$$
+\mathbf{w}_{t+1} \;=\; \mathbf{w}_t \;-\; \eta\!\left( \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \varepsilon} \;+\; \lambda \mathbf{w}_t \right).
+$$
+
+This is the optimizer every transformer in production uses. nanoGPT uses it. GPT-3 used it. Llama uses it. The `W` earns its letter.
+</Step>

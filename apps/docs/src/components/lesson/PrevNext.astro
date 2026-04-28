@@ -1,0 +1,93 @@
+---
+interface Sibling {
+  title: string;
+  href: string;
+}
+interface Props {
+  prev: Sibling | null;
+  next: Sibling | null;
+  moduleHref: string;
+  moduleTitle: string;
+}
+const { prev, next, moduleHref, moduleTitle } = Astro.props;
+---
+
+<nav class="prev-next" aria-label="Lesson navigation">
+  <div class="rail">
+    {prev ? (
+      <a href={prev.href} class="nav-card prev-card">
+        <span class="direction">← Previous</span>
+        <span class="title">{prev.title}</span>
+      </a>
+    ) : (
+      <div class="nav-card spacer" aria-hidden="true"></div>
+    )}
+    <a href={moduleHref} class="nav-card module-link">
+      <span class="direction">Module</span>
+      <span class="title">{moduleTitle}</span>
+    </a>
+    {next ? (
+      <a href={next.href} class="nav-card next-card">
+        <span class="direction">Next →</span>
+        <span class="title">{next.title}</span>
+      </a>
+    ) : (
+      <div class="nav-card spacer" aria-hidden="true"></div>
+    )}
+  </div>
+</nav>
+
+<style>
+  .prev-next {
+    margin: 2.5rem 0 0;
+    padding-top: 1.5rem;
+    border-top: 1px solid color-mix(in srgb, var(--site-fg) 10%, transparent);
+  }
+  .rail {
+    display: grid;
+    grid-template-columns: 1fr minmax(0, auto) 1fr;
+    gap: 0.75rem;
+  }
+  .nav-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    background: var(--demo-card);
+    border: 1px solid var(--demo-card-border);
+    color: inherit;
+    text-decoration: none;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+    min-height: 4rem;
+  }
+  .nav-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--ink-red) 55%, transparent);
+  }
+  .direction {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--site-fg-muted);
+  }
+  .title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.98rem;
+    line-height: 1.25;
+    color: var(--site-fg);
+  }
+  .next-card { text-align: right; }
+  .module-link .direction { text-align: center; }
+  .module-link .title { text-align: center; color: var(--ink-red); }
+  .spacer { background: transparent; border-color: transparent; pointer-events: none; }
+
+  @media (max-width: 640px) {
+    .rail { grid-template-columns: 1fr; }
+    .next-card { text-align: left; }
+    .module-link .direction,
+    .module-link .title { text-align: left; }
+  }
+</style>

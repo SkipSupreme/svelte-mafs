@@ -1,0 +1,159 @@
+---
+title: Normalize what, exactly?
+module: m13-training-dynamics
+summary: BatchNorm and LayerNorm are the same operation parameterized by which axes you reduce over. Pick the axis whose statistics are stable.
+estimatedMinutes: 15
+order: 4
+prereqs:
+  - why-your-gradients-explode
+conceptsCovered:
+  - batch-norm
+  - bn-train-vs-eval
+  - bn-as-landscape-smoother
+  - layer-norm
+  - bn-vs-ln-when
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+
+<Step title="Good init isn't enough">
+You picked your weights with He scaling. Layer-1 activations have unit variance, layer-10 activations have unit variance. You start training. After a thousand steps, weights have moved. The careful variance-preservation argument from the previous lesson assumed *initial* weights. The trained ones are different.
+
+In a deep network, even with perfect initialization, the activation distributions at each layer drift around during training. Some layers get systematically larger, some smaller, some skew. The next layer was happy with the *old* distribution; suddenly the inputs look different and it has to relearn how to use them. Training slows down or breaks.
+
+The fix the field landed on, around 2015: at every layer, normalize the activations *during* training. Force them back to a known scale. This is what BatchNorm and LayerNorm do.
+</Step>
+
+<Step title="BatchNorm: the formula">
+BatchNorm normalizes across the *batch* dimension, one feature at a time. For a minibatch of $m$ examples, with $x_i$ the value of one feature on the $i$-th example:
+
+$$
+\mu_B \;=\; \frac{1}{m}\sum_{i=1}^m x_i, \qquad
+\sigma_B^2 \;=\; \frac{1}{m}\sum_{i=1}^m (x_i - \mu_B)^2.
+$$
+
+Then normalize each example's value of that feature:
+
+$$
+\hat x_i \;=\; \frac{x_i - \mu_B}{\sqrt{\sigma_B^2 + \epsilon}}.
+$$
+
+The $\epsilon$ (typically $10^{-5}$) is a tiny constant that prevents divide-by-zero when the batch variance is zero. Now $\hat x$ has mean 0 and variance 1 across the batch, by construction.
+
+Finally — and this matters — BN learns a per-feature affine transform on top:
+
+$$
+y_i \;=\; \gamma\, \hat x_i \;+\; \beta.
+$$
+
+$\gamma$ and $\beta$ are trainable parameters. Why? So the network can *undo* the normalization if it turns out the original distribution was useful. With $\gamma = \sqrt{\sigma_B^2 + \epsilon}$ and $\beta = \mu_B$, you've recovered the input exactly. BN never destroys information; it just gives the network the option to choose a different scale.
+</Step>
+
+<Step title="Train mode and inference mode are not the same">
+The above formula uses *batch statistics*. During training that's fine — we have a batch.
+
+At inference time you might be feeding in a single example. There is no batch. So BN keeps a running exponential moving average of the per-feature mean and variance during training:
+
+$$
+\mu_{\text{run}} \;\leftarrow\; (1 - \alpha)\,\mu_{\text{run}} \;+\; \alpha\,\mu_B
+$$
+
+$$
+\sigma^2_{\text{run}} \;\leftarrow\; (1 - \alpha)\,\sigma^2_{\text{run}} \;+\; \alpha\,\sigma_B^2.
+$$
+
+At inference, BN swaps in those stored stats and normalizes deterministically:
+
+$$
+\hat x \;=\; \frac{x - \mu_{\text{run}}}{\sqrt{\sigma^2_{\text{run}} + \epsilon}}.
+$$
+
+The framework controls which mode BN is in via a flag (PyTorch's `model.eval()` flips this; `model.train()` flips it back). If you forget to switch modes at inference, BN computes batch statistics from whatever you happen to be feeding it. With a batch of one, this is catastrophic.
+</Step>
+
+<Step title="The most common BN bug, exactly">
+A network is trained on real batches. You then run inference on a single example. You forget to switch to eval mode.
+
+BN computes batch statistics from the single example: $\mu_B = x$ exactly, and $\sigma_B^2 = 0$ exactly. So
+
+$$
+\hat x \;=\; \frac{x - x}{\sqrt{0 + \epsilon}} \;=\; 0.
+$$
+
+Every channel is zeroed. The output of the BN layer is just $\gamma \cdot 0 + \beta = \beta$. The learned biases are *all* you get back. The signal you fed in is gone.
+
+The fix is one line: call `model.eval()` before inference. This is the single most common BN bug, and you have now seen it derived from the formula.
+</Step>
+
+<StepCheck
+  title="BN with batch size 1"
+  prompt="x_hat = "
+  answer={0}
+  tolerance={0.001}
+  hint="With batch size 1, μ_B = x and σ²_B = 0. So x̂ = (x − x)/√ε = 0."
+>
+A BatchNorm layer is run in *training mode* on a batch of size 1. The single example has feature value 7. **What does $\hat x$ equal after BN normalizes it?** (Take $\epsilon \to 0$.)
+</StepCheck>
+
+<Step title="BN's real mechanism (it's not what the original paper said)">
+The 2015 BN paper argued that BN works by reducing "internal covariate shift" — the idea that each layer's input distribution drifts during training and BN re-stabilizes it.
+
+Three years later Santurkar et al. demonstrated this story is essentially wrong. They artificially injected non-stationary noise *after* the BN layer (so distributions still drift) and training was unaffected. The covariate-shift narrative does not predict the experiment.
+
+Their alternative explanation, which has held up better: BN makes the *loss landscape smoother*. It tightens the Lipschitz bounds on the loss and on the gradient, which makes gradient steps more reliable predictors of where the loss will actually go. You can take bigger steps without overshooting.
+
+The mechanism is "more predictive gradients," not "stationary distributions." BN is a smoother of the optimization problem, not a stabilizer of activations.
+</Step>
+
+<Step title="LayerNorm: same shape, different axis">
+Now flip the axes. LayerNorm normalizes across the *feature* dimension, one example at a time. For a single example with feature vector of length $H$:
+
+$$
+\mu \;=\; \frac{1}{H}\sum_{j=1}^H x_j, \qquad
+\sigma^2 \;=\; \frac{1}{H}\sum_{j=1}^H (x_j - \mu)^2.
+$$
+
+Then $\hat x_j = (x_j - \mu)/\sqrt{\sigma^2 + \epsilon}$, and again learn an affine $y_j = \gamma_j \hat x_j + \beta_j$ — but now $\gamma$ and $\beta$ are *per-feature* vectors, not per-channel scalars.
+
+The crucial difference: LN does not care about the batch. It computes its statistics from a single example. There are no running stats. There is no train/eval discrepancy. With batch size 1, it works fine.
+
+This is exactly why transformers prefer LN.
+</Step>
+
+<StepCheck
+  title="LayerNorm by hand"
+  prompt="x_hat_2 = "
+  answer={0}
+  tolerance={0.01}
+  hint="μ = (1+2+3)/3 = 2. So x_2 = 2 sits exactly at the mean: x̂_2 = (2 − 2)/σ = 0."
+>
+Apply LayerNorm to the token vector $x = [1, 2, 3]$ with $\gamma = 1$, $\beta = 0$, $\epsilon = 0$. **What is $\hat x_2$?** (the middle entry, after normalization)
+</StepCheck>
+
+<Step title="When to use BN and when to use LN">
+The taxonomy is "which axes do you reduce over."
+
+**BN:** reduce over the batch dimension, normalize per feature. Default for vision and CNNs with stable, large batches. Fragile when the batch is small or non-i.i.d. — you've seen the size-1 disaster.
+
+**LN:** reduce over the feature dimension, normalize per example. Default for transformers. Variable sequence lengths, padded tokens, and single-example inference would all corrupt BN's batch statistics; LN is immune to all of it.
+
+The picture generalizes: **GroupNorm** reduces over a *group* of features per example. **InstanceNorm** reduces over each individual feature map per example. **RMSNorm** drops the mean term entirely and just rescales by root-mean-square — used by LLaMA-family models, slightly cheaper:
+
+$$
+y_j \;=\; \frac{x_j}{\sqrt{\frac{1}{H}\sum_k x_k^2 + \epsilon}}\,\gamma_j.
+$$
+
+They are all the same formula. The only thing that differs is which axes go into the average.
+</Step>
+
+<Step title="What this looks like in the transformer">
+Every sub-block in a pre-LN transformer is exactly:
+
+```
+x = x + Attention(LayerNorm(x))
+x = x + MLP(LayerNorm(x))
+```
+
+Two LayerNorms per block. No BatchNorm anywhere. The next lesson covers the `+ x` part — residual connections — and the warmup schedule that makes the whole thing trainable.
+</Step>
