@@ -14,6 +14,7 @@ conceptsCovered:
 
 import Step from '../../components/lesson/Step.astro';
 import StepCheck from '../../components/lesson/StepCheck.astro';
+import LossCurveDoctor from '../../components/demos/LossCurveDoctor.svelte';
 
 <Step title="A 5-parameter and a 5000-parameter polynomial walk into a bar">
 Twenty noisy points on a roughly-quadratic curve. Fit a degree-2 polynomial to them — three parameters, intercept included. The fit is approximate. Some points sit above the curve, some below. It misses on purpose. Three parameters cannot memorize twenty points; there isn't enough wiggle room.
@@ -99,6 +100,10 @@ Train and validation curves over training steps tell you exactly what's going wr
 5. **Dead curve.** Loss never moves from its initial value. The network is not learning at all. Almost always bad initialization, or the wrong loss for the problem.
 
 Read curves the way a doctor reads a chart. The shape tells you what the bug is, before you've even looked at code.
+
+<LossCurveDoctor client:visible />
+
+Six unlabeled cases. Pick the diagnosis, get feedback. The point is the *perception* skill — pattern-match the shape before you know what fixed it.
 </Step>
 
 <Step title="What you'll do with this">

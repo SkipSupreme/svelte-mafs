@@ -16,6 +16,7 @@ conceptsCovered:
 
 import Step from '../../components/lesson/Step.astro';
 import StepCheck from '../../components/lesson/StepCheck.astro';
+import BnTrainEvalToggle from '../../components/demos/BnTrainEvalToggle.svelte';
 
 <Step title="Good init isn't enough">
 You picked your weights with He scaling. Layer-1 activations have unit variance, layer-10 activations have unit variance. You start training. After a thousand steps, weights have moved. The careful variance-preservation argument from the previous lesson assumed *initial* weights. The trained ones are different.
@@ -84,6 +85,10 @@ $$
 Every channel is zeroed. The output of the BN layer is just $\gamma \cdot 0 + \beta = \beta$. The learned biases are *all* you get back. The signal you fed in is gone.
 
 The fix is one line: call `model.eval()` before inference. This is the single most common BN bug, and you have now seen it derived from the formula.
+
+<BnTrainEvalToggle client:visible />
+
+Drag *batch size* to 1, click *training step* a few times in **train** mode, and watch x̂ for the test point collapse to zero — the batch statistics are degenerate. Switch to **eval** at batch size 1 and the running stats save you. The asymmetry between modes is the bug.
 </Step>
 
 <StepCheck

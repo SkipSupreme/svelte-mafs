@@ -17,6 +17,8 @@ conceptsCovered:
 
 import Step from '../../components/lesson/Step.astro';
 import StepCheck from '../../components/lesson/StepCheck.astro';
+import ResidualGradientFlow from '../../components/demos/ResidualGradientFlow.svelte';
+import WarmupStabilizer from '../../components/demos/WarmupStabilizer.svelte';
 
 <Step title="The degradation problem">
 Around 2014–2015, papers kept reporting the same uncomfortable result. You'd train a 20-layer network on ImageNet. It worked. You'd add more layers — 30, 50, 56 — and the loss got *worse*. Not just worse on the test set: worse on the *training* set. Adding capacity to the model was making it dumber.
@@ -58,6 +60,10 @@ $$
 Gradient passes through *unattenuated*. It doesn't matter how saturated the nonlinearity inside $F$ is, doesn't matter how deep the stack is. The identity term guarantees the gradient never has to multiply through $F$ to reach earlier layers. Vanishing gradients can no longer kill you.
 
 Residuals are not "letting the network ignore layers." They are *gradient highways*. The Jacobian on the shortcut is the identity, and backprop cannot break that.
+
+<ResidualGradientFlow client:visible />
+
+Toggle the residual shortcuts off. Switch to tanh. The gradient at the input side collapses by ten or twenty orders of magnitude — that's vanishing gradients, made visible. Toggle them back on and the bar stays roughly uniform from top to bottom.
 </Step>
 
 <Step title="Pre-LN beats post-LN, full stop">
@@ -100,6 +106,10 @@ $$
 $$
 
 After that the LR usually decays — cosine, linear, or 1/√t schedules are all reasonable. Warmup is not folklore; it is what you do when your second-moment estimator is still unreliable.
+
+<WarmupStabilizer client:visible />
+
+Start in **post-LN** mode with warmup at 0. Loss diverges within twenty steps. Drag warmup up to ~30 — the first step is small, the gradient amplifier has time to decay, and the run survives. Switch to **pre-LN** and the run is stable even with no warmup. Two routes to the same fix; pre-LN is the cleaner one, which is why the field landed there.
 </Step>
 
 <StepCheck

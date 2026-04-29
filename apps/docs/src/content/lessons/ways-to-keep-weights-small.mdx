@@ -16,6 +16,8 @@ conceptsCovered:
 
 import Step from '../../components/lesson/Step.astro';
 import StepCheck from '../../components/lesson/StepCheck.astro';
+import PriorPenaltyEquivalence from '../../components/demos/PriorPenaltyEquivalence.svelte';
+import DropoutMaskScrub from '../../components/demos/DropoutMaskScrub.svelte';
 
 <Step title="Regularization is bigger than λ-times-norm-squared">
 A lot of people who took a machine-learning course will tell you "regularization means L2." It does not. Regularization is *anything that biases search toward simpler hypotheses or constrains the hypothesis space*. Weight decay is one item under that umbrella. So is dropout. So is data augmentation. So is early stopping. So is the noise that mini-batch SGD injects for free.
@@ -79,6 +81,10 @@ $$
 The geometric difference is the whole reason L1 is used. The prior's level sets — the points of equal prior density — are *circles* for the Gaussian and *diamonds* for the Laplace. When the gradient of the data loss meets a constraint surface, it tends to land on whichever feature of the surface sticks out the most. The diamond has corners, and the corners sit on the axes. So L1's MAP solution tends to push individual coordinates of $w$ all the way to zero.
 
 That is *sparsity*. L2 shrinks all weights uniformly; L1 zeroes some out completely. The corners did the work.
+
+<PriorPenaltyEquivalence client:visible />
+
+The blue dot is the data minimum, sitting at $(1.6, 0.5)$. The coral dot is the MAP solution. Toggle to L1 and slide $\lambda$ past about 1 — you'll watch the smaller coordinate snap exactly to zero. With L2, both coordinates shrink continuously; nobody hits the axis.
 </Step>
 
 <Step title="AdamW: the decoupling fix">
@@ -136,4 +142,8 @@ They both regularize. They are not interchangeable.
 L2 shrinks all weights uniformly — every coordinate of $w$ pays the same multiplicative tax per step. Dropout's regularization is *adaptive*: it punishes co-adapted features (neurons that rely on others to compensate) much more than independently useful ones. In linear models, dropout can be shown to correspond to a *data-dependent* L2 penalty proportional to the input variance. Plain L2 is data-independent.
 
 In practice you use both. The transformer block in this course will apply dropout to the attention output and to the MLP output, and AdamW will apply weight decay across all projection matrices.
+
+<DropoutMaskScrub client:visible />
+
+Hit *sample × 50* a few times and watch the coral bars (running mean of training-mode samples) lock onto the gray bars (eval-mode true values). That's what the $1/(1-p)$ scaling is for: the train-time expectation matches the eval-time output exactly.
 </Step>

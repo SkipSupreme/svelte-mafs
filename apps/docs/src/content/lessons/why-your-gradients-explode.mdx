@@ -16,6 +16,7 @@ conceptsCovered:
 
 import Step from '../../components/lesson/Step.astro';
 import StepCheck from '../../components/lesson/StepCheck.astro';
+import VarianceFanOut from '../../components/demos/VarianceFanOut.svelte';
 
 <Step title="A network that won't move">
 Build a 10-layer MLP. 200 hidden units per layer. Tanh activations. Initialize every weight from $\mathcal{N}(0, 1)$ — a "reasonable" looking standard-normal sample. Now feed in a batch of unit-variance inputs.
@@ -25,6 +26,10 @@ By layer 2 or 3, every tanh is pinned at $\pm 1$. By layer 10, every neuron is f
 There is no error message. No NaN. The optimizer ran "successfully." It just produced no learning. And the bug is one number: the standard deviation of the initial weights.
 
 Why does it matter so much? Algebra.
+
+<VarianceFanOut client:visible />
+
+Drag the slider all the way to the right (σ_W ≈ 0.4) and watch every layer's histogram collapse to a wall at $\pm 1$ — that's tanh saturation. Drag to the far left (σ_W ≈ 0.01) and the activations decay toward zero. Hit the *He* preset and the histograms stabilize to a clean Gaussian at every depth. The layer-1 gradient readout in the corner tells you whether the network can learn at all.
 </Step>
 
 <Step title="Variance through one linear layer">

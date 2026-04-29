@@ -12,7 +12,7 @@ export default defineConfig({
   site: 'https://learntinker.com',
   integrations: [svelte(), mdx()],
   adapter: cloudflare(),
-  output: 'static',
+  output: 'server',
   markdown: {
     shikiConfig: {
       themes: { light: 'github-light', dark: 'github-dark' },
