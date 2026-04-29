@@ -1,8 +1,6 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
-import XpCounter from './nav/XpCounter.svelte';
-import StreakFlame from './nav/StreakFlame.svelte';
-import { createAuth } from '../server/auth';
+import UserMenu from './auth/UserMenu.svelte';
 
 let user: { name: string; email: string } | null = null;
 try {
@@ -53,6 +51,7 @@ try {
     </div>
 
     <ThemeToggle />
+    <UserMenu client:load />
   </div>
 </header>
 

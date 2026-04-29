@@ -11,7 +11,12 @@
     "preview": "astro preview",
     "astro": "astro",
     "docgen": "tsx scripts/docgen.ts",
-    "generate-types": "wrangler types"
+    "generate-types": "wrangler types",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply tinker --local",
+    "db:migrate:remote": "wrangler d1 migrations apply tinker --remote"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^13.2.1",
@@ -20,9 +25,6 @@
     "astro": "^6.1.9",
     "better-auth": "^1.6.9",
     "drizzle-orm": "^0.45.2",
-    "katex": "^0.16.11",
-    "rehype-katex": "^7.0.1",
-    "remark-math": "^6.0.0",
     "resend": "^6.12.2",
     "svelte": "^5.55.5",
     "svelte-mafs": "workspace:*",
@@ -32,11 +34,14 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
+    "@cloudflare/workers-types": "^4.20260425.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.6.0",
+    "@vitest/coverage-v8": "^3.0.0",
     "better-sqlite3": "^12.9.0",
     "drizzle-kit": "^0.31.10",
-    "tsx": "^4.19.0"
+    "tsx": "^4.19.0",
+    "vitest": "^3.0.0"
   },
   "overrides": {
     "vite": "^7"

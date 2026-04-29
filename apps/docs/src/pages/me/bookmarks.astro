@@ -1,0 +1,93 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import { createAuth, getSession } from '../../server/auth';
+import { getDb } from '../../server/db';
+import { listBookmarks } from '../../server/bookmarks';
+import { getEnv } from '../../server/env';
+
+const env = getEnv();
+const auth = createAuth({
+  DB: env.DB,
+  BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET,
+  GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
+  GITHUB_CLIENT_ID: env.GITHUB_CLIENT_ID,
+  GITHUB_CLIENT_SECRET: env.GITHUB_CLIENT_SECRET,
+  RESEND_API_KEY: env.RESEND_API_KEY,
+  PUBLIC_SITE_URL: env.PUBLIC_SITE_URL,
+});
+
+const session = await getSession(auth, Astro.request.headers);
+if (!session) return Astro.redirect('/signin?next=/me/bookmarks');
+
+const db = getDb(env.DB);
+const bookmarks = await listBookmarks(db, session.user.id);
+---
+
+<Base title="Bookmarks">
+  <section class="bookmarks">
+    <h1>Bookmarks</h1>
+    {bookmarks.length === 0 ? (
+      <p class="empty">No bookmarks yet. Tap the bookmark icon on any lesson to save it here.</p>
+    ) : (
+      <ul>
+        {bookmarks.map((b) => (
+          <li data-id={b.id}>
+            <a href={`/courses/ml-math/${b.lessonSlug}${b.anchor ?? ''}`}>{b.lessonSlug}{b.anchor ? <span class="anchor">{b.anchor}</span> : null}</a>
+            <button class="remove" type="button" data-id={b.id}>Remove</button>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+</Base>
+
+<script is:inline>
+  function getCsrf() {
+    const m = document.cookie.match(/(?:^|;\s*)__Secure-tinker\.csrf_token=([^;]+)/) ||
+              document.cookie.match(/(?:^|;\s*)tinker\.csrf_token=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  document.querySelectorAll('button.remove').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      if (!id) return;
+      const res = await fetch('/api/bookmarks/' + encodeURIComponent(id), {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: { 'x-tinker-csrf': getCsrf() },
+      });
+      if (res.ok) {
+        btn.closest('li')?.remove();
+      }
+    });
+  });
+</script>
+
+<style>
+  .bookmarks { max-width: 640px; margin: 3rem auto; padding: 0 1.5rem; }
+  h1 { font-family: var(--font-display); font-size: 2rem; margin: 0 0 1.5rem; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--site-border);
+  }
+  li a { color: var(--site-fg); text-decoration: none; }
+  li a:hover { text-decoration: underline; }
+  .anchor { color: var(--site-fg-muted); font-family: var(--font-mono); font-size: 0.85em; margin-left: 0.5rem; }
+  .empty { color: var(--site-fg-muted); }
+  button.remove {
+    padding: 0.35rem 0.75rem;
+    background: transparent;
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-sm);
+    color: var(--site-fg-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+  button.remove:hover { color: #b91c1c; border-color: #b91c1c; }
+</style>

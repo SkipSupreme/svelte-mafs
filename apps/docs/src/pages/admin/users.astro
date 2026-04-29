@@ -1,0 +1,64 @@
+---
+export const prerender = false;
+import { desc, eq } from 'drizzle-orm';
+import Base from '../../layouts/Base.astro';
+import { requireAdmin } from '../../server/admin';
+import { user as userTbl, userProfile } from '../../server/schema';
+import { getEnv } from '../../server/env';
+
+const env = getEnv();
+const guard = await requireAdmin(Astro.request, {
+  DB: env.DB,
+  BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET,
+  GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
+  GITHUB_CLIENT_ID: env.GITHUB_CLIENT_ID,
+  GITHUB_CLIENT_SECRET: env.GITHUB_CLIENT_SECRET,
+  RESEND_API_KEY: env.RESEND_API_KEY,
+  PUBLIC_SITE_URL: env.PUBLIC_SITE_URL,
+});
+if (!guard.ok) return guard.response;
+
+const rows = await guard.db
+  .select({
+    id: userTbl.id,
+    email: userTbl.email,
+    role: userTbl.role,
+    createdAt: userTbl.createdAt,
+    optIn: userProfile.marketingOptIn,
+  })
+  .from(userTbl)
+  .leftJoin(userProfile, eq(userProfile.userId, userTbl.id))
+  .orderBy(desc(userTbl.createdAt))
+  .limit(200);
+---
+
+<Base title="Admin · users">
+  <section class="users">
+    <h1>Users <span class="count">({rows.length})</span></h1>
+    <table>
+      <thead>
+        <tr><th>Email</th><th>Role</th><th>Opt-in</th><th>Joined</th></tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr>
+            <td>{r.email}</td>
+            <td>{r.role}</td>
+            <td>{r.optIn ? '✓' : '—'}</td>
+            <td>{r.createdAt.toLocaleString()}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+</Base>
+
+<style>
+  .users { max-width: 900px; margin: 3rem auto; padding: 0 1.5rem; }
+  h1 { font-family: var(--font-display); font-size: 1.75rem; margin: 0 0 1.5rem; }
+  .count { color: var(--site-fg-muted); font-weight: 400; font-size: 1rem; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 0.55rem 0.75rem; text-align: left; border-bottom: 1px solid var(--site-border); font-size: 0.9rem; }
+  th { color: var(--site-fg-muted); font-weight: 500; background: var(--site-surface); }
+</style>

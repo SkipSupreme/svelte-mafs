@@ -1,0 +1,140 @@
+---
+export const prerender = false;
+import { eq } from 'drizzle-orm';
+import Base from '../layouts/Base.astro';
+import { createAuth, getSession } from '../server/auth';
+import { getDb } from '../server/db';
+import { userProfile } from '../server/schema';
+import { getEnv } from '../server/env';
+
+const env = getEnv();
+const auth = createAuth({
+  DB: env.DB,
+  BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET,
+  GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
+  GITHUB_CLIENT_ID: env.GITHUB_CLIENT_ID,
+  GITHUB_CLIENT_SECRET: env.GITHUB_CLIENT_SECRET,
+  RESEND_API_KEY: env.RESEND_API_KEY,
+  PUBLIC_SITE_URL: env.PUBLIC_SITE_URL,
+});
+
+const session = await getSession(auth, Astro.request.headers);
+if (!session) return Astro.redirect('/signin');
+
+const db = getDb(env.DB);
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const optIn = form.get('marketing_opt_in') === 'on';
+  await db
+    .update(userProfile)
+    .set({ marketingOptIn: optIn })
+    .where(eq(userProfile.userId, session.user.id));
+}
+
+const profile = await db
+  .select()
+  .from(userProfile)
+  .where(eq(userProfile.userId, session.user.id))
+  .get();
+---
+
+<Base title="Account">
+  <section class="me">
+    <h1>Account</h1>
+    <dl class="info">
+      <dt>Email</dt>
+      <dd>{session.user.email}</dd>
+      {session.user.name ? (
+        <>
+          <dt>Name</dt>
+          <dd>{session.user.name}</dd>
+        </>
+      ) : null}
+    </dl>
+
+    <form method="POST" class="block">
+      <h2>Email preferences</h2>
+      <label class="opt-in">
+        <input type="checkbox" name="marketing_opt_in" value="on" checked={profile?.marketingOptIn ?? false} />
+        <span>Email me when new modules drop.</span>
+      </label>
+      <button type="submit">Save preferences</button>
+    </form>
+
+    <section class="block danger">
+      <h2>Delete account</h2>
+      <p>Permanently delete your account and all progress. This cannot be undone.</p>
+      <button type="button" id="delete-account">Delete my account</button>
+    </section>
+  </section>
+</Base>
+
+<script is:inline>
+  document.getElementById('delete-account')?.addEventListener('click', async () => {
+    if (!confirm('This permanently deletes your account, progress, bookmarks, and notes. Continue?')) return;
+    const res = await fetch('/api/me', { method: 'DELETE', credentials: 'same-origin' });
+    if (res.status === 204) {
+      location.href = '/';
+    } else {
+      alert('Could not delete account. Try signing out and back in, then retry.');
+    }
+  });
+</script>
+
+<style>
+  .me {
+    max-width: 640px;
+    margin: 3rem auto;
+    padding: 0 1.5rem;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    margin: 0 0 1.5rem;
+  }
+  h2 {
+    font-size: 1.1rem;
+    margin: 0 0 0.75rem;
+  }
+  .info {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: 0.5rem 1rem;
+    margin: 0 0 2rem;
+  }
+  .info dt { color: var(--site-fg-muted); font-size: 0.9rem; }
+  .info dd { margin: 0; }
+  .block {
+    padding: 1.5rem;
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    margin-bottom: 1rem;
+    background: var(--site-bg);
+  }
+  .block.danger {
+    border-color: color-mix(in srgb, #b91c1c 30%, var(--site-border));
+  }
+  .opt-in { display: flex; gap: 0.5rem; align-items: flex-start; margin-bottom: 1rem; }
+  .opt-in input { margin-top: 0.3rem; }
+  form button {
+    padding: 0.6rem 1.2rem;
+    background: var(--site-fg);
+    color: var(--site-bg);
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .danger button {
+    padding: 0.6rem 1.2rem;
+    background: transparent;
+    color: #b91c1c;
+    border: 1px solid #b91c1c;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .danger button:hover { background: #b91c1c; color: white; }
+</style>

@@ -1,0 +1,109 @@
+---
+export const prerender = false;
+import { desc, eq, sql } from 'drizzle-orm';
+import Base from '../../layouts/Base.astro';
+import { requireAdmin } from '../../server/admin';
+import { user as userTbl, userProfile, emailDrop } from '../../server/schema';
+import { getEnv } from '../../server/env';
+
+const env = getEnv();
+const guard = await requireAdmin(Astro.request, {
+  DB: env.DB,
+  BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET,
+  GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
+  GITHUB_CLIENT_ID: env.GITHUB_CLIENT_ID,
+  GITHUB_CLIENT_SECRET: env.GITHUB_CLIENT_SECRET,
+  RESEND_API_KEY: env.RESEND_API_KEY,
+  PUBLIC_SITE_URL: env.PUBLIC_SITE_URL,
+});
+if (!guard.ok) return guard.response;
+
+const db = guard.db;
+
+const [{ total }] = await db.select({ total: sql<number>`count(*)`.as('total') }).from(userTbl);
+const [{ optedIn }] = await db
+  .select({ optedIn: sql<number>`count(*)`.as('optedIn') })
+  .from(userProfile)
+  .where(eq(userProfile.marketingOptIn, true));
+const recentDrops = await db.select().from(emailDrop).orderBy(desc(emailDrop.sentAt)).limit(10);
+---
+
+<Base title="Admin">
+  <section class="admin">
+    <h1>Admin</h1>
+    <div class="stats">
+      <div class="stat">
+        <span class="num">{total}</span>
+        <span class="label">total users</span>
+      </div>
+      <div class="stat">
+        <span class="num">{optedIn}</span>
+        <span class="label">opted into module emails</span>
+      </div>
+      <div class="stat">
+        <span class="num">{recentDrops.length}</span>
+        <span class="label">drops sent (recent)</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a class="btn primary" href="/admin/drops/new">Compose new drop</a>
+      <a class="btn" href="/admin/users">View users</a>
+    </div>
+
+    <h2>Recent drops</h2>
+    {recentDrops.length === 0 ? (
+      <p class="empty">No drops sent yet.</p>
+    ) : (
+      <table>
+        <thead><tr><th>Sent</th><th>Subject</th><th>Audience</th><th>Sent</th></tr></thead>
+        <tbody>
+          {recentDrops.map((d) => (
+            <tr>
+              <td>{d.sentAt.toLocaleString()}</td>
+              <td><a href={`/admin/drops/${d.id}`}>{d.subject}</a></td>
+              <td>{d.targetCount}</td>
+              <td>{d.sentCount}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
+  </section>
+</Base>
+
+<style>
+  .admin { max-width: 820px; margin: 3rem auto; padding: 0 1.5rem; }
+  h1 { font-family: var(--font-display); font-size: 2rem; margin: 0 0 1.5rem; }
+  h2 { font-size: 1.1rem; margin: 2rem 0 0.75rem; }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .stat {
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    background: var(--site-surface);
+  }
+  .num { display: block; font-family: var(--font-display); font-size: 2rem; line-height: 1; }
+  .label { color: var(--site-fg-muted); font-size: 0.85rem; }
+  .actions { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; }
+  .btn {
+    padding: 0.55rem 1.1rem;
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    background: var(--site-bg);
+    color: var(--site-fg);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .btn.primary { background: var(--site-fg); color: var(--site-bg); border-color: var(--site-fg); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--site-border); font-size: 0.9rem; }
+  th { color: var(--site-fg-muted); font-weight: 500; }
+  .empty { color: var(--site-fg-muted); }
+</style>

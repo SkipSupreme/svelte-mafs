@@ -1,0 +1,126 @@
+---
+export const prerender = false;
+import Base from '../../../layouts/Base.astro';
+import { requireAdmin } from '../../../server/admin';
+import { getEnv } from '../../../server/env';
+
+const env = getEnv();
+const guard = await requireAdmin(Astro.request, {
+  DB: env.DB,
+  BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET,
+  GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
+  GITHUB_CLIENT_ID: env.GITHUB_CLIENT_ID,
+  GITHUB_CLIENT_SECRET: env.GITHUB_CLIENT_SECRET,
+  RESEND_API_KEY: env.RESEND_API_KEY,
+  PUBLIC_SITE_URL: env.PUBLIC_SITE_URL,
+});
+if (!guard.ok) return guard.response;
+---
+
+<Base title="Admin · new drop">
+  <section class="composer">
+    <h1>New module-launch email</h1>
+    <p class="lede">Compose, preview, send a test to yourself, then send to all opted-in users.</p>
+    <form id="drop-form">
+      <label>
+        <span>Subject</span>
+        <input name="subject" type="text" required maxlength="200" placeholder="New: The Chain Rule" />
+      </label>
+      <label>
+        <span>Body (HTML)</span>
+        <textarea name="body" rows="14" required placeholder="<p>This week we shipped…</p>"></textarea>
+      </label>
+      <label class="row">
+        <span>Lesson slug (optional)</span>
+        <input name="lesson_slug" type="text" maxlength="200" placeholder="the-chain-rule" />
+      </label>
+
+      <div class="actions">
+        <button type="button" id="send-test">Send test to me</button>
+        <button type="button" id="send-all" class="primary">Send to all opted-in</button>
+      </div>
+      <p id="status" class="status" aria-live="polite"></p>
+    </form>
+  </section>
+</Base>
+
+<script is:inline>
+  function getCsrf() {
+    const m = document.cookie.match(/(?:^|;\s*)__Secure-tinker\.csrf_token=([^;]+)/) ||
+              document.cookie.match(/(?:^|;\s*)tinker\.csrf_token=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  function payload(form, testOnly) {
+    const fd = new FormData(form);
+    return {
+      subject: String(fd.get('subject') || '').trim(),
+      body_html: String(fd.get('body') || '').trim(),
+      lesson_slug: String(fd.get('lesson_slug') || '').trim() || undefined,
+      test_only: !!testOnly,
+    };
+  }
+  async function send(testOnly) {
+    const form = document.getElementById('drop-form');
+    const status = document.getElementById('status');
+    const data = payload(form, testOnly);
+    if (!data.subject || !data.body_html) {
+      status.textContent = 'Subject and body are required.';
+      return;
+    }
+    if (!testOnly && !confirm('Send to all opted-in users?')) return;
+    status.textContent = testOnly ? 'Sending test…' : 'Sending to opted-in users…';
+    const res = await fetch('/api/admin/drops', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'content-type': 'application/json', 'x-tinker-csrf': getCsrf() },
+      body: JSON.stringify(data),
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      status.textContent = 'Error: ' + (result?.error?.message || res.status);
+      return;
+    }
+    status.textContent = `Sent ${result.sent_count} of ${result.target_count}. Drop id ${result.id}.`;
+    if (!testOnly) setTimeout(() => location.href = '/admin/drops/' + result.id, 1500);
+  }
+  document.getElementById('send-test')?.addEventListener('click', () => send(true));
+  document.getElementById('send-all')?.addEventListener('click', () => send(false));
+</script>
+
+<style>
+  .composer { max-width: 720px; margin: 3rem auto; padding: 0 1.5rem; }
+  h1 { font-family: var(--font-display); font-size: 1.75rem; margin: 0 0 0.5rem; }
+  .lede { color: var(--site-fg-muted); margin: 0 0 2rem; }
+  form { display: flex; flex-direction: column; gap: 1rem; }
+  label { display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.9rem; }
+  label.row { flex-direction: column; }
+  label span { color: var(--site-fg-muted); }
+  input, textarea {
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    background: var(--site-bg);
+    color: var(--site-fg);
+    font-family: inherit;
+    font-size: 1rem;
+  }
+  textarea { font-family: var(--font-mono); font-size: 0.9rem; }
+  .actions { display: flex; gap: 0.75rem; margin-top: 0.75rem; }
+  button {
+    padding: 0.6rem 1.1rem;
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    background: var(--site-bg);
+    color: var(--site-fg);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 500;
+  }
+  button.primary {
+    background: var(--site-fg);
+    color: var(--site-bg);
+    border-color: var(--site-fg);
+  }
+  .status { color: var(--site-fg-muted); font-size: 0.9rem; min-height: 1.2em; }
+</style>

@@ -18,6 +18,17 @@
 	"observability": {
 		"enabled": true
 	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "tinker",
+			"database_id": "REPLACE_WITH_REAL_ID_AFTER_WRANGLER_D1_CREATE",
+			"migrations_dir": "migrations"
+		}
+	],
+	"vars": {
+		"PUBLIC_SITE_URL": "https://learntinker.com"
+	},
 	"routes": [
 		{ "pattern": "learntinker.com", "custom_domain": true },
 		{ "pattern": "www.learntinker.com", "custom_domain": true }
