@@ -1,0 +1,122 @@
+---
+title: One block, top to bottom
+module: m16-transformer-block
+summary: Build the canonical transformer block from already-known parts. Two sub-layers — attention then a position-wise MLP — each wrapped in residual + layer norm. The block doesn't transform the residual stream; it adds a delta to it.
+estimatedMinutes: 15
+order: 1
+prereqs:
+  - cost-and-the-cache
+conceptsCovered:
+  - pre-ln-block
+  - residual-stream
+  - position-wise-ffn
+  - four-x-expansion
+  - gelu-activation
+  - sub-layer-dropout
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import ResidualStreamScope from '../../components/demos/ResidualStreamScope.svelte';
+import ParamBudgetPie from '../../components/demos/ParamBudgetPie.svelte';
+
+<Step title="Two halves of one rule">
+M15 ended with a complete attention layer. M13 taught residual connections and layer normalization. M11 taught the MLP. M16's job is to put those three pieces in the right order, twice, around a residual stream — and then stack the result $N$ times.
+
+The canonical pre-LN transformer block, written compactly:
+
+$$
+\tilde x = x + \mathrm{MHA}(\mathrm{LN}(x)),\qquad y = \tilde x + \mathrm{FFN}(\mathrm{LN}(\tilde x))
+$$
+
+Two sub-layers. Each one normalizes its input, computes a delta, and adds the delta to the residual stream. That's the entire shape. Everything that follows in this module is *why* it's shaped this way and *what happens* when you stack it.
+</Step>
+
+<Step title="Sub-layer one: attention you already built">
+The first sub-layer's delta is the multi-head attention from M15:
+
+$$
+\Delta_{\text{attn}}(x) = \mathrm{MHA}(\mathrm{LN}(x))
+$$
+
+Layer-normalize the residual stream first, then run scaled dot-product self-attention with however many heads, the causal mask, the positional encoding of your choice, all the way through to multi-head concat and $W_O$. Whatever that produces is *added* to $x$, not used to *replace* $x$.
+
+This is the move that lets you stack: each layer's contribution rides on top of every prior layer's contribution. The information from earlier layers doesn't get overwritten — it gets added to.
+</Step>
+
+<Step title="Sub-layer two: a position-wise MLP">
+The second sub-layer is a 2-layer MLP, applied independently to every token's residual-stream vector:
+
+$$
+\mathrm{FFN}(z) = \mathrm{GELU}(z W_1 + b_1)\, W_2 + b_2,\qquad W_1 \in \mathbb{R}^{d \times 4d},\ W_2 \in \mathbb{R}^{4d \times d}
+$$
+
+Two linear layers with one nonlinearity between them. *Position-wise* means there is no token axis in this computation — each row of the input is processed in isolation. If attention's job is cross-token mixing, the FFN's job is per-token computation. They split the labor cleanly.
+
+Two design choices to call out:
+
+- **The hidden dimension is $4 \times d_{\text{model}}$.** This is a 2017 convention that ablations validated and every standard transformer keeps. Modern gated FFNs (SwiGLU in LLaMA) use a smaller ratio because the gate adds a third matrix; the 4× rule applies to the dense two-matrix FFN.
+- **GELU instead of ReLU.** GELU is $x \cdot \Phi(x)$ — the input scaled by the standard normal CDF. It's smooth where ReLU is kinked, which gives slightly better gradient flow and very slightly better final loss. Hendrycks-Gimpel 2016 proposed it; modern transformers default to it.
+</Step>
+
+<StepCheck
+  title="The 4× expansion"
+  prompt="d_ff = "
+  answer={2048}
+  tolerance={0.5}
+  hint="d_ff = 4 · d_model. Here 4 · 512."
+>
+With $d_{\text{model}} = 512$, **what is the standard hidden dimension $d_{\text{ff}}$ of the FFN's first linear layer?**
+</StepCheck>
+
+<Step title="Why the FFN doesn't mix tokens">
+A common assumption: the FFN is the *biggest* matrix in the block, so surely it's where the heavy interaction happens between tokens. It isn't. The FFN has no token axis. Each token's vector goes into `Linear(d, 4d) → GELU → Linear(4d, d)` independently of every other token's vector. If you shuffled the rows of the FFN's input, its output would shuffle the same way — exactly like permutation equivariance, but on purpose this time.
+
+Cross-token mixing is *exclusively* attention's job in a transformer block. The FFN is per-token computation: take whatever attention just deposited into this position's residual-stream vector, and run it through a learnable nonlinear function.
+
+This split is more important than it sounds. It's what makes the block so easy to parallelize, and it's what makes interpretability tractable: you can study what attention does (token routing) and what the FFN does (per-token feature computation) as two largely independent things.
+</Step>
+
+<Step title="A vector flowing through the stream">
+The block doesn't *transform* the residual stream. It *adds a delta* to it. A whole stack of blocks is, structurally, just a sum:
+
+$$
+h_N = h_0 + \sum_{\ell=1}^{N} \Delta_\ell
+$$
+
+where each $\Delta_\ell$ is the sum of that block's two sub-layer contributions. This is the framing M16's lesson 3 will lean on hard. For now, just see it move.
+
+<ResidualStreamScope client:visible />
+
+The widget shows a tiny scripted model — 4 blocks, 5 token positions, $d = 16$. Click any cell in the grid to inspect that residual-stream state at that token. The bottom row is the embedding $h_0$; each row above adds another sub-layer's delta to it. Each cell's color encodes its overall magnitude. The vector itself appears below — sea bars are positive components, coral are negative. Notice that the embedding rows look small, the deeper rows look bigger, and the position with the most recent token (the last column) tends to accumulate the most.
+</Step>
+
+<StepCheck
+  title="Trace the addition"
+  prompt="y[1] = "
+  answer={0.5}
+  tolerance={0.001}
+  hint="Pre-LN: y = x + Δ_attn + Δ_ffn (in vector form, component-wise). Dim 1: 0 + 0.5 + 0 = 0.5."
+>
+At one position, $x = (1, 0, -1)$, $\Delta_{\text{attn}} = (0, 0.5, 0)$, $\Delta_{\text{ffn}} = (0, 0, 0.25)$ (collapsing each sub-layer into one delta for this exercise). **What is component 1 of $y$**, the block output?
+</StepCheck>
+
+<Step title="Where does the block's mass live?">
+The block has four matrices that dominate its parameter count: the four attention projections $W_Q, W_K, W_V, W_O$ (each $d \times d$, totalling $4d^2$) and the two FFN matrices ($d \times 4d$ and $4d \times d$, totalling $8d^2$). Twelve $d^2$ blocks of mass per block, two-thirds of which is in the FFN.
+
+<ParamBudgetPie client:visible />
+
+Snap the preset to **GPT-2 small** to anchor the picture. Then drag $d_{\text{model}}$ from 64 to 4096 and watch the FFN's coral slice eat the screen as $d$ grows — the embedding's relative share collapses, and at frontier-scale models, the FFN dominates. This will matter again in lesson 16.5 when we count the cost.
+</Step>
+
+<Step title="Where does dropout sit?">
+The standard recipe puts dropout in three places, all of them on a *delta*, never on the residual trunk itself:
+
+1. After the embedding-plus-positional sum, before the first block.
+2. On each sub-layer's output, after the sub-layer computes its delta and before that delta is added to the residual stream.
+3. On the attention weights inside MHA, before the weighted sum of values.
+
+Dropping anywhere on the residual trunk would break the gradient highway that makes deep stacks trainable — the whole reason residuals exist (m13). Don't do it.
+
+That's the block. Two sub-layers, each a delta added to the residual stream; layer norm before each sub-layer; dropout on the deltas; the FFN is 4× wide and uses GELU. Next lesson: why the layer norm is *before* and not *after* the sub-layer.
+</Step>
