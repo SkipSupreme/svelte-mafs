@@ -1,0 +1,170 @@
+---
+title: Loss, perplexity, and how to sample
+module: m14-sequence-models
+summary: NLL is the loss; perplexity is its branching-factor twin; temperature reshapes a distribution without changing what's most likely; top-k censors the long tail. Four ideas, one widget, every later language model.
+estimatedMinutes: 16
+order: 3
+prereqs:
+  - two-paths-to-the-same-model
+conceptsCovered:
+  - nll-loss
+  - log-space-arithmetic
+  - perplexity
+  - categorical-sampling
+  - greedy-decoding
+  - temperature
+  - top-k-sampling
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import TemperatureBars from '../../components/demos/TemperatureBars.svelte';
+
+<Step title="Why we work in log-space, always">
+The chain rule of probability says the joint probability of a sequence is the product of conditionals:
+
+$$
+P(x_1, \ldots, x_T) \;=\; \prod_{t=1}^{T} P(x_t \mid \text{context}_t).
+$$
+
+Each conditional is at most 1. A 200-character sentence might have an average per-character probability around 0.05. The full joint is then about $0.05^{200} = 10^{-260}$. That number is *not representable* in float32 — it underflows to zero. Multiply nothing by zero forever and you get nothing.
+
+We never compute the joint directly. We compute its log:
+
+$$
+\log P(x_1, \ldots, x_T) \;=\; \sum_{t=1}^{T} \log P(x_t \mid \text{context}_t).
+$$
+
+A sum of small *manageable* numbers like $-3$ each, no underflow. The negative log-likelihood (NLL) is just the negative of this sum, divided by $T$ to get a per-token average:
+
+$$
+\mathcal{L} \;=\; -\frac{1}{T}\sum_{t=1}^{T} \log P_\theta(x_t \mid \text{context}_t).
+$$
+
+This is the loss. All language models in this course minimize it. Every time you see "cross-entropy loss" in a deep-learning paper, this is what they mean — averaged over a batch instead of one sequence.
+</Step>
+
+<StepCheck
+  title="NLL of a single word"
+  prompt="L = "
+  answer={1.835}
+  tolerance={0.005}
+  hint="Sum −ln of each conditional, divide by T = 4. (−ln 0.13 + −ln 0.05 + −ln 0.50 + −ln 0.20)/4 ≈ 1.835."
+>
+A bigram model gives the following four conditional probabilities for the sequence `·, a, d, a, ·`:
+
+$$
+P(a\mid\cdot) = 0.13,\quad P(d\mid a) = 0.05,\quad P(a\mid d) = 0.50,\quad P(\cdot\mid a) = 0.20.
+$$
+
+**Compute the per-token NLL** of the word `ada`. Use natural log (nats). Round to three decimals.
+</StepCheck>
+
+<Step title="Perplexity: the branching-factor twin">
+NLL is the right *loss* — it's smooth, additive, gradient-friendly. But the number itself is unintuitive. "The model has loss 1.83." Compared to what?
+
+**Perplexity** is the same quantity transformed for human reading:
+
+$$
+\mathrm{PPL} \;=\; \exp(\mathcal{L}).
+$$
+
+That's it. Exponentiate the NLL. Why is it useful? Because perplexity has units the human brain can grab onto: it is the *effective branching factor* the model is dealing with at each step.
+
+If a model has perplexity 7 on some text, it behaves *as if* — at each character — it were guessing among 7 equally plausible options. Not 27, not 4 — 7. That maps directly to "how confused is the model, in number-of-choices."
+
+PPL of 1 means the model is never surprised: it assigns probability 1 to the next token at every step. PPL of $|V|$ — for our character vocab, 27 — means the model is exactly as confused as a uniform random guess. Anything in between is the spectrum from "perfect" to "no information."
+
+Lower perplexity is better. State-of-the-art transformer language models on natural-language text have perplexities in the low single digits.
+</Step>
+
+<StepCheck
+  title="Loss to perplexity"
+  prompt="PPL = "
+  answer={12.302}
+  tolerance={0.05}
+  hint="PPL = exp(loss). exp(2.51) ≈ 12.30."
+>
+Our trained bigram model has reached a per-token loss of $\mathcal{L} = 2.51$. **What is its perplexity?** Round to two decimals.
+</StepCheck>
+
+<Step title="The two endpoints">
+Two reference points to keep in your head:
+
+- **Random model.** Knows nothing. Outputs uniform $1/|V|$ for every token. Loss $= -\log(1/27) = \log 27 \approx 3.30$. PPL $= 27$. This is the *floor* of competence — anything above 3.30 is worse than guessing.
+- **Perfect model.** Always assigns probability 1 to the actual next token. Loss $= -\log 1 = 0$. PPL $= 1$. This is the ceiling, and it is unreachable on real text because real text contains genuine ambiguity.
+
+Our trained bigram lands at PPL $\approx 12$ on the names corpus — substantially better than random, but still confused on the order of "ten plausible next characters per step." The Bengio MLP, the RNN, and the transformer in later lessons each cut into that residual confusion.
+</Step>
+
+<Step title="Sampling: getting text out of probabilities">
+Training is one half of the loop. Generation is the other.
+
+To sample a sequence, start at the start token. The model gives you a row of probabilities over the next character. **Sample one** — that means: draw a uniform $u \in [0, 1)$, and pick the character whose cumulative probability first exceeds $u$. (This is the inverse-CDF method, equivalent to spinning a roulette wheel weighted by the categorical.) Now feed that character back as context for the next step. Repeat until you sample the end token.
+
+The naive alternative is *greedy decoding*: at every step, just pick the most likely character. It sounds like "the model's best guess." It is also a disaster on a bigram model — once you land on a high-probability character that's likely to follow itself (say `a`), greedy will loop forever between two letters. The model has variety to offer; greedy refuses to use it.
+
+Below: the next-token distribution from a fixed context. Drag the top of any bar to set its probability directly. Hit "Sample × 100" to draw 100 samples from the categorical — coral ticks appear above each bar showing the empirical frequency. With enough samples, those ticks lock onto the bar tops. That convergence *is* what sampling means.
+
+<TemperatureBars client:visible />
+</Step>
+
+<Step title="Temperature: reshape, don't reorder">
+Temperature is one number that controls how peaked or flat your distribution is. The recipe: divide every logit by $T$ before softmax.
+
+$$
+P_T(j) \;=\; \frac{\exp(\ell_j / T)}{\sum_k \exp(\ell_k / T)}.
+$$
+
+- $T \to 0$: every logit gets divided by a tiny number, so the largest logit dominates exponentially. The distribution collapses to a one-hot at the argmax. Sampling becomes greedy.
+- $T = 1$: identity. The original logits.
+- $T \to \infty$: every logit gets divided by a huge number, so all of them become roughly zero, and softmax of zeros is uniform. Sampling becomes "pick any character at random."
+
+Drag the temperature slider in the widget above through this whole range. Three things happen simultaneously and one thing does not.
+
+**Happens:** the bars stretch (low T) or squash (high T). The peakedness changes. The empirical histogram of samples follows.
+
+**Does not happen:** the *ranking* of bars. The character with the highest logit at $T = 1$ still has the highest probability at $T = 0.1$ and at $T = 10$ — the highlighted "argmax" character does not change. Temperature reshapes the distribution; it does not reorder it.
+
+This kills the most common temperature misconception: that turning T up "lets the model think more creatively" by making it pick different things. No. The model's *ranking* of options is fixed. Temperature only changes *how often* it picks lower-ranked options instead of the top one.
+</Step>
+
+<Step title="Top-k: censor the long tail">
+Temperature reshapes the whole distribution. Top-k does something cruder and often more useful: it *sets the probability of all but the largest k options to exactly zero*, then renormalizes the survivors.
+
+$$
+\tilde P(j) \;=\; \begin{cases}
+P(j)\,/\,Z & j \in \mathrm{top}_k(P) \\
+0 & \text{otherwise}
+\end{cases}
+\qquad Z \;=\; \sum_{j \in \mathrm{top}_k(P)} P(j).
+$$
+
+Top-k forbids the model from ever picking a low-probability token, no matter how unlucky the dice roll. With a vocabulary of thousands of tokens, the long tail of low-probability options is enormous in aggregate — sample from it occasionally and you get text that wanders into nonsense. Top-k cuts the tail cleanly.
+
+Drag the top-k slider in the widget above down from 27 toward 1. As k drops, more bars go faded — those tokens are now censored, probability zero. The surviving bars grow (because the kept mass renormalizes). At $k = 1$, you've recovered greedy decoding.
+
+Modern samplers usually combine the two — temperature softens, top-k or its cousin **top-p** (nucleus sampling) caps the tail. We will use a small $k$ in the transformer's generation loop later in the course.
+</Step>
+
+<StepCheck
+  title="Top-k by hand"
+  prompt="P(top after top-k) = "
+  answer={0.625}
+  tolerance={0.001}
+  hint="Top-2 keeps (0.5, 0.3). New normalizer = 0.5 + 0.3 = 0.8. New P of top = 0.5 / 0.8 = 0.625."
+>
+A model outputs probabilities $(0.5,\, 0.3,\, 0.15,\, 0.05)$ over four tokens. Apply **top-k with $k = 2$**. **What is the probability of the most likely token after renormalization?** Round to three decimals.
+</StepCheck>
+
+<Step title="What's now in the toolkit">
+Three pieces. Each shows up at every later stage of the course.
+
+**Loss is NLL, expressed in nats.** Add up $-\log P$ of each next token, divide by token count. That's the number you minimize for every language model from here on.
+
+**Perplexity is exp(loss), the branching-factor reading.** PPL = 27 is a uniform random model on our 27-token vocab; PPL = 1 is impossible perfection; everything else is in between. When you read "GPT-3 hits PPL 17 on WikiText," you now know what that means: the model is as uncertain as if it were guessing among 17 equally plausible next tokens.
+
+**Temperature reshapes; top-k censors.** Both modify the distribution before sampling. Neither changes how the model was trained or what it actually computes — they're decisions you make at *generation* time, not at training time. Every text generation script you'll ever write sets these two knobs.
+
+The next lesson upgrades the *input* side of the model. We replace the bigram's one-character context with a window of multiple characters fed through a learned embedding. The output is still a row of probabilities. The loss is still NLL. The sampling is still everything in this lesson. The only thing that changes is the architecture between the input and the softmax.
+</Step>
