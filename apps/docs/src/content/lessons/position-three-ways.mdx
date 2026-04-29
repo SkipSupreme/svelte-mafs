@@ -1,0 +1,121 @@
+---
+title: Position, three ways
+module: m15-attention
+summary: Self-attention is blind to order. Patch it. Sinusoidal encodings drop a multi-scale clock onto the input. Learned absolute encodings buy positions from a lookup table. RoPE rotates queries and keys inside the attention score so only relative position survives.
+estimatedMinutes: 14
+order: 4
+prereqs:
+  - three-projections
+conceptsCovered:
+  - positional-encoding-need
+  - sinusoidal-pe
+  - learned-absolute-pe
+  - rope-rotary-pe
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import RopeRotationDial from '../../components/demos/RopeRotationDial.svelte';
+
+<Step title="Patching the bug we already saw">
+Last lesson ended with a working attention layer that *cannot tell `dog bites man` from `man bites dog`*. The operation is permutation-equivariant — a rearrangement of the input rows produces a corresponding rearrangement of the output rows, and nothing else.
+
+We need to inject *position* into the operation so that two tokens at different positions produce different attention behavior, even when they are the same token. There are three approaches in widespread use, each with a different geometry. We'll cover all three at the level of "what does it actually *do* to the math," not derivation.
+</Step>
+
+<Step title="Sinusoidal: a multi-scale clock added to the input">
+The original transformer (Vaswani et al., 2017) injects position as a fixed vector added to each token embedding before it enters the first attention layer:
+
+$$
+\mathrm{PE}_{(\mathrm{pos},\,2i)}   = \sin\!\left(\frac{\mathrm{pos}}{10000^{2i/d}}\right),\qquad
+\mathrm{PE}_{(\mathrm{pos},\,2i+1)} = \cos\!\left(\frac{\mathrm{pos}}{10000^{2i/d}}\right)
+$$
+
+The vector $\mathrm{PE}_{\mathrm{pos}} \in \mathbb{R}^d$ has $d/2$ pairs of components. Each pair is a 2-D point on the unit circle, rotating at a different frequency: $\omega_i = 1/10000^{2i/d}$.
+
+So $\mathrm{PE}_{\mathrm{pos}}$ is *a clock with $d/2$ hands*, each hand turning at its own rate. The fastest hand (smallest $i$) sweeps the unit circle in $2\pi$ steps. The slowest (largest $i$) takes about $2\pi \cdot 10000$ steps to make one revolution. Together, the hands give a unique fingerprint for each position over a very large range.
+</Step>
+
+<Step title="Why those weird wavelengths">
+The choice of geometric wavelengths from $2\pi$ to $2\pi \cdot 10000$ is not aesthetic. It is what makes the encoding *relatively shift-invariant*.
+
+For each frequency band, the (sin, cos) pair at position $\mathrm{pos} + k$ is a 2-D rotation of the (sin, cos) pair at position $\mathrm{pos}$:
+
+$$
+\begin{bmatrix}\sin(\omega_i(\mathrm{pos}+k))\\ \cos(\omega_i(\mathrm{pos}+k))\end{bmatrix}
+\;=\;
+R(\omega_i k)\,\begin{bmatrix}\sin(\omega_i\,\mathrm{pos})\\ \cos(\omega_i\,\mathrm{pos})\end{bmatrix}
+$$
+
+That means $\mathrm{PE}_{\mathrm{pos}+k}$ is a *fixed linear function* of $\mathrm{PE}_{\mathrm{pos}}$ for any offset $k$. The attention layer can — in principle — learn that linear function and use it to read off relative positions. Sinusoidal encodings give the model a smooth, position-invariant way to think about offsets.
+</Step>
+
+<StepCheck
+  title="The slowest hand"
+  prompt="≈ "
+  answer={62832}
+  tolerance={50}
+  hint="Wavelength = 2π/ω = 2π · 10000^(2i/d). For i = 255 of d = 512, the exponent (2i/d) ≈ 1, so wavelength ≈ 2π · 10000."
+>
+For dimension index $i = 0$ at $d = 512$, the wavelength of the sinusoid is $2\pi$ — one revolution per position step. For the *last* pair ($i = 255$), **what is the wavelength** in positions, to the nearest integer?
+</StepCheck>
+
+<Step title="Learned absolute: skip the math, buy the table">
+GPT-2 and GPT-3 swap sinusoidal for a learned table. Maintain a parameter matrix $\mathrm{PE} \in \mathbb{R}^{T_{\max} \times d}$ — one row per position, $T_{\max}$ rows total. At every position, look up the corresponding row and add it to the token embedding.
+
+Trade-offs:
+
+- **Pro**: zero math. Just gradient descent. Whatever positions the training data exercises, the table learns whatever embedding helps the loss.
+- **Pro**: simpler to explain.
+- **Con**: hard cap at $T_{\max}$. If you trained with a 2048-position table and you want to run inference at length 4096, you have nothing to feed positions 2048–4095. The model cannot extrapolate.
+- **Con**: each new context length needs a retrain.
+
+For a research-scale model with a fixed context budget, this is fine. For a frontier model that wants to scale context windows after pre-training, it is the wrong shape.
+</Step>
+
+<Step title="RoPE: position lives inside the score">
+Rotary positional embeddings (Su et al., 2021) take a different angle entirely. Don't *add* anything to the embedding. Instead, *rotate* the query and key vectors by an angle proportional to their positions, *inside* the attention computation:
+
+$$
+\tilde q_m = R(\theta m)\,q,\qquad \tilde k_n = R(\theta n)\,k
+$$
+
+(Generalize: $q$ and $k$ live in $\mathbb{R}^{d_k}$. Treat each consecutive pair of dimensions as a 2-D plane and apply its own rotation at frequency $\theta_i$. The $\theta_i$ are geometrically spaced like sinusoidal PE.)
+
+The killer property: the dot product after rotation depends *only on the offset* $n - m$, not on the absolute positions $m$ or $n$.
+
+$$
+\tilde q_m \cdot \tilde k_n
+\;=\; (R(\theta m)\,q)^\top (R(\theta n)\,k)
+\;=\; q^\top R(\theta n - \theta m)\,k
+\;=\; q^\top R(\theta(n - m))\,k.
+$$
+
+That's it. The position information makes it through the rotation but the dot product reads off only the *relative* offset — exactly what an attention head wants in order to model "this token is three back" without caring about its absolute index.
+
+<RopeRotationDial client:visible />
+
+Watch what happens. Set $m = 1$ and $n = 3$ — offset is 2. Read the rotated dot product. Now press **+1** twice. $m = 3$, $n = 5$, offset still 2. The rotated dot product is the same number to the last decimal. Press **−1** until $m$ and $n$ slide back. Same number. The yellow reference row computes the same dot product at the canonical $m = 0, n = 2$ to confirm that what you're seeing is the geometry, not numerical luck.
+
+In a real transformer, $\theta$ is small (frequencies $\theta_i = 1 / 10000^{2i/d_k}$ as before) and the rotation is per-pair, not for the whole vector. The widget exaggerates the rotation to $\pi/4$ per step so the geometry is visible.
+</Step>
+
+<StepCheck
+  title="Shifting the whole sequence"
+  prompt="change in scores = "
+  answer={0}
+  tolerance={0.0001}
+  hint="With RoPE, attention scores depend only on (n − m). Adding the same offset to every position leaves all pairwise differences unchanged."
+>
+A model is using RoPE. We shift every token's position by +5 (so token at position 0 becomes position 5, position 1 becomes position 6, etc.). **By how much do the attention scores change?**
+</StepCheck>
+
+<Step title="What to use, what to remember">
+- **Sinusoidal**: cheap, fixed, no parameters, the textbook answer. Worth knowing because it appears in every transformer paper.
+- **Learned absolute**: GPT-2/3 era. Simple, hard cap at training-time context length.
+- **RoPE**: what most modern open-weight models (LLaMA family, most fine-tuneable LLMs) actually use. Encodes relative position, extrapolates better, plugs in cleanly per layer.
+
+If you're building a transformer today, default to RoPE unless you have a specific reason not to. If you're reading a 2017–2018-era paper, you'll see sinusoidal. If you're reading the original GPT-2 code, you'll see a learned table. All three are solving the same named problem: *attention without position information cannot tell sequences from sets, and we wanted sequences*.
+
+We have now built a single attention head that scales correctly, masks the future, and respects position. The next two lessons widen and run it: *multi-head* lets several attention patterns operate in parallel on the same input; the *cost and the cache* lesson shows you why context windows are expensive and how production inference dodges most of that cost.
+</Step>
