@@ -385,13 +385,20 @@
     65%      { rotate: 6deg; }
   }
 
-  /* Reduced motion: no bob, no cursor tilt. Click bounce stays. */
+  /* Reduced motion: no bob, no cursor tilt, no idle actions. Click
+     bounce stays — it's a deliberate user response. */
   .tinker--reduced .tinker-img {
     animation: none;
     transform: rotate(var(--tinker-tilt));
   }
   .tinker--reduced.tinker--bouncing .tinker-img {
     animation: tinker-bounce 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .tinker--reduced.tinker--wiggle .tinker-img,
+  .tinker--reduced.tinker--hop .tinker-img,
+  .tinker--reduced.tinker--lean .tinker-img {
+    animation: none;
+    transform: rotate(var(--tinker-tilt));
   }
 
   .tinker-sparkles {
