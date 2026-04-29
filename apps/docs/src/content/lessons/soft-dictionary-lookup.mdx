@@ -1,0 +1,115 @@
+---
+title: Soft dictionary lookup
+module: m15-attention
+summary: A hash table maps a query to one entry. A soft hash table returns every entry, weighted by similarity. Replace argmax with softmax and the lookup becomes differentiable. That's attention — the rest of this module is plumbing.
+estimatedMinutes: 13
+order: 1
+prereqs:
+  - training-the-rnn-and-where-it-breaks
+conceptsCovered:
+  - weighted-average-as-aggregator
+  - soft-dictionary-lookup
+  - query-key-value-roles
+  - dot-product-as-similarity
+  - unscaled-attention-score
+  - attention-weights-row
+  - single-head-attention-output
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import QkVectorPlayground from '../../components/demos/QkVectorPlayground.svelte';
+
+<Step title="What every previous model couldn't do">
+The bigram knew one character. The Bengio MLP knew $k$ characters. The RNN tried to know everything in a single carrying vector and faded after about ten characters. None of these models can *look up* anything from earlier in the sequence on demand. Each one is forced to compress the past into a fixed-size container before getting to use it.
+
+What we want is something different: at each position, given the current state, *go back and read the parts of the past that are relevant*. Not all of it. Not the most recent $k$ tokens. The relevant parts.
+
+That's a lookup.
+</Step>
+
+<Step title="Hard lookup is dead in the water">
+The lookup operation we know from code is a hash table. Compute a query, hash it, get the matching entry. Trouble is that exact matching is *brittle and non-differentiable*. Two queries that are nearly identical can return totally different entries. There's no gradient telling us "this query was almost right."
+
+For a learnable model we need something gentler. The first instinct is `argmax`: find the key most aligned with the query, return its value. The score for key $j$ is the dot product $q\cdot k_j$ — large when they point the same way, small when they don't. Argmax picks the largest.
+
+<QkVectorPlayground client:visible />
+
+Set the toggle to **hard** and drag the red query around. Whichever key has the larger dot product wins; the output snaps to that key with no contribution from the other one. The yellow output vector teleports between $k_1$ and $k_2$ as you cross the boundary.
+
+That snap is the problem. The score is continuous in $q$, but the output is a step function in the score, and a step function has zero gradient almost everywhere. The model can't learn through it.
+</Step>
+
+<Step title="Replace argmax with softmax">
+Switch the toggle to **soft**. Now every key contributes to the output, weighted by how aligned it is with the query.
+
+Compute the score $s_j = q\cdot k_j$ for each key. Apply softmax across the scores to get a probability distribution $\alpha$ over keys: a vector of weights that sum to 1, with the largest weight on the key most aligned with $q$. The output is the corresponding weighted sum of values:
+
+$$
+o = \sum_{j} \alpha_j \, v_j
+\qquad
+\alpha_j = \frac{\exp(q\cdot k_j)}{\sum_{j'} \exp(q\cdot k_{j'})}
+$$
+
+Drag $q$ toward $k_1$ and the bar shifts mass to position 1. Drag it between the two keys and the bar splits. The yellow output vector slides smoothly between $k_1$ and $k_2$ — no snap.
+
+This is differentiable. We can train it.
+
+(In the widget, the values are the keys themselves: $v_j = k_j$. That's the self-attention setup we'll formalize two lessons from now. For now just notice the operation: query, score, softmax, weighted sum.)
+</Step>
+
+<StepCheck
+  title="Hand-compute one query"
+  prompt="o = "
+  answer={12.69}
+  tolerance={0.05}
+  hint="Scores are q·k₁ = 1 and q·k₂ = 0. Softmax of (1, 0) is (e/(e+1), 1/(e+1)) ≈ (0.731, 0.269). Output = 0.731·10 + 0.269·20."
+>
+For $q = (1, 0)$, keys $k_1 = (1, 0)$ and $k_2 = (0, 1)$, and *scalar* values $v_1 = 10$, $v_2 = 20$, **what is the attention output?**
+
+Skip the $\sqrt{d_k}$ scale for this example — we'll motivate it next lesson.
+</StepCheck>
+
+<Step title="Three roles, one kind of object">
+Three names for vectors that play different roles in this lookup:
+
+- **Query** $q$ — *what am I looking for?* The thing matched against the keys.
+- **Key** $k_j$ — *what do I advertise?* The thing the query is matched against.
+- **Value** $v_j$ — *what do I deliver if matched?* The payload returned, weighted by the match.
+
+These are three labels for the *same kind of object*. They're vectors. In the self-attention layer we'll build two lessons from now they'll all be different linear projections of the *same* input sequence — same source, three different views. For now we just have to remember which role each plays.
+</Step>
+
+<Step title="The single-query equation">
+The full single-query attention, with a placeholder for one detail we'll patch next lesson:
+
+$$
+\boxed{\;o \;=\; \sum_{j=1}^{T} \alpha_j \, v_j,\qquad \alpha_j \;=\; \frac{\exp(q\cdot k_j / \sqrt{d_k})}{\sum_{j'} \exp(q\cdot k_{j'} / \sqrt{d_k})}\;}
+$$
+
+That's all of attention. Two lines.
+
+Everything else in this module — Q, K, V matrices, multi-head, masking, positional encoding, KV cache — is plumbing around those two lines. The $\sqrt{d_k}$ in the denominator we'll motivate next lesson; today's widget left it out because at $d_k = 2$ it doesn't matter much. But the rest of the formula is the operation in full generality.
+
+Re-read the boxed equation until it feels inert. We're going to build everything from it.
+</Step>
+
+<Step title="Uniform attention is just averaging">
+Notice what happens when all the scores $q\cdot k_j$ are equal. Softmax of equal values is uniform: $\alpha_j = 1/T$ for every $j$. The output is the *unweighted average* of the values.
+
+Uniform attention is the same as "just take the mean." That's not useless — that's the running-average baseline an RNN's hidden state was trying to be a smarter version of. Attention contains running-mean as a special case, and gives the model a *learned, differentiable* way to deviate from it.
+
+When the query points strongly toward one key, attention picks that value. When the query is neutral, attention falls back to the average. The same operation handles both extremes — and every blend in between. There is no separate "averaging mode" and "selecting mode"; there is one operation, parameterized by a continuous distribution $\alpha$.
+</Step>
+
+<StepCheck
+  title="The uniform-scores case"
+  prompt="α_j = "
+  answer={0.333}
+  tolerance={0.005}
+  hint="Softmax of T equal scores is 1/T per position. Here T = 3."
+>
+With $T = 3$ keys and all scores equal, **what is the attention weight assigned to each key?**
+
+Round to three decimal places.
+</StepCheck>
