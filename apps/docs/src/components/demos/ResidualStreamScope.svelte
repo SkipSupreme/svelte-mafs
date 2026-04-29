@@ -99,11 +99,54 @@
 
   let selectedRow = $state(STATE_LABELS.length - 1); // top of stack
   let selectedCol = $state(0);
+  let mode = $state<'raw' | 'decompose'>('raw');
 
   const selectedVector = $derived(streams[selectedRow][selectedCol]);
   const vecScale = $derived(
     Math.max(0.01, ...selectedVector.map((v) => Math.abs(v)))
   );
+
+  // For decompose mode: per-source contributions to the selected cell.
+  // Sources: h_0 (init), then for each block ℓ up to the selected row,
+  // attn_ℓ and ffn_ℓ. We only count sources up to and including the row.
+  type Source = { name: string; kind: 'init' | 'attn' | 'ffn'; block?: number; values: number[] };
+  const selectedDecomposition = $derived.by<Source[]>(() => {
+    const sources: Source[] = [];
+    sources.push({
+      name: 'h₀ (embed)',
+      kind: 'init',
+      values: streams[0][selectedCol].slice(),
+    });
+    // Each block contributes attn first, then ffn. selectedRow indexes into
+    // states: 0 = embed, 1 = attn1, 2 = ffn1, 3 = attn2, 4 = ffn2, ...
+    let stateIdx = 1;
+    for (let l = 0; l < N && stateIdx <= selectedRow; l++) {
+      sources.push({
+        name: `attn ${l + 1}`,
+        kind: 'attn',
+        block: l + 1,
+        values: state.attnDeltas[l][selectedCol].slice(),
+      });
+      stateIdx++;
+      if (stateIdx > selectedRow) break;
+      sources.push({
+        name: `ffn ${l + 1}`,
+        kind: 'ffn',
+        block: l + 1,
+        values: state.ffnDeltas[l][selectedCol].slice(),
+      });
+      stateIdx++;
+    }
+    return sources;
+  });
+
+  const decomposeScale = $derived.by(() => {
+    let m = 0.01;
+    for (const src of selectedDecomposition) {
+      for (const v of src.values) m = Math.max(m, Math.abs(v));
+    }
+    return m;
+  });
   const cellMagnitudes = $derived.by(() => {
     const mags: number[][] = [];
     for (let row = 0; row < streams.length; row++) {
@@ -163,18 +206,45 @@
         at position <strong>{selectedCol}</strong> ("<em>{TOKENS[selectedCol]}</em>")
       </span>
       <span class="vector-state">{STATE_LABELS[selectedRow].name}</span>
+      <div class="seg">
+        <button class="seg-btn" class:active={mode === 'raw'} onclick={() => (mode = 'raw')}>raw</button>
+        <button class="seg-btn" class:active={mode === 'decompose'} onclick={() => (mode = 'decompose')}>decompose</button>
+      </div>
     </div>
-    <div class="vector-bar">
-      {#each selectedVector as v, dim}
-        <div
-          class="vec-cell"
-          class:pos={v >= 0}
-          class:neg={v < 0}
-          style="--w:{Math.abs(v) / vecScale}"
-          title="dim {dim}: {v.toFixed(3)}"
-        ></div>
-      {/each}
-    </div>
+
+    {#if mode === 'raw'}
+      <div class="vector-bar">
+        {#each selectedVector as v, dim}
+          <div
+            class="vec-cell"
+            class:pos={v >= 0}
+            class:neg={v < 0}
+            style="--w:{Math.abs(v) / vecScale}"
+            title="dim {dim}: {v.toFixed(3)}"
+          ></div>
+        {/each}
+      </div>
+    {:else}
+      <div class="decompose">
+        <div class="decompose-hint">each row shows one source's contribution to the selected vector. sum the rows component-wise to recover the raw vector above.</div>
+        {#each selectedDecomposition as src}
+          <div class="decompose-row" data-kind={src.kind}>
+            <span class="decompose-label">{src.name}</span>
+            <div class="vector-bar small">
+              {#each src.values as v, dim}
+                <div
+                  class="vec-cell"
+                  class:pos={v >= 0}
+                  class:neg={v < 0}
+                  style="--w:{Math.abs(v) / decomposeScale}"
+                  title="dim {dim}: {v.toFixed(3)}"
+                ></div>
+              {/each}
+            </div>
+          </div>
+        {/each}
+      </div>
+    {/if}
     <div class="vector-axis">
       <span>dim 0</span>
       <span>dim {D - 1}</span>
@@ -340,5 +410,62 @@
     font-family: var(--font-mono);
     font-size: 0.7rem;
     color: var(--site-fg-muted);
+  }
+
+  .seg {
+    display: inline-flex;
+    border: 1px solid color-mix(in srgb, var(--site-fg) 14%, transparent);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .seg-btn {
+    appearance: none;
+    border: 0;
+    padding: 0.25rem 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    background: transparent;
+    color: var(--site-fg-muted);
+    cursor: pointer;
+  }
+  .seg-btn + .seg-btn {
+    border-left: 1px solid color-mix(in srgb, var(--site-fg) 14%, transparent);
+  }
+  .seg-btn.active {
+    background: color-mix(in srgb, var(--ink-sea) 18%, transparent);
+    color: var(--site-fg);
+  }
+
+  .decompose {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .decompose-hint {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    color: var(--site-fg-muted);
+    margin-bottom: 0.2rem;
+  }
+  .decompose-row {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.4rem;
+    border-radius: 6px;
+    border-left: 3px solid var(--site-fg-muted);
+    background: color-mix(in srgb, var(--site-fg) 3%, transparent);
+  }
+  .decompose-row[data-kind='init'] { border-left-color: var(--ink-orange); }
+  .decompose-row[data-kind='attn'] { border-left-color: var(--ink-sea); }
+  .decompose-row[data-kind='ffn']  { border-left-color: var(--ink-coral); }
+  .decompose-label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--site-fg-muted);
+  }
+  .vector-bar.small {
+    height: 22px;
   }
 </style>
