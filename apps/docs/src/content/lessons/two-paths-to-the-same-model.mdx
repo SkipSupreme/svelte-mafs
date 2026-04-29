@@ -1,0 +1,108 @@
+---
+title: Two paths to the same model
+module: m14-sequence-models
+summary: Counting bigrams and training a one-layer neural network find the exact same probabilities. Watch them converge in real time, then learn why "smoothing" and "L2 regularization" are the same trick from two angles.
+estimatedMinutes: 18
+order: 2
+prereqs:
+  - predicting-the-next-character
+conceptsCovered:
+  - bigram-as-onelayer-nn
+  - count-vs-gd-equivalence
+  - nll-loss
+  - softmax-stability
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import BigramTwoWays from '../../components/demos/BigramTwoWays.svelte';
+
+<Step title="A neural network with one layer and one job">
+Last lesson, the bigram model was a count matrix $N$. To get probabilities, we normalized each row.
+
+Here is the same model rebuilt as a tiny neural network:
+
+- **Inputs:** a one-hot vector $\mathbf{x} \in \{0, 1\}^{27}$, with a single 1 at the index of the current character.
+- **Weights:** a single matrix $W \in \mathbb{R}^{27 \times 27}$.
+- **Forward pass:** logits $\boldsymbol{\ell} = \mathbf{x}^\top W$, then probabilities $\mathbf{p} = \mathrm{softmax}(\boldsymbol{\ell})$.
+
+Because $\mathbf{x}$ is one-hot, $\mathbf{x}^\top W$ is just *row $i$ of $W$* — the row picked out by which character is currently 1. So the model's prediction for "what comes after character $i$" is $\mathrm{softmax}(W[i, :])$. Same shape as the count matrix's row, computed differently.
+
+This is a one-layer neural network. Same input shape, same output shape, same row-as-distribution structure. The only difference: $W$ is *trained* by gradient descent against a loss, not filled in by counting.
+</Step>
+
+<Step title="The loss it's trained on">
+The loss is the negative log-likelihood of the corpus under the model:
+
+$$
+\mathcal{L}(W) \;=\; -\frac{1}{N} \sum_{(i, j) \in \text{corpus}} \log P_W(j \mid i)
+\;=\; -\frac{1}{N} \sum_{i, j} N_{ij} \, \log \mathrm{softmax}(W[i, :])_j
+$$
+
+where $N$ is the total number of bigrams in the corpus. Average per-bigram, in nats. This is the same loss every language model on earth is trained on, all the way through to GPT-4 — only the architecture between the input and the softmax changes.
+
+Two facts to internalize before we run anything:
+
+1. **The minimum of $\mathcal{L}$ is achieved exactly when $\mathrm{softmax}(W[i, :])$ matches the empirical distribution $N_{i, \cdot} / \sum_k N_{i, k}$ for every row.** Setting $\nabla_W \mathcal{L} = 0$ with one-hot inputs gives this in two lines.
+2. So the SGD-trained model and the count-table model have the *same minimizer*.
+
+That means we should expect them to *converge to each other.* Let's watch.
+</Step>
+
+<StepCheck
+  title="Loss before training"
+  prompt="L = "
+  answer={3.2958}
+  tolerance={0.01}
+  hint="At init, every row of softmax(W) is roughly uniform over 27 tokens. log(27) ≈ 3.296."
+>
+$W$ is initialized so that every row of $\mathrm{softmax}(W)$ is essentially uniform over the 27 tokens — every cell is about $1/27$. **What is the per-bigram NLL loss before any training?** (Round to four decimal places. Use natural log; we report nats.)
+</StepCheck>
+
+<Step title="Watch them converge">
+Below: two heatmaps of the same shape, both showing a 27×27 distribution. The **left** panel is $P(j \mid i)$ from raw counts (with light add-$s$ smoothing). The **right** panel is $\mathrm{softmax}(W[i, :])$, with $W$ initialized to small random values.
+
+Press **Auto** and watch the right panel. It starts as a flat grey field — every row of $W$ is near zero, so every softmax row is near uniform. As gradient descent runs, the right panel grows the same dark cells as the left, in roughly the same places, with the same intensities. After a few hundred steps the convergence readout `|count − sgd|` drops below 0.005 and the panels are visibly indistinguishable.
+
+<BigramTwoWays client:visible learningRate={30} />
+
+The point is not that this is impressive — the model has 729 parameters and a closed-form optimum. The point is that **the same model, expressed two ways, lands in the same place.** Counting and gradient descent are not competing approaches; they are two algorithms for finding the same maximum-likelihood estimate. The neural-network framing wins as soon as the model gets too complex for closed-form counting — which is the next lesson, and the lesson after that, and the rest of this course.
+</Step>
+
+<Step title="Sample from it">
+Hit the **Sample a name** button in the widget above. The model starts at the `·` token, looks at its row, samples a next character from that row's distribution, and repeats until it samples `·` again. Some samples will look name-like (`emma·`, `eva·`); most will be garbage (`xrnxg·`).
+
+This is the entire generation algorithm. *Look up a row. Sample from its distribution. Repeat.* Sampling text from a transformer at the end of this course is the same loop — the model that produces each row is just enormously more sophisticated.
+</Step>
+
+<Step title="Smoothing IS regularization">
+Look at the count panel. The `q` row in our small corpus is sparse — almost no observed `q→?` bigrams. Without smoothing, almost every cell in the `q` row would be exactly zero, which means $\log P = -\infty$, which means the loss is undefined the moment the test set contains any never-seen bigram.
+
+The fix on the count side is **add-$s$ smoothing**: pretend every cell got $s$ extra observations before normalizing. Every probability becomes nonzero; the rare ones become small but finite. Crank the **smoothing** slider up — the count panel visibly flattens. At $s = 20$, every cell is close to uniform.
+
+Now do the equivalent on the SGD side. **L2 regularization** adds a $\tfrac{\lambda}{2} \|W\|^2$ term to the loss, which gradient descent translates into a "pull every weight toward zero" force on every step. Pulling $W$ toward zero pulls $\mathrm{softmax}(W[i,:])$ toward uniform. Crank the **L2 $\lambda$** slider up and watch the right panel flatten in *exactly* the same way as the left.
+
+These are the same intervention seen from two algorithmic angles. On the count side it's a Bayesian prior (every bigram starts with $s$ pseudo-observations). On the SGD side it's a penalty on weight magnitude. Both pull predictions toward uniform; both reduce overfitting; both correspond, formally, to the same MAP estimate under a symmetric Dirichlet prior. You will reach for one or the other constantly throughout the course — they are two interfaces to one idea.
+</Step>
+
+<StepCheck
+  title="What add-1 smoothing does to an empty row"
+  prompt="P(q | q) = "
+  answer={0.0370}
+  tolerance={0.001}
+  hint="Add-s smoothing with s=1: numerator = 0 + 1; denominator = 0 + 27·1 = 27."
+>
+Row `q` of our corpus contains zero observed bigrams (no name in the corpus follows a `q` with anything). Apply add-1 smoothing. **What does the model now predict for $P(q \mid q)$?** Round to four decimals.
+</StepCheck>
+
+<Step title="Why this matters past this lesson">
+Three things are now in the toolkit forever.
+
+**Softmax of a logit row is the language-model output shape.** Every language model in this course — bigram, MLP, RNN, transformer — outputs a probability distribution over the vocabulary by softmaxing a vector of length $|V|$. The bigram NN does it with a single weight matrix; the transformer does it after twelve layers of attention; the math at the output is identical.
+
+**NLL is the loss every language model trains on.** "Average negative log probability of the next token, given context." That sentence describes what the bigram NN, the Bengio MLP, the LSTM, and the transformer all minimize. Different architectures, same objective.
+
+**Regularization is the same idea everywhere.** Whether it shows up as smoothing on a count table, L2 penalty on weights, dropout, label smoothing, or weight decay in AdamW — the underlying move is "don't let the model become overconfident from finite data." We will see four more flavors of this before the course is over, and they will all be the same trick.
+
+Counting was a warmup. The next lesson upgrades the *output side* (loss, perplexity, sampling); after that we upgrade the *input side* (context, embeddings, architecture). The rows of the matrix go away. The shape of a probability distribution over the next token does not.
+</Step>
