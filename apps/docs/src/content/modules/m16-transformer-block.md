@@ -4,7 +4,7 @@ arc: arc-3-transformers
 order: 16
 title: The Transformer Block
 summary: Compose attention with a position-wise FFN, wrap each in residual + layer norm, stack N times, top with a final LN and a tied unembedding. Pre-LN vs post-LN. The residual stream as the noun the model operates on. Where the parameters and FLOPs actually go.
-status: drafting
+status: shipped
 estimatedMinutes: 75
 prereqs: [m13-training-dynamics, m14-sequence-models, m15-attention]
 conceptsCovered:

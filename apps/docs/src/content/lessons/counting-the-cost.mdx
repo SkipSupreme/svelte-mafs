@@ -1,0 +1,124 @@
+---
+title: Counting the cost
+module: m16-transformer-block
+summary: Per-block, per-token, per-step. Where the parameters live (FFN, mostly), where the FLOPs live (FFN, also mostly), and the rule of thumb that lets you predict training compute from parameter count alone.
+estimatedMinutes: 12
+order: 5
+prereqs:
+  - stacking-n-and-the-full-forward-pass
+conceptsCovered:
+  - block-parameter-budget
+  - block-flops
+  - model-parameter-budget
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import ParamBudgetPie from '../../components/demos/ParamBudgetPie.svelte';
+
+<Step title="The 12 d² rule">
+Per-block parameter count, ignoring biases and LayerNorm (both negligible):
+
+$$
+P_{\text{block}} \;=\; \underbrace{4 d^{2}}_{W_Q, W_K, W_V, W_O} \;+\; \underbrace{2 \cdot d \cdot 4d}_{W_1, W_2 \text{ in FFN}} \;=\; 12\, d^{2}
+$$
+
+Two-thirds of this is FFN. The four attention projections — each $d \times d$ — sum to $4 d^2$. The two FFN matrices — first $d \times 4d$, then $4d \times d$ — sum to $8 d^2$. Per block, the FFN owns twice the parameter count of attention.
+
+This is a 2017 convention that keeps holding up. Every standard pre-LN transformer follows it. Modern gated FFNs (SwiGLU in LLaMA) reduce the ratio to ~$8/3$ because the gate adds a third matrix; the underlying ratio of "FFN dominates" is preserved.
+</Step>
+
+<StepCheck
+  title="Per-block params at GPT-2 dimensions"
+  prompt="params = "
+  answer={7077888}
+  tolerance={1000}
+  hint="P_block = 12 · d² = 12 · 768² = 12 · 589,824 = 7,077,888."
+>
+GPT-2 small has $d = 768$. **What is the per-block parameter count** (assume no biases, ignore LayerNorm)?
+</StepCheck>
+
+<Step title="Where GPT-2 small's 124M actually goes">
+Walk the derivation, with the standard configuration ($V = 50{,}257$, $T_{\max} = 1024$, $N = 12$, $d_{\text{ff}} = 4d$, weight-tied):
+
+| Component | Formula | Value |
+|---|---|---|
+| Token embedding (tied with LM head) | $V \cdot d$ | 38.6 M |
+| Learned positional encoding | $T_{\max} \cdot d$ | 0.79 M |
+| 12 blocks of attention | $N \cdot 4 d^2$ | 28.3 M |
+| 12 blocks of FFN | $N \cdot 8 d^2$ | 56.6 M |
+| LayerNorms (per-block + final) | $\sim N \cdot 4d + 2d$ | 0.04 M (negligible) |
+| **Total** | | **≈ 124.4 M** |
+
+GPT-2 reports 124M for small. The arithmetic accounts for nearly every parameter; the small remainder is biases (which we ignored).
+
+Two things this table makes loud:
+
+1. **At GPT-2 small's scale, the embedding alone is 31% of the total.** That's a quirk of small models with large vocabularies. As $d$ grows, $V \cdot d$ stays linear in $d$ but $N \cdot 12 d^2$ goes quadratic — embeddings shrink as a share of the budget.
+2. **Of the non-embedding parameters, two-thirds live in the FFN** (56.6 / (28.3 + 56.6) ≈ 67%). Attention is the famous part of a transformer. The FFN is where the weight is.
+
+Now scale this up. Snap the widget below to **GPT-2 small** and watch it land near 124 M. Then snap to **GPT-2 medium** ($d = 1024$, $N = 24$, ~355 M). Then **GPT-2 XL** ($d = 1600$, $N = 48$, ~1.5 B). Then **GPT-3 175B**. Notice the embedding's relative slice collapsing as you go.
+
+<ParamBudgetPie client:visible />
+</Step>
+
+<StepCheck
+  title="GPT-2 small total"
+  prompt="≈ "
+  answer={124000000}
+  tolerance={2000000}
+  hint="V · d (tied) + T · d + 12 · 12d² ≈ 38.6M + 0.79M + ~85M ≈ 124M."
+>
+With $V = 50{,}257$, $d = 768$, $N = 12$, $T_{\max} = 1024$, weight tying on, **estimate the total parameter count of GPT-2 small** to the nearest million.
+</StepCheck>
+
+<Step title="FLOPs follow params, almost exactly">
+The Kaplan-and-friends rule of thumb (Kaplan et al. 2020 and follow-ups):
+
+$$
+C_{\text{train per token}} \;\approx\; 6 \cdot P_{\text{non-emb}}
+$$
+
+That is: training compute per token, in FLOPs, is roughly six times the non-embedding parameter count. The factor of 6 comes from one forward pass (≈ $2P$ FLOPs) plus a backward pass (≈ $4P$ FLOPs, accounting for gradients with respect to both inputs and parameters). Within a small constant, training one token through any transformer costs $6P$ FLOPs of arithmetic.
+
+This rule of thumb is what makes scaling laws so clean. Total training compute = (FLOPs per token) × (tokens trained on) = $6 \cdot P \cdot D$. Predict performance from $P$ and $D$ alone, ignoring most architectural details. It's why "Chinchilla-optimal" training ratios talk about $D \approx 20 P$ — they're statements about the $P$-vs-$D$ trade-off in a constant-FLOPs budget, derived from this approximation.
+</Step>
+
+<Step title="The T² term — when it actually dominates">
+M15 ended on the cost of attention being $O(T^2 \cdot d_k)$ — quadratic in sequence length. Time to put that in context.
+
+Attention's per-block cost has two parts:
+
+- **Projections** ($Q, K, V, O$): $\sim 4 \cdot 2 \cdot T \cdot d^2 = 8 \, T d^2$
+- **The matmul mixing** ($QK^\top$ and $\alpha V$): $\sim 4 \, T^2 \, d$
+
+The crossover is where $8 T d^2 \approx 4 T^2 d$, i.e., $T \approx 2d$. Below that, projection FLOPs dominate. Above that, the $T^2$ matmul dominates.
+
+For GPT-2 small with $d = 768$, the crossover is at $T \approx 1500$. Below that — including the standard $T = 1024$ context — attention FLOPs are dominated by *projections*, not by $T^2$. This is why "long context" is a research-frontier problem: at $T = 32{,}768$ and the same $d$, the matmul dominates and grows quadratically forever. Below the crossover, scaling $T$ is cheap; above it, scaling $T$ is expensive.
+
+The FFN, meanwhile, is $\sim 16 \, T d^2$ — linear in $T$, dominant at all reasonable contexts at GPT-2-small scale. As we said: FFN is where the weight is, *and* where most of the FLOPs are.
+</Step>
+
+<StepCheck
+  title="Doubling sequence length"
+  prompt="factor = "
+  answer={4}
+  tolerance={0.01}
+  hint="The T² term scales as T². Doubling T multiplies it by 4. (The projection terms scale as T and double; the FFN scales as T and doubles. The bottleneck term grows fastest.)"
+>
+At long enough context that the $T^2$ matmul dominates, **by what factor does attention compute grow when you double sequence length** $T$?
+</StepCheck>
+
+<Step title="What's already done, and what's next">
+You have the entire transformer architecture. Six lessons in this module:
+
+- **One block, top to bottom** — what a transformer block is.
+- **Why pre-LN** — why modern wirings put LayerNorm where they do.
+- **The residual stream as the object** — the framing that makes everything that follows tractable.
+- **Stacking N and the full forward pass** — the seven-line forward pass.
+- **Counting the cost** — where parameters and FLOPs go.
+
+Plus everything from earlier modules that this module just *reused*: token embeddings (m14), softmax cross-entropy loss (m14), gradients flowing through residuals (m13), layer norm (m13), the MLP (m11), full multi-head attention (m15). The transformer is small. The transformer is six modules of prerequisites and one module of assembly.
+
+The last thing left for the language-model arc is *how to actually use* the trained model. M17 covers tokenization (BPE — byte-pair encoding, the boundary between "raw text" and "token IDs the model sees") and sampling (temperature, top-k, top-p, beam search — the decisions you make at inference time about how to turn the next-token *distribution* into the next *token*). Then the M18 capstone trains a tiny GPT in your browser, end-to-end.
+</Step>
