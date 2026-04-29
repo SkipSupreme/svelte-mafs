@@ -26,10 +26,13 @@ function page(body: string, status = 200): Response {
   );
 }
 
-const BAD = page(
-  `<h1>This link is no longer valid.</h1><p>If you'd still like to unsubscribe, <a href="/me">visit your account page</a>.</p>`,
-  400,
-);
+// Must be a function, not a const Response — Response bodies are streams and
+// re-serving the same Response object across requests throws after the first.
+const bad = () =>
+  page(
+    `<h1>This link is no longer valid.</h1><p>If you'd still like to unsubscribe, <a href="/me">visit your account page</a>.</p>`,
+    400,
+  );
 
 // GET shows a confirmation form. We deliberately do NOT mutate state on GET so
 // link prefetchers (Outlook safe-link, Gmail prefetch, anti-virus URL scanners,
@@ -38,9 +41,9 @@ const BAD = page(
 export const GET: APIRoute = async ({ url }) => {
   const env = getEnv();
   const token = url.searchParams.get('token');
-  if (!token || !env.UNSUBSCRIBE_HMAC_SECRET) return BAD;
+  if (!token || !env.UNSUBSCRIBE_HMAC_SECRET) return bad();
   const userId = await verifyUnsubscribeToken(token, env.UNSUBSCRIBE_HMAC_SECRET);
-  if (!userId) return BAD;
+  if (!userId) return bad();
   // Don't echo userId back to the client; just confirm the token is valid.
   return page(
     `<h1>Unsubscribe from module-launch emails?</h1>
@@ -55,7 +58,7 @@ export const GET: APIRoute = async ({ url }) => {
 
 export const POST: APIRoute = async ({ request, url }) => {
   const env = getEnv();
-  if (!env.UNSUBSCRIBE_HMAC_SECRET) return BAD;
+  if (!env.UNSUBSCRIBE_HMAC_SECRET) return bad();
 
   // RFC 8058 sends `List-Unsubscribe=One-Click` as form data. Browser form
   // submissions also use form data. JSON or query-string clients also work.
@@ -74,10 +77,10 @@ export const POST: APIRoute = async ({ request, url }) => {
       }
     }
   }
-  if (!token) return BAD;
+  if (!token) return bad();
 
   const userId = await verifyUnsubscribeToken(token, env.UNSUBSCRIBE_HMAC_SECRET);
-  if (!userId) return BAD;
+  if (!userId) return bad();
 
   const db = getDb(env.DB);
   await db.update(userProfile).set({ marketingOptIn: false }).where(eq(userProfile.userId, userId));

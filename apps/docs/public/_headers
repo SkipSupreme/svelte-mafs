@@ -1,0 +1,19 @@
+# Static-asset headers for prerendered pages. SSR routes get the same set
+# from src/middleware.ts; this covers /, /lessons/*, /examples/* etc. that
+# Cloudflare serves directly from the assets binding.
+
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), accelerometer=(), gyroscope=(), interest-cohort=()
+
+# CSP only on HTML responses. JSON / image responses don't benefit and
+# some clients log noise. The :ext glob in Cloudflare _headers is path-based,
+# so we attach CSP to "/" + extensionless paths + .html paths.
+/
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: https://avatars.githubusercontent.com https://lh3.googleusercontent.com; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline'; connect-src 'self'; manifest-src 'self'
+
+/*.html
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: https://avatars.githubusercontent.com https://lh3.googleusercontent.com; font-src 'self' https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline'; connect-src 'self'; manifest-src 'self'
