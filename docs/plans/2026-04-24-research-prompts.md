@@ -224,6 +224,18 @@ NEXT_MODULE: m16-transformer-block (residual connections + layer norm + the feed
 ENDGAME: Attention is the operation. The rest of a transformer — residuals, layer norm, an MLP on top — is plumbing around this single core idea: every position broadcasts a query, every position offers a key, and the softmax-weighted match decides whose values you pull back. You are now one layer of glue away from the real thing.
 ```
 
+### M16 — The Transformer Block
+
+```
+ORDER: 16
+TITLE: The Transformer Block
+ARC: Arc 3 — Language Models
+PRIOR: From m11-neural-networks: MLPs as stacks of (matmul + nonlinearity), forward pass, activation functions including ReLU and GELU. From m12-backpropagation: backprop on a computational graph; gradient flow through compositions. From m13-training-dynamics: residual connections (with the gradient-highway intuition), layer norm and batch norm, variance-preserving initialization (Xavier, He), dropout, weight decay. From m14-sequence-modeling: token vocab, embedding lookup, NLL loss, perplexity, the bigram-as-one-layer-NN equivalence, the full chain "tokens → embedding → predict next token." From m15-attention: full scaled dot-product self-attention with the matrix form softmax(QKᵀ/√dₖ)V, causal masking, three flavors of positional encoding (sinusoidal, learned absolute, RoPE), multi-head as parallel subspaces, the T² cost and the KV cache. From m7-linear-algebra: matmul, softmax, broadcasting.
+CONCEPTS: the canonical transformer block as x → x + MHA(LN(x)) → x + FFN(LN(x)) — two sub-layers, each wrapped in residual + layer norm; pre-LN vs post-LN architectures and the empirical / gradient-flow argument for pre-LN winning at depth; the residual stream as a per-token vector that every block reads from and writes to (Anthropic mech-interp framing); the position-wise feed-forward block as a 2-layer MLP applied independently to every token's vector with no cross-token mixing; the 4× hidden-dimension expansion convention (d_model → 4 d_model → d_model); GELU vs ReLU as the modern FFN activation choice; stacking N transformer blocks for depth; the final layer norm at the top of the stack before the language-modeling head; the unembedding matrix as the projection from d_model back to vocabulary-size logits; weight tying — sharing parameters between the input embedding and the output unembedding; the complete top-to-bottom forward pass: token ids → embedding lookup → + positional encoding → N × transformer block → final layer norm → unembedding → softmax → next-token distribution; parameter count budget per block (≈ 4d² from attention projections + ≈ 8d² from the FFN's two matrices, roughly 12d² per block, dominated by the FFN as d grows); where dropout sits in the standard recipe.
+NEXT_MODULE: m17-tokenization-sampling (byte-pair encoding tokenization, sampling strategies — temperature, top-k, top-p, beam search — and the inference loop that wraps around a trained transformer to actually generate text)
+ENDGAME: This is the transformer. Tokens at the bottom, attention + MLP blocks in the middle, an unembedding at the top, the bigram-style NLL loss as the training objective. Stack N of them, train with Adam and a warmup schedule, and you have GPT.
+```
+
 ---
 
 ## Widget research template (fire per interactive widget)
