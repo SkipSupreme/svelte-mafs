@@ -261,22 +261,27 @@ All celebrations respect `prefers-reduced-motion`. Audio mute-by-default only if
 
 ## Sound
 
-Four tones, all Web Audio API sine waves with attack/decay envelopes. Implementation in `apps/docs/src/lib/sound.ts`.
+Four event tokens, each backed by a curated CC0 mp3 in `apps/docs/public/`. Implementation in `apps/docs/src/lib/sound.ts` plays them via `HTMLAudioElement`.
 
-| Token | Frequency | Duration | Role |
-|---|---|---|---|
-| `tick` | 880 Hz | 60ms | Step advance, widget snap, continue click. |
-| `ding` | 880 + 1320 Hz chord | 120ms | Correct answer. |
-| `chime` | 660 → 880 → 1320 Hz | 400ms | Lesson complete. |
-| `anthem` | 523 → 659 → 784 → 1047 Hz | 1000ms | Module complete. |
+| Token | File | Role |
+|---|---|---|
+| `tick` | `humordome-soft-ui-pop-light-minimal-click-451232.mp3` | Step advance, widget snap, continue click. |
+| `ding` | `freesound_community-ui_correct_button2-103167.mp3` | Correct answer. |
+| `chime` | `freesound_community-melancholy-ui-chime-47804.mp3` | Lesson complete. |
+| `anthem` | `freesound_community-success-1-6297.mp3` | Module complete. |
+| `jump` | `freesound_community-cartoon-jump-6462.mp3` | Tinker mascot click bounce. |
 
-Tones progress up the scale. Finishing a lesson *sounds* like finishing.
+Sounds escalate from a soft pop on every step click to a full success cue at module complete. Finishing a lesson *sounds* like finishing. The mascot has its own cartoon-jump cue so clicking Tinker feels physical.
+
+Four additional CC0 mp3s sit in `/public/` for future events (woosh, camera shutter, button-pressed, confirm-tap). Wire them up the same way: edit the `PALETTE` map in `lib/sound.ts`.
 
 Rules:
 - Default on. Settings toggle to mute, persisted to localStorage.
 - Sound only on earned state changes. Never on page load or navigation.
-- If `AudioContext` fails: fail silent, never throw.
+- If audio fails to load or play: fail silent, never throw.
 - Respect `(prefers-reduced-motion: reduce)` — if so, default to off.
+
+History: 2026-04-23..27 used hand-crafted Web Audio sine tones (zero asset cost). They sounded thin and synthetic; replaced 2026-04-28.
 
 ---
 
