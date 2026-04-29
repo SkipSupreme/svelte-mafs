@@ -4,7 +4,7 @@ arc: arc-3-transformers
 order: 15
 title: Attention
 summary: Build attention from a soft dictionary lookup. Scaled dot-product. Q, K, V as projections of the same X. Causal masking. Permutation-equivariance and three flavors of positional encoding. Multi-head as parallel subspaces. The T² cost and the KV-cache that tames it.
-status: drafting
+status: shipped
 estimatedMinutes: 77
 prereqs: [m13-training-dynamics, m14-sequence-models]
 conceptsCovered:
