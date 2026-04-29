@@ -1,0 +1,230 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+export const prerender = true;
+
+const lessons = await getCollection('lessons', (l) => !l.data.draft);
+const modules = await getCollection('modules');
+
+const moduleMap = new Map(modules.map((m) => [m.id, m.data]));
+
+// Group lessons by module, sort by frontmatter `order` within each module.
+type LessonEntry = (typeof lessons)[number];
+const grouped = new Map<string, LessonEntry[]>();
+for (const lesson of lessons) {
+  const arr = grouped.get(lesson.data.module) ?? [];
+  arr.push(lesson);
+  grouped.set(lesson.data.module, arr);
+}
+for (const arr of grouped.values()) {
+  arr.sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0));
+}
+
+// Sort module groups by the module's own `order`.
+const sortedGroups = Array.from(grouped.entries()).sort(([a], [b]) => {
+  const oa = moduleMap.get(a)?.order ?? 999;
+  const ob = moduleMap.get(b)?.order ?? 999;
+  return oa - ob;
+});
+---
+
+<Base title="Lessons" description="Every lesson in the Tinker math-for-ML course, organized by module.">
+  <main class="lessons-shell">
+    <header class="hero">
+      <p class="eyebrow">course · ml-math</p>
+      <h1>Lessons</h1>
+      <p class="lede">
+        Interactive lessons from "Machine Learning, Backpropagation, and AI — The Math."
+        Pick any module to start; each lesson is one read-in-one-sitting page with
+        gated steps and a widget for every key idea.
+      </p>
+    </header>
+
+    <ol class="modules">
+      {
+        sortedGroups.map(([moduleId, entries]) => {
+          const m = moduleMap.get(moduleId);
+          return (
+            <li class="module">
+              <header class="module-head">
+                <p class="module-eyebrow">
+                  Module {m?.order ?? '—'}
+                  {m?.status && <span class={`status status-${m.status}`}>{m.status}</span>}
+                </p>
+                <h2>{m?.title ?? moduleId}</h2>
+                {m?.summary && <p class="module-summary">{m.summary}</p>}
+              </header>
+              <ol class="lesson-list">
+                {entries.map((entry) => (
+                  <li>
+                    <a href={`/lessons/${entry.id}`} class="lesson-link">
+                      <span class="lesson-order">{String(entry.data.order ?? 0).padStart(2, '0')}</span>
+                      <span class="lesson-body">
+                        <span class="lesson-title">{entry.data.title}</span>
+                        <span class="lesson-summary">{entry.data.summary}</span>
+                      </span>
+                      <span class="lesson-min">{entry.data.estimatedMinutes} min</span>
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </li>
+          );
+        })
+      }
+    </ol>
+  </main>
+</Base>
+
+<style>
+  .lessons-shell {
+    max-width: var(--max-shell, 1120px);
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 3vw, 2rem) 6rem;
+    color: var(--site-fg);
+  }
+
+  .hero {
+    max-width: 720px;
+    margin-bottom: 3rem;
+  }
+  .eyebrow {
+    margin: 0 0 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--ink-red);
+  }
+  h1 {
+    font-family: var(--font-display, Fraunces, Georgia, serif);
+    font-weight: 700;
+    font-size: clamp(2.1rem, 5.5vw, 4rem);
+    margin: 0 0 1rem;
+    text-wrap: balance;
+  }
+  .lede {
+    font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+    color: var(--site-fg-muted);
+    line-height: 1.55;
+    max-width: 60ch;
+  }
+
+  .modules {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+  .module {
+    border-top: 1px solid color-mix(in srgb, var(--site-fg) 14%, transparent);
+    padding-top: 1.5rem;
+  }
+  .module-head {
+    margin-bottom: 1rem;
+  }
+  .module-eyebrow {
+    margin: 0 0 0.35rem;
+    font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--site-fg-muted);
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+  }
+  .status {
+    border-radius: 999px;
+    padding: 0.05rem 0.55rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+  }
+  .status-shipped {
+    background: color-mix(in srgb, var(--cta) 16%, transparent);
+    color: var(--cta);
+  }
+  .status-drafting {
+    background: color-mix(in srgb, var(--ink-sun) 18%, transparent);
+    color: var(--ink-sun);
+  }
+  .status-planned {
+    background: color-mix(in srgb, var(--site-fg) 8%, transparent);
+    color: var(--site-fg-muted);
+  }
+  .module h2 {
+    font-family: var(--font-display, Fraunces, Georgia, serif);
+    font-size: clamp(1.35rem, 2.4vw, 1.7rem);
+    margin: 0 0 0.4rem;
+    font-weight: 600;
+    text-wrap: balance;
+  }
+  .module-summary {
+    margin: 0;
+    color: var(--site-fg-muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    max-width: 65ch;
+  }
+
+  .lesson-list {
+    list-style: none;
+    padding: 0;
+    margin: 1.25rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .lesson-link {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+    gap: 0.85rem;
+    align-items: baseline;
+    padding: 0.85rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--site-fg) 12%, transparent);
+    border-radius: 12px;
+    background: var(--demo-card, transparent);
+    text-decoration: none;
+    color: var(--site-fg);
+    transition: transform 140ms ease, border-color 160ms ease, background 160ms ease;
+  }
+  .lesson-link:hover {
+    transform: translateY(-1px);
+    border-color: var(--ink-red);
+    background: color-mix(in srgb, var(--ink-red) 4%, transparent);
+  }
+  .lesson-order {
+    font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+    font-size: 0.85rem;
+    color: var(--site-fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .lesson-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+  .lesson-title {
+    font-family: var(--font-display, Fraunces, Georgia, serif);
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--site-fg);
+  }
+  .lesson-summary {
+    font-size: 0.85rem;
+    color: var(--site-fg-muted);
+    line-height: 1.5;
+  }
+  .lesson-min {
+    font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+    font-size: 0.78rem;
+    color: var(--site-fg-muted);
+    white-space: nowrap;
+  }
+</style>
