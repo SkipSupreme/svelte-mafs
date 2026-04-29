@@ -13,6 +13,7 @@
    */
   import { onMount } from 'svelte';
   import { burst } from '../../lib/confetti';
+  import { TINKER_EVENT } from '../../lib/events';
 
   interface Props {
     /** Default level when triggered via the window event without a detail. */
@@ -59,11 +60,11 @@
       const detail = (e as CustomEvent<{ level?: 'lesson' | 'module' }>).detail;
       play(detail?.level ?? defaultLevel);
     };
-    window.addEventListener('tinker:celebrate', handler);
+    window.addEventListener(TINKER_EVENT.celebrate, handler);
     if (autoplay) {
       requestAnimationFrame(() => play(defaultLevel));
     }
-    return () => window.removeEventListener('tinker:celebrate', handler);
+    return () => window.removeEventListener(TINKER_EVENT.celebrate, handler);
   });
 </script>
 

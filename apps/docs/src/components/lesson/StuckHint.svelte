@@ -1,9 +1,10 @@
 <script lang="ts">
   import { Spring, prefersReducedMotion } from 'svelte/motion';
   import { onMount } from 'svelte';
+  import { TINKER_EVENT } from '../../lib/events';
+  import { LS_KEY } from '../../lib/storage-keys';
 
   const THROTTLE_MS = 120_000; // 2 min global
-  const LS_KEY = 'tinker:stuck-last-shown';
 
   let visible = $state(false);
   let hint = $state('');
@@ -11,7 +12,7 @@
 
   function show(h: string) {
     let last = 0;
-    try { last = Number(localStorage.getItem(LS_KEY) ?? '0'); } catch {}
+    try { last = Number(localStorage.getItem(LS_KEY.stuckLastShown) ?? '0'); } catch {}
     if (Date.now() - last < THROTTLE_MS) return;
     hint = h;
     visible = true;
@@ -20,9 +21,9 @@
     } else {
       slide.target = 0;
     }
-    try { localStorage.setItem(LS_KEY, String(Date.now())); } catch {}
+    try { localStorage.setItem(LS_KEY.stuckLastShown, String(Date.now())); } catch {}
     window.dispatchEvent(
-      new CustomEvent('tinker:announce', { detail: { message: `Hint: ${h}` } }),
+      new CustomEvent(TINKER_EVENT.announce, { detail: { message: `Hint: ${h}` } }),
     );
   }
 
@@ -41,10 +42,10 @@
       if (detail?.hint) show(detail.hint);
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') hide(); };
-    window.addEventListener('tinker:stuck', onStuck);
+    window.addEventListener(TINKER_EVENT.stuck, onStuck);
     window.addEventListener('keydown', onKey);
     return () => {
-      window.removeEventListener('tinker:stuck', onStuck);
+      window.removeEventListener(TINKER_EVENT.stuck, onStuck);
       window.removeEventListener('keydown', onKey);
     };
   });

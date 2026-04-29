@@ -4,6 +4,8 @@
    * Listens for `tinker:announce` window events. Dropped into Lesson.astro
    * once; every celebration calls announce(msg) from lib/celebrate.ts.
    */
+  import { TINKER_EVENT } from '../../lib/events';
+
   let message = $state('');
 
   $effect(() => {
@@ -13,9 +15,9 @@
         message = e.detail.message;
       });
     };
-    window.addEventListener('tinker:announce', onAnnounce as EventListener);
+    window.addEventListener(TINKER_EVENT.announce, onAnnounce as EventListener);
     return () =>
-      window.removeEventListener('tinker:announce', onAnnounce as EventListener);
+      window.removeEventListener(TINKER_EVENT.announce, onAnnounce as EventListener);
   });
 </script>
 

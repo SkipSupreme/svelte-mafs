@@ -18,6 +18,9 @@
  * other listeners can update live without polling localStorage.
  */
 
+import { TINKER_EVENT } from './events';
+import { LS_KEY } from './storage-keys';
+
 export const XP_AWARD = {
   stepAdvance: 1,
   correctFirstTry: 5,
@@ -25,11 +28,6 @@ export const XP_AWARD = {
   lessonComplete: 20,
   moduleComplete: 100,
 } as const;
-
-const LS_XP = 'tinker:xp';
-const LS_STREAK = 'tinker:streak';
-const LS_STREAK_MAX = 'tinker:streak-max';
-const LS_LAST_DAY = 'tinker:streak-last-day';
 
 function readInt(key: string, fallback = 0): number {
   if (typeof window === 'undefined') return fallback;
@@ -58,21 +56,22 @@ function dayStringUTC(d = new Date()): string {
   return `${y}-${m}-${day}`;
 }
 
-function emit<T>(name: string, detail: T): void {
+function emit<T>(name: 'xp' | 'streak', detail: T): void {
   if (typeof window === 'undefined') return;
-  window.dispatchEvent(new CustomEvent(`tinker:${name}`, { detail }));
+  const eventName = name === 'xp' ? TINKER_EVENT.xp : TINKER_EVENT.streak;
+  window.dispatchEvent(new CustomEvent(eventName, { detail }));
 }
 
 export function getXp(): number {
-  return readInt(LS_XP);
+  return readInt(LS_KEY.xp);
 }
 
 export function getStreak(): number {
-  return readInt(LS_STREAK);
+  return readInt(LS_KEY.streak);
 }
 
 export function getMaxStreak(): number {
-  return readInt(LS_STREAK_MAX);
+  return readInt(LS_KEY.streakMax);
 }
 
 export interface XpEventDetail {
@@ -84,7 +83,7 @@ export interface XpEventDetail {
 export function awardXp(amount: number, reason: string): number {
   if (!Number.isFinite(amount) || amount === 0) return getXp();
   const total = Math.max(0, getXp() + amount);
-  writeInt(LS_XP, total);
+  writeInt(LS_KEY.xp, total);
   emit<XpEventDetail>('xp', { amount, total, reason });
   return total;
 }
@@ -107,7 +106,7 @@ export function bumpStreak(): StreakEventDetail {
   const today = dayStringUTC();
   let last: string | null = null;
   try {
-    last = localStorage.getItem(LS_LAST_DAY);
+    last = localStorage.getItem(LS_KEY.streakLastDay);
   } catch {
     /* ignore */
   }
@@ -123,11 +122,11 @@ export function bumpStreak(): StreakEventDetail {
   })();
   const continuing = last === yesterday;
   const streak = continuing ? getStreak() + 1 : 1;
-  writeInt(LS_STREAK, streak);
+  writeInt(LS_KEY.streak, streak);
   const max = Math.max(getMaxStreak(), streak);
-  writeInt(LS_STREAK_MAX, max);
+  writeInt(LS_KEY.streakMax, max);
   try {
-    localStorage.setItem(LS_LAST_DAY, today);
+    localStorage.setItem(LS_KEY.streakLastDay, today);
   } catch {
     /* ignore */
   }

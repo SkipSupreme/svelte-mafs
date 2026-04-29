@@ -2,14 +2,9 @@
 export const prerender = false;
 import Base from '../layouts/Base.astro';
 import AuthForm from '../components/auth/AuthForm.svelte';
+import { resolveAuthError } from '../lib/auth-errors';
 
-const url = new URL(Astro.request.url);
-const errorParam = url.searchParams.get('error') ?? '';
-const errorMessage = errorParam
-  ? errorParam === 'INVALID_TOKEN' || errorParam === 'EXPIRED_TOKEN'
-    ? 'Your sign-in link has expired or already been used. Send a new one below.'
-    : 'Something went wrong. Try again.'
-  : '';
+const errorMessage = resolveAuthError(new URL(Astro.request.url).searchParams);
 ---
 
 <Base title="Sign in">

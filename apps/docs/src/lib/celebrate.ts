@@ -13,13 +13,14 @@ import { cubicOut } from 'svelte/easing';
 import { play } from './sound';
 import { burst } from './confetti';
 import { awardXp, vibrate, XP_AWARD } from './xp';
+import { TINKER_EVENT } from './events';
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export function announce(message: string) {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(
-    new CustomEvent('tinker:announce', { detail: { message } }),
+    new CustomEvent(TINKER_EVENT.announce, { detail: { message } }),
   );
 }
 
@@ -61,7 +62,7 @@ export async function celebrateLesson(card: HTMLElement) {
   }
   if (typeof window !== 'undefined') {
     window.dispatchEvent(
-      new CustomEvent('tinker:celebrate', { detail: { level: 'lesson' } }),
+      new CustomEvent(TINKER_EVENT.celebrate, { detail: { level: 'lesson' } }),
     );
   }
   play('chime');
@@ -80,7 +81,7 @@ export async function celebrateModule(
 ) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(
-      new CustomEvent('tinker:celebrate', { detail: { level: 'module' } }),
+      new CustomEvent(TINKER_EVENT.celebrate, { detail: { level: 'module' } }),
     );
   }
   await wait(180);

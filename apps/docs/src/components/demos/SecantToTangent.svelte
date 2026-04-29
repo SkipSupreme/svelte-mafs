@@ -3,6 +3,7 @@
   import { burst } from '../../lib/confetti';
   import { play } from '../../lib/sound';
   import { vibrate } from '../../lib/xp';
+  import { TINKER_EVENT } from '../../lib/events';
 
   interface Props {
     /** Hide the slope readout — used for the opening "you can't do this yet" hook. */
@@ -69,7 +70,7 @@
     vibrate(20);
     if (stage) burst(stage, { count: 14, spread: 1.4 });
     window.dispatchEvent(
-      new CustomEvent('tinker:celebrate', { detail: { level: 'step' } }),
+      new CustomEvent(TINKER_EVENT.celebrate, { detail: { level: 'step' } }),
     );
   });
 </script>

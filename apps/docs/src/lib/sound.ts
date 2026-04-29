@@ -19,9 +19,9 @@
  * cartoon-jump for the mascot, etc).
  */
 
-export type SoundName = 'tick' | 'ding' | 'chime' | 'anthem' | 'jump';
+import { LS_KEY } from './storage-keys';
 
-const LS_MUTED = 'tinker:sound-muted';
+export type SoundName = 'tick' | 'ding' | 'chime' | 'anthem' | 'jump';
 
 type SoundDef = { src: string; volume: number };
 
@@ -65,7 +65,7 @@ function readMuted(): boolean {
   if (mutedCached !== null) return mutedCached;
   if (typeof window === 'undefined') return true;
   try {
-    const stored = localStorage.getItem(LS_MUTED);
+    const stored = localStorage.getItem(LS_KEY.soundMuted);
     if (stored !== null) {
       mutedCached = stored === '1';
       return mutedCached;
@@ -89,7 +89,7 @@ export function isMuted(): boolean {
 export function setMuted(value: boolean): void {
   mutedCached = value;
   try {
-    localStorage.setItem(LS_MUTED, value ? '1' : '0');
+    localStorage.setItem(LS_KEY.soundMuted, value ? '1' : '0');
   } catch {
     /* ignore */
   }

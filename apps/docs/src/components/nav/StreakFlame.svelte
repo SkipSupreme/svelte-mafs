@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { StreakEventDetail } from '../../lib/xp';
+  import { TINKER_EVENT } from '../../lib/events';
 
   let { streak: initial = 0 }: { streak?: number } = $props();
   let streak = $state(initial);
@@ -13,13 +14,13 @@
       flicker = true;
       setTimeout(() => (flicker = false), 800);
       window.dispatchEvent(
-        new CustomEvent('tinker:announce', {
+        new CustomEvent(TINKER_EVENT.announce, {
           detail: { message: `Streak now ${detail.streak} days.` },
         }),
       );
     };
-    window.addEventListener('tinker:streak', onBump);
-    return () => window.removeEventListener('tinker:streak', onBump);
+    window.addEventListener(TINKER_EVENT.streak, onBump);
+    return () => window.removeEventListener(TINKER_EVENT.streak, onBump);
   });
 </script>
 

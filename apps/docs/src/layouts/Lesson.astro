@@ -380,6 +380,8 @@ const moduleLabel = module.replace(/-/g, ' ');
   import { play } from '../lib/sound';
   import { awardXp, XP_AWARD } from '../lib/xp';
   import { celebrateCorrect, celebrateLesson, celebrateWrong } from '../lib/celebrate';
+  import { TINKER_EVENT } from '../lib/events';
+  import { lessonUnlockedKey, lessonCompletedKey } from '../lib/storage-keys';
 
   type CheckData = { answer: number; tolerance: number };
 
@@ -391,8 +393,8 @@ const moduleLabel = module.replace(/-/g, ' ');
 
   function initLesson(root: HTMLElement) {
     const slug = root.dataset.lessonSlug ?? 'unknown';
-    const storageKey = `tinker:lesson:${slug}:unlocked`;
-    const completionKey = `tinker:lesson:${slug}:completed`;
+    const storageKey = lessonUnlockedKey(slug);
+    const completionKey = lessonCompletedKey(slug);
 
     const steps = Array.from(root.querySelectorAll<HTMLElement>('[data-step]'));
     steps.forEach((step, i) => step.dataset.index = String(i));
@@ -511,7 +513,7 @@ const moduleLabel = module.replace(/-/g, ' ');
         if (stuckTimer !== null) clearTimeout(stuckTimer);
         stuckTimer = window.setTimeout(() => {
           window.dispatchEvent(
-            new CustomEvent('tinker:stuck', { detail: { hint } }),
+            new CustomEvent(TINKER_EVENT.stuck, { detail: { hint } }),
           );
           stuckTimer = null;
         }, STUCK_MS);

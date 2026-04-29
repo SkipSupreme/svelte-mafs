@@ -3,6 +3,7 @@
   import { cubicOut } from 'svelte/easing';
   import { fly, fade } from 'svelte/transition';
   import type { XpEventDetail } from '../../lib/xp';
+  import { TINKER_EVENT } from '../../lib/events';
 
   let { initial = 0 }: { initial?: number } = $props();
   const display = new Tween(initial, { duration: 900, easing: cubicOut });
@@ -21,8 +22,8 @@
       }
       floaters = [...floaters, { id: nextId++, amount: detail.amount }];
     };
-    window.addEventListener('tinker:xp', onXp);
-    return () => window.removeEventListener('tinker:xp', onXp);
+    window.addEventListener(TINKER_EVENT.xp, onXp);
+    return () => window.removeEventListener(TINKER_EVENT.xp, onXp);
   });
 
   function remove(id: number) {
