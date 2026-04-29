@@ -3,6 +3,7 @@ import { createAuth } from '../../../server/auth';
 import { getDb } from '../../../server/db';
 import { getEnv } from '../../../server/env';
 import { checkRateLimit } from '../../../server/ratelimit';
+import { ResendError } from '../../../server/email';
 
 export const prerender = false;
 
@@ -27,17 +28,37 @@ const handler: APIRoute = async ({ request }) => {
     const db = getDb(env.DB);
     const rl = await checkRateLimit(db, `auth:magic-link:${ip}`, { limit: 5, windowMs: 60_000 });
     if (!rl.allowed) {
-      return new Response(JSON.stringify({ error: 'Too many sign-in requests, try again in a minute.' }), {
-        status: 429,
-        headers: {
-          'content-type': 'application/json',
-          'retry-after': String(Math.ceil(rl.retryAfterMs / 1000)),
+      return new Response(
+        JSON.stringify({ error: 'Too many sign-in requests, try again in a minute.' }),
+        {
+          status: 429,
+          headers: {
+            'content-type': 'application/json',
+            'retry-after': String(Math.ceil(rl.retryAfterMs / 1000)),
+          },
         },
-      });
+      );
     }
   }
 
-  return auth.handler(request);
+  try {
+    return await auth.handler(request);
+  } catch (err) {
+    // Resend transport failures (unverified domain, revoked key, etc.)
+    // bubble up from sendMagicLinkEmail. Map to a clean 503 + logged
+    // detail so users see "service unavailable" instead of a Cloudflare
+    // generic 500 with no body.
+    if (err instanceof ResendError) {
+      console.error('[auth] resend failed', err.status, err.body);
+      return new Response(
+        JSON.stringify({
+          error: "Sign-in email service is temporarily unavailable. We've been notified.",
+        }),
+        { status: 503, headers: { 'content-type': 'application/json' } },
+      );
+    }
+    throw err;
+  }
 };
 
 function clientIp(request: Request): string {

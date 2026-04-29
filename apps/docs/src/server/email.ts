@@ -16,6 +16,21 @@ interface ResendPayload {
   headers?: Record<string, string>;
 }
 
+/**
+ * Custom error class so callers can distinguish Resend transport failures
+ * (domain not verified, key revoked, recipient bounced) from logic bugs.
+ * Lets the auth handler surface a clean 503 instead of a generic 500.
+ */
+export class ResendError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly body: string,
+  ) {
+    super(`Resend ${status}: ${body.slice(0, 200)}`);
+    this.name = 'ResendError';
+  }
+}
+
 async function postResend(apiKey: string, payload: ResendPayload): Promise<{ id: string }> {
   const res = await fetch(RESEND_URL, {
     method: 'POST',
@@ -27,7 +42,7 @@ async function postResend(apiKey: string, payload: ResendPayload): Promise<{ id:
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Resend ${res.status}: ${text}`);
+    throw new ResendError(res.status, text);
   }
   return res.json() as Promise<{ id: string }>;
 }
