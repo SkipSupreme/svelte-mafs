@@ -268,7 +268,7 @@
     font-size: 0.83rem; font-weight: 600;
     transition: background 160ms ease, color 160ms ease;
   }
-  .seg-btn.active { background: var(--ink-red); color: #fdfdfc; }
+  .seg-btn.active { background: var(--ink-red); color: var(--on-color-fg); }
 
   .caption {
     margin: 0; font-size: 0.85rem; color: var(--site-fg-muted); line-height: 1.55;

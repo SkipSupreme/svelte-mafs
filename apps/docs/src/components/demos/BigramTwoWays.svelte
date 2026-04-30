@@ -531,7 +531,7 @@
   }
   .btn-primary {
     background: var(--ink-red);
-    color: #fdfdfc;
+    color: var(--on-color-fg);
     border-color: var(--ink-red);
   }
   .btn-primary:hover:not(:disabled) {

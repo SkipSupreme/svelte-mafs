@@ -292,7 +292,7 @@
     cursor: pointer;
   }
   .slot-pop-btn:hover { background: color-mix(in srgb, var(--ink-red) 16%, transparent); }
-  .slot-pop-btn.active { background: var(--ink-red); color: #fdfdfc; }
+  .slot-pop-btn.active { background: var(--ink-red); color: var(--on-color-fg); }
 
   .emb-row { display: flex; gap: 0.35rem; align-items: flex-end; }
   .emb-block {

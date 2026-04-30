@@ -296,7 +296,7 @@
     transition: background 160ms ease, border-color 160ms ease;
   }
   .mode:hover { border-color: var(--site-fg); }
-  .mode.active { background: var(--ink-red); color: #fdfdfc; border-color: var(--ink-red); }
+  .mode.active { background: var(--ink-red); color: var(--on-color-fg); border-color: var(--ink-red); }
 
   .plot-wrap {
     width: 100%; overflow: hidden; border-radius: 12px;

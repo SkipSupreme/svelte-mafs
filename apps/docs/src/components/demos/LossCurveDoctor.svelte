@@ -369,7 +369,7 @@
   .next-btn {
     border: none;
     background: var(--ink-red);
-    color: #fdfdfc;
+    color: var(--on-color-fg);
     border-radius: 999px;
     padding: 0.45rem 1rem;
     cursor: pointer;

@@ -299,7 +299,7 @@
   .btn-ghost { color: var(--site-fg-muted); font-weight: 500; }
   .btn.active {
     background: var(--ink-sea);
-    color: #fdfdfc;
+    color: var(--on-color-fg);
     border-color: var(--ink-sea);
   }
 

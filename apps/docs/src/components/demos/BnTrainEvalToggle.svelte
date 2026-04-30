@@ -220,7 +220,7 @@
     transition: background 160ms ease, color 160ms ease;
   }
   .seg-btn.active {
-    background: var(--ink-sea); color: #fdfdfc;
+    background: var(--ink-sea); color: var(--on-color-fg);
   }
 
   .strip {
@@ -329,7 +329,7 @@
     transition: background 160ms ease, transform 120ms ease, border-color 160ms ease;
   }
   .btn:hover { transform: translateY(-1px); border-color: var(--site-fg); }
-  .btn-primary { background: var(--ink-sea); color: #fdfdfc; border-color: var(--ink-sea); }
+  .btn-primary { background: var(--ink-sea); color: var(--on-color-fg); border-color: var(--ink-sea); }
   .btn-ghost { color: var(--site-fg-muted); font-weight: 500; }
 
   .slider { display: flex; flex-direction: column; gap: 0.2rem; }

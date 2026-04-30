@@ -302,7 +302,7 @@
   .btn:hover { transform: translateY(-1px); border-color: var(--site-fg); }
   .btn-ghost { color: var(--site-fg-muted); font-weight: 500; }
   .btn.active {
-    background: var(--ink-sea); color: #fdfdfc; border-color: var(--ink-sea);
+    background: var(--ink-sea); color: var(--on-color-fg); border-color: var(--ink-sea);
   }
 
   .caption {

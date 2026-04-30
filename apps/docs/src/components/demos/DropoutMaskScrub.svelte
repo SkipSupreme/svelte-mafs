@@ -288,7 +288,7 @@
   .btn:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--site-fg); }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .btn-primary {
-    background: var(--ink-coral); color: #fdfdfc; border-color: var(--ink-coral);
+    background: var(--ink-coral); color: var(--on-color-fg); border-color: var(--ink-coral);
   }
   .btn-toggle.active { background: var(--cta); color: var(--cta-fg); border-color: var(--cta); }
   .btn-ghost { color: var(--site-fg-muted); font-weight: 500; }

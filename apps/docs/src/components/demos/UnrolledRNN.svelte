@@ -305,7 +305,7 @@
     font-size: 0.83rem; font-weight: 600;
     transition: background 160ms ease, color 160ms ease;
   }
-  .seg-btn.active { background: var(--ink-sea); color: #fdfdfc; }
+  .seg-btn.active { background: var(--ink-sea); color: var(--on-color-fg); }
 
   .rolled {
     display: flex; flex-direction: column;
@@ -376,7 +376,7 @@
   .tok {
     width: 28px; height: 28px;
     display: inline-flex; align-items: center; justify-content: center;
-    background: var(--ink-red); color: #fdfdfc;
+    background: var(--ink-red); color: var(--on-color-fg);
     border-radius: 6px;
     font-family: var(--font-mono); font-weight: 700; font-size: 0.95rem;
   }
@@ -398,7 +398,7 @@
   .ucell:hover { transform: translateY(-1px); }
   .ucell.current {
     border-width: 2.5px;
-    background: var(--ink-sea); color: #fdfdfc;
+    background: var(--ink-sea); color: var(--on-color-fg);
   }
   .ucell-label sub { font-size: 0.7em; }
 
@@ -446,7 +446,7 @@
     transition: background 160ms ease, transform 120ms ease, border-color 160ms ease;
   }
   .btn:hover { transform: translateY(-1px); border-color: var(--site-fg); }
-  .btn-toggle.active { background: var(--ink-coral); color: #fdfdfc; border-color: var(--ink-coral); }
+  .btn-toggle.active { background: var(--ink-coral); color: var(--on-color-fg); border-color: var(--ink-coral); }
 
   .cursor-readout {
     display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem;
@@ -458,7 +458,7 @@
   .cr-key { font-family: var(--font-mono); font-size: 0.7rem; color: var(--site-fg-muted); text-transform: uppercase; letter-spacing: 0.08em; }
   .cr-val { font-family: var(--font-mono); font-size: 0.85rem; color: var(--site-fg); font-variant-numeric: tabular-nums; }
   .argmax-pill {
-    background: var(--ink-red); color: #fdfdfc;
+    background: var(--ink-red); color: var(--on-color-fg);
     padding: 0 0.4rem; border-radius: 4px;
     margin-right: 0.35rem;
   }

@@ -375,7 +375,7 @@
   .meta-key { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7rem; }
   .meta-val { color: var(--site-fg); font-variant-numeric: tabular-nums; font-weight: 600; }
   .meta-val.argmax {
-    background: var(--ink-red); color: #fdfdfc;
+    background: var(--ink-red); color: var(--on-color-fg);
     padding: 0 0.45rem; border-radius: 4px;
     font-family: var(--font-mono);
   }
@@ -397,7 +397,7 @@
   }
   .btn:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--site-fg); }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-primary { background: var(--ink-red); color: #fdfdfc; border-color: var(--ink-red); }
+  .btn-primary { background: var(--ink-red); color: var(--on-color-fg); border-color: var(--ink-red); }
   .btn-toggle.active { background: var(--cta); color: var(--cta-fg); border-color: var(--cta); }
   .btn-ghost { color: var(--site-fg-muted); font-weight: 500; }
 

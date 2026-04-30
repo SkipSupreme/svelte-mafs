@@ -42,6 +42,12 @@
   --cta-hover: #16a34a;
   --cta-fg: #0a1a10;
 
+  /* Always-cream foreground for white text on saturated colored backgrounds
+     (chip badges, active mode buttons, etc). Stays cream in BOTH themes —
+     never inverts to dark in dark mode, because the saturated background
+     stays saturated. Use this instead of hex literals in components. */
+  --on-color-fg: #fdfdfc;
+
   /* Saturated "ink" accents for decorative math inside headlines.
      --ink-red is the primary brand color (apple). Replaces the old --ink-violet
      after the 2026-04-24 owl→apple pivot; purple is the AI slop color. */

@@ -233,7 +233,7 @@
     font-size: 0.83rem; font-weight: 600;
     transition: background 160ms ease, color 160ms ease;
   }
-  .seg-btn.active { background: var(--ink-red); color: #fdfdfc; }
+  .seg-btn.active { background: var(--ink-red); color: var(--on-color-fg); }
 
   .slider { display: flex; flex-direction: column; gap: 0.2rem; }
   .slider-label { font-family: var(--font-mono); font-size: 0.78rem; color: var(--site-fg-muted); }

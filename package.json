@@ -6,11 +6,16 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "lint:css": "stylelint \"apps/docs/src/**/*.{css,svelte,astro}\" --allow-empty-input",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
-    "typescript": "^5.6.0",
-    "@changesets/cli": "^2.27.0"
+    "@changesets/cli": "^2.27.0",
+    "postcss-html": "^1.8.1",
+    "stylelint": "^16",
+    "stylelint-config-standard": "^36",
+    "typescript": "^5.6.0"
   },
   "engines": {
     "node": ">=20.11"

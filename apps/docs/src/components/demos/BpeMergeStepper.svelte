@@ -279,7 +279,7 @@
     transition: background 160ms ease, border-color 160ms ease, transform 120ms ease;
   }
   .btn-primary {
-    background: var(--ink-red); color: #fdfdfc; border: 1px solid var(--ink-red);
+    background: var(--ink-red); color: var(--on-color-fg); border: 1px solid var(--ink-red);
   }
   .btn-primary:hover:not(:disabled) { transform: translateY(-1px); }
   .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }

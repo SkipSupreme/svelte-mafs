@@ -239,7 +239,7 @@
     transition: background 160ms ease, color 160ms ease;
   }
   .seg-btn.active {
-    background: var(--ink-red); color: #fdfdfc;
+    background: var(--ink-red); color: var(--on-color-fg);
   }
 
   .slider { display: flex; flex-direction: column; gap: 0.2rem; }

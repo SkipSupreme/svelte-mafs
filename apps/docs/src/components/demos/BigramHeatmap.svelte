@@ -309,7 +309,7 @@
   .widget {
     --cell-size: clamp(16px, 2.4vw, 22px);
     --cell-empty: color-mix(in srgb, var(--site-fg) 5%, transparent);
-    --cream-on-red: #fdfdfc;
+    --cream-on-red: var(--on-color-fg);
     display: flex;
     flex-direction: column;
     gap: 0.85rem;
