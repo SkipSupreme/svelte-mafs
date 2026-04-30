@@ -1,0 +1,70 @@
+---
+// /dev/m18-forward/ — internal-only smoke page for M18 Slice 2.
+//
+// NOT linked from nav. Kept routable so the engine team can verify a forward
+// pass through the WGSL kernels reproduces the CPU twin's output. When Slice
+// 3 lands the backward kernels, /dev/m18-train/ joins this one.
+
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import M18ForwardSmoke from '../../components/demos/M18ForwardSmoke.svelte';
+---
+
+<Base title="M18 Forward Smoke" prose>
+  <article class="dev-page">
+    <header>
+      <p class="kicker">/dev · M18 Slice 2</p>
+      <h1>Forward smoke test</h1>
+      <p class="lede">
+        One forward pass through the WGSL engine on a hand-crafted batch.
+        Logit shape, softmax-sums-to-1, and WGSL-vs-CPU drift land in the card
+        below. This page exists for the engine team — it is not linked from
+        the course nav and will not be linked when Slice 8 ships.
+      </p>
+    </header>
+
+    <M18ForwardSmoke client:only="svelte" />
+
+    <section class="notes">
+      <h2>What this checks</h2>
+      <ul>
+        <li><strong>Shape:</strong> logits should be <code>(B·T, V)</code> = <code>(128, 65)</code> for B=2, T=64, V=65.</li>
+        <li><strong>Softmax:</strong> each of the 128 rows must sum to 1 within 1e-3 (any drift larger than that points to a numerical pathology in either the kernel or the CPU twin).</li>
+        <li>
+          <strong>Drift:</strong> the same forward pass run through the pure-TS
+          CPU twin (apps/docs/src/lib/m18/engine/cpu/) should agree with the
+          WGSL output to ~1e-3 elementwise. The drift is non-zero because GPU
+          matmul reduction order is implementation-defined; ~1e-4 is healthy,
+          ~1e-1 is a kernel bug.
+        </li>
+      </ul>
+    </section>
+  </article>
+</Base>
+
+<style>
+  .dev-page {
+    max-width: 720px;
+    margin: 3rem auto;
+    padding: 0 1.25rem;
+    display: flex; flex-direction: column; gap: 2rem;
+  }
+  header { display: flex; flex-direction: column; gap: 0.65rem; }
+  .kicker {
+    margin: 0; font-family: var(--font-mono); font-size: 0.78rem;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--site-fg-muted);
+  }
+  h1 { margin: 0; font-family: var(--font-display); font-size: clamp(1.7rem, 3vw, 2.2rem); font-weight: 700; }
+  .lede { margin: 0; color: var(--site-fg-muted); line-height: 1.6; }
+
+  .notes h2 {
+    margin: 0 0 0.55rem; font-family: var(--font-display); font-weight: 700;
+    font-size: 1.1rem;
+  }
+  .notes ul { margin: 0; padding-left: 1.2rem; line-height: 1.6; color: var(--site-fg); }
+  .notes code {
+    font-family: var(--font-mono); font-size: 0.85em;
+    background: color-mix(in srgb, var(--site-fg) 6%, transparent);
+    padding: 0.05rem 0.35rem; border-radius: 4px;
+  }
+</style>

@@ -1,5 +1,11 @@
 /// <reference types="astro/client" />
 /// <reference types="@cloudflare/workers-types" />
+/// <reference types="@webgpu/types" />
+
+declare module '*.wgsl?raw' {
+  const content: string;
+  export default content;
+}
 
 interface Env {
   DB: D1Database;

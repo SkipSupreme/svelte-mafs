@@ -1,0 +1,4 @@
+# Regenerable training artifacts — corpus is fetched by the script, log is
+# rewritten on every run.
+tinyshakespeare.txt
+nanogpt_reference.log
