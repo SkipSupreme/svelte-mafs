@@ -5,7 +5,10 @@
 // supports T ≤ 64 and dHead ≤ 64 (our locked config: T=64, dHead=16).
 
 const WG: u32 = 64u;
-const NEG_INF: f32 = -3.4028235e38;
+// Large-magnitude negative used as a softmax mask. Avoids the literal
+// -3.4028235e38 which the WGSL parser rounds to slightly more than f32::MIN
+// and rejects on Chromium 124+. -1e30 is plenty for exp(-1e30) → 0.
+const NEG_INF: f32 = -1e30;
 
 @group(0) @binding(0) var<storage, read>          qkv:  array<f32>; // [B*T, 3*d]
 @group(0) @binding(1) var<storage, read_write>    out:  array<f32>; // [B*T, d]
