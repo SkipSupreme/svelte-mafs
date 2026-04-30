@@ -61,6 +61,22 @@
   let sleeping = $state(false);
   let idleAction = $state<'none' | 'wiggle' | 'hop' | 'lean'>('none');
 
+  // Hero-region reactivity state — exposed as data-tinker-state on the
+  // root for integration tests and for any CSS hooks. Default 'idle';
+  // shifts to 'focus' / 'drag' / 'threshold' / 'success' when the
+  // homepage hero wires up TINKER_HERO_EVENT listeners. Phase 2 work
+  // attaches the listener; Phase 1 (now) just exposes the attribute so
+  // T-1 has something to assert against.
+  let tinkerState = $state<'idle' | 'focus' | 'drag' | 'threshold' | 'success' | 'sleeping' | 'bouncing'>('idle');
+
+  const computedState = $derived<typeof tinkerState>(
+    bouncing
+      ? 'bouncing'
+      : sleeping
+        ? 'sleeping'
+        : tinkerState,
+  );
+
   const PET_LS_KEY = 'tinker:pet-count';
   const PET_THRESHOLD = 10;
   const HOVER_TILT_RANGE_DEG = 3;
@@ -189,6 +205,7 @@
   class:tinker--wiggle={idleAction === 'wiggle'}
   class:tinker--hop={idleAction === 'hop'}
   class:tinker--lean={idleAction === 'lean'}
+  data-tinker-state={computedState}
   style="--tinker-size: {sizeCss}; --tinker-tilt: {tilt}deg; --tinker-cursor-tilt: {cursorTilt}deg;"
   onpointermove={onPointerMove}
   onpointerleave={onPointerLeave}

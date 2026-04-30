@@ -377,6 +377,47 @@ Tokens and patterns must match this file. Deviations are bugs.
 
 ---
 
+## Widget Visual Quality Bar
+
+Every svelte-mafs widget in production must pass these invariants. A widget that fails the bar is a bug. Phase 1 captures current state into `audit-capture/` (broken or not) for the Phase 3 violation list; widgets are promoted to `baselines/` only when they pass.
+
+### Invariants
+
+1. **Plot margins.** Every widget reserves a minimum padding band around the plot rectangle. Axis labels, tick labels, legends, and title text live INSIDE that band, never abutting the plot edge or the widget container edge. Specific rule: `--mafs-plot-pad-x: 24px` minimum on left/right, `--mafs-plot-pad-y: 16px` minimum on top/bottom. Larger if labels need it; never smaller.
+
+2. **No covered numbers.** Numeric labels never overlap data marks, gridlines, axis ticks, or other labels. When two labels would collide, ONE moves (alternate above/below, leader-line out, or hide the lower-priority label). When a label would cross a data mark, the label moves, not the mark. Pixel-diff visual regression catches obvious cases; bounding-box collision detection is queued in TODOS for cases that slip through.
+
+3. **Alignment grid.** All in-widget elements snap to the same baseline grid as the surrounding lesson typography: `--baseline-grid: 4px`. Widget container padding, internal section gaps, and label positioning are multiples of the grid.
+
+4. **Spacing tokens.** No bespoke `padding: 13px` or `margin: 7px`. Widget container, internal sections, label clusters, and control panels use named tokens: `--mafs-pad-tight (8px)`, `--mafs-pad-normal (16px)`, `--mafs-pad-loose (24px)`, `--mafs-pad-section (32px)`. New tokens added to `global.css` first; never one-off literals.
+
+5. **Motion timing.** Idle / hover / interaction / state-change motion durations match DESIGN.md's existing motion tokens (`--motion-fast: 120ms`, `--motion-normal: 240ms`, `--motion-slow: 480ms`). No bespoke `transition: 200ms`; pick a token. Easing always references DESIGN.md's curves.
+
+6. **Responsive behavior.** Widget renders correctly at `desktop` (≥1024px), `tablet` (640–1023px), `mobile` (<640px) viewports defined in `/dev/widget-lab/`. Labels reflow or rescale rather than truncate. Touch targets ≥44px on mobile.
+
+7. **Reduced motion.** `prefers-reduced-motion: reduce` disables ambient/idle motion (bobbing, pulsing) but preserves user-initiated interaction feedback (click bounces, drag updates). Reduced-motion variant doesn't break the visual identity — the widget still looks composed, just calmer.
+
+8. **Color tokens.** Zero hex literals in component CSS. All colors via `var(--token-name)` from `global.css`. Token values themselves live ONLY in `global.css`; DESIGN.md describes intent in prose. Stylelint enforces the no-hex rule in components; `global.css` is the only file allowed to contain hex.
+
+### Audit surface
+
+`/dev/widget-lab/` (env-gated; production builds exclude the route) renders every production svelte-mafs widget at desktop / tablet / mobile breakpoints with toggleable overlays for plot bounds, baseline grid, and container padding. The lab IS the audit surface: any widget that visibly fails an overlay check fails the bar.
+
+### Two snapshot directories
+
+- `audit-capture/` — current-state screenshots, broken or not. Used as evidence for the Phase 3 violation list. Never the source of truth.
+- `baselines/` — accepted, Quality-Bar-passing screenshots. The regression-protection layer. Phase 1 starts empty; widgets graduate from `audit-capture/` to `baselines/` as they pass the checklist.
+
+### Apple event API (hero context only)
+
+Tinker the Apple reacts to the homepage hero widget via scoped DOM events bubbled on the hero region's parent. Event types and payload shapes live in `apps/docs/src/lib/tinker-events.ts`. Five events: `tinker:focus` (apple eye-tracks toward region), `tinker:drag` (apple leans in drag direction), `tinker:threshold` (apple face shifts on meaningful state change), `tinker:success` (celebration choreography fires), `tinker:idle` (return to ambient bob/sparkle).
+
+`Tinker.svelte` keeps a small event buffer that replays events fired before its listener attached — handles Astro island hydration ordering. Coordinates in `focus` and `drag` payloads are normalized to the hero region's bounding box.
+
+This pattern is **homepage-hero-only** by DESIGN.md decree (mascot does not appear inside lesson bodies or widget bodies). The scoped-DOM-events choice keeps the contract structurally bounded to where reactivity belongs.
+
+---
+
 ## Decisions Log
 
 | Date | Decision | Rationale |
