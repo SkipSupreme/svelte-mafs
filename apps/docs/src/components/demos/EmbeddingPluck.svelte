@@ -195,15 +195,18 @@
 
   <div
     class="stage"
+    class:stage-hero={hero}
     bind:this={stageEl}
     onpointermove={onStagePointerMove}
     onpointerleave={onStagePointerLeave}
   >
     <Mafs width={460} height={340} viewBox={{ x: [-2.7, 2.7], y: [-1.9, 1.9] }}>
-      <Coordinates.Cartesian
-        xAxis={{ labels: () => '' }}
-        yAxis={{ labels: () => '' }}
-      />
+      {#if !hero}
+        <Coordinates.Cartesian
+          xAxis={{ labels: () => '' }}
+          yAxis={{ labels: () => '' }}
+        />
+      {/if}
 
       <!-- All other characters as static labeled points -->
       {#each VOCAB as c}
@@ -212,22 +215,29 @@
         {/if}
       {/each}
 
-      <!-- Selected char as a movable point -->
+      <!-- Selected char as a movable point. In hero mode the label is
+           rendered as a positioned overlay (no Mafs tooltip), so the
+           label prop is empty to avoid the dual-render. -->
       <MovablePoint
         bind:x={positions[selected][0]}
         bind:y={positions[selected][1]}
         color={colorFor(selected)}
-        label={`Embedding of ${display(selected)}`}
+        label={hero ? '' : `Embedding of ${display(selected)}`}
       />
     </Mafs>
 
     <!-- Overlay labels, positioned via CSS calc on the SVG-coord system.
-         We absolutely position by transforming to a percentage of the viewBox. -->
+         We absolutely position by transforming to a percentage of the viewBox.
+         Constrained to a safe interior padding so labels never abut the
+         widget edge or get clipped (Quality Bar invariant: no covered
+         numbers, no edge collisions). -->
     <div class="labels" aria-hidden="true">
       {#each VOCAB as c}
         {@const [x, y] = positions[c]}
-        {@const left = ((x - -2.7) / (2.7 - -2.7)) * 100}
-        {@const top = ((1.9 - y) / (1.9 - -1.9)) * 100}
+        {@const cx = ((x - -2.7) / (2.7 - -2.7))}
+        {@const cy = ((1.9 - y) / (1.9 - -1.9))}
+        {@const left = (0.05 + cx * 0.9) * 100}
+        {@const top = (0.08 + cy * 0.84) * 100}
         <span
           class="lbl"
           class:active={c === selected}
@@ -308,7 +318,16 @@
     width: 100%; background: var(--demo-stage); border-radius: 12px;
     overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none;
   }
-  .stage :global(svg) { display: block; width: 100%; height: auto; max-width: 100%; }
+  .stage :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    /* Mafs sets overflow:visible inline so axis labels can render outside
+       the viewBox; clip it back so SVG content can't bleed past the
+       stage's rounded corners. Quality Bar invariant: edges are clean. */
+    overflow: hidden;
+  }
 
   .labels {
     position: absolute; inset: 0;
@@ -320,13 +339,16 @@
     font-family: var(--font-mono);
     font-size: 0.7rem;
     font-weight: 600;
-    text-shadow:
-      -1px -1px 0 var(--demo-stage),
-      1px -1px 0 var(--demo-stage),
-      -1px 1px 0 var(--demo-stage),
-      1px 1px 0 var(--demo-stage);
+    /* No text-shadow — at the top edge a thick 4-direction shadow can
+       merge across labels into solid white blobs. Use a subtle
+       padding+background pill instead so labels read against any
+       neighbor color without visual artifacts. */
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--demo-card) 88%, transparent);
+    line-height: 1;
   }
-  .lbl.active { font-size: 0.85rem; transform: translate(-50%, -130%); }
+  .lbl.active { font-size: 0.85rem; transform: translate(-50%, -135%); font-weight: 700; }
 
   .picker { display: flex; flex-direction: column; gap: 0.35rem; }
   .picker-label {
@@ -377,7 +399,6 @@
     border: none;
     padding: 0;
     box-shadow: none;
-    /* Hero stage gets its own visual treatment via the .stage rule below. */
   }
   .widget-hero .stage {
     background: var(--demo-stage);
@@ -386,13 +407,21 @@
     box-shadow:
       0 1px 0 rgba(0,0,0,0.04),
       0 32px 56px -36px color-mix(in srgb, var(--ink-sea) 60%, transparent);
+    overflow: hidden;
   }
+  /* In hero mode: bigger labels, same clean pill background as the
+     full-chrome variant. No text-shadow — clipped halos at the widget
+     edge merge into ugly white blobs. The pill is finite and predictable. */
   .widget-hero .lbl {
-    /* Slightly larger labels for hero readability. */
-    font-size: 0.78rem;
+    font-size: 0.82rem;
+    padding: 2px 5px;
+    background: color-mix(in srgb, var(--demo-card) 92%, transparent);
+    border-radius: 5px;
   }
   .widget-hero .lbl.active {
-    font-size: 0.95rem;
+    font-size: 1rem;
+    font-weight: 800;
+    padding: 3px 7px;
   }
 
   .try-me {
