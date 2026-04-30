@@ -1,0 +1,101 @@
+---
+title: What the loss curve is telling you
+module: m17-tokenization-sampling
+summary: Loss has shape, not just direction. The expected trajectory on tiny-shakespeare-char. How to recognize overfitting from the train/val gap. Why "monotone down" is not the same as "working." The five canonical pathologies.
+estimatedMinutes: 12
+order: 4
+prereqs:
+  - wrapping-the-training-loop
+conceptsCovered:
+  - loss-trajectory
+  - overfit-signal
+  - train-val-split
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import LossCurveDoctor from '../../components/demos/LossCurveDoctor.svelte';
+
+<Step title="The expected curve">
+Run a small character-level transformer on tiny-shakespeare. The training loss does the same thing every time:
+
+- **Iter 0:** ~$\ln 65 \approx 4.17$ — the uniform-output ceiling.
+- **Iter 100:** still near 4.17. The first hundred iterations are warmup; the model is barely learning yet because the LR is climbing from 0.
+- **Iter 500:** ~1.7. Most of the heavy lifting is done. The model has learned which characters are common, which can't follow which, the basic shape of the corpus.
+- **Iter 2,000:** ~1.4. The slow part. The model is learning longer-range structure — what comes after `the`, that capital letters mostly follow newlines, that `Shakespeare` ends in `e`.
+- **Iter 5,000 (best val):** ~1.47–1.5. Plateau.
+
+That last number is the one to memorize. **Validation loss around 1.5 nats** on tiny-shakespeare-char with a small model. Smaller is harder to reach, larger means something's wrong.
+</Step>
+
+<StepCheck
+  title="From val loss to perplexity"
+  prompt="PPL = "
+  answer={4.5}
+  tolerance={0.1}
+  hint="Perplexity = exp(NLL). exp(1.5) ≈ 4.48."
+>
+Validation NLL has plateaued at $1.5$ nats. **What is the validation perplexity, to one decimal?**
+</StepCheck>
+
+<Step title="The two-curve rule">
+There is no such thing as a useful single-curve loss plot. Always plot train *and* val together. The train curve tells you whether the model is learning anything. The val curve tells you whether what it learned generalizes. The *gap* between them tells you everything else.
+
+A small, stable gap is healthy. The train curve is a few percent below the val curve and they decay together. Nothing to do.
+
+A growing gap — train keeps falling, val flattens, then val turns up — is the signature of overfitting. The model has started to memorize specific examples in the training stream, which lowers train loss but doesn't help on held-out tokens. Ship the checkpoint from before the val turn, not the latest one.
+
+A flat gap that never closes from above — both curves stuck high — is undertraining or under-parameterization. The model is too small, the LR is too low, or the optimizer is wedged. More iterations won't help.
+</Step>
+
+<Step title="Pathology recognition">
+Five shapes you will see, repeatedly, across every training run you ever do. The widget below shows them randomized — pick the diagnosis for each curve.
+
+<LossCurveDoctor client:visible />
+
+The five:
+
+- **Clean fit.** Both curves decay together; the gap stays small. Ship it.
+- **Overfitting fork.** Train keeps falling; val turns up. Stop earlier.
+- **Plateau / underfit.** Both stop high. Bigger model, longer schedule, or higher LR.
+- **Divergence spike.** Was fine, then loss exploded. LR too high, missing warmup, exploded gradient.
+- **Dead curve.** Loss never moves from initial value. Disconnected loss, frozen weights, broken graph.
+
+Each has a different fix. Misidentifying the pathology is how training runs waste a week.
+</Step>
+
+<StepCheck
+  title="Read the diagnosis"
+  prompt="ship? (1=yes, 0=no): "
+  answer={0}
+  tolerance={0.5}
+  hint="Train at 0.4, val at 2.1 is a 5× gap. Severe overfitting. Don't ship the latest checkpoint — ship the earliest one before val turned up."
+>
+A run reports train loss = 0.4, val loss = 2.1 at the latest checkpoint. **Should you ship this checkpoint?** (1 = yes, 0 = no)
+</StepCheck>
+
+<Step title="Save on val, not on iters">
+Most beginner training scripts save a checkpoint every $N$ iterations and ship the last one. This is the wrong rule on tiny corpora. The last checkpoint is, almost by definition, after the model has started to overfit — that's the point at which val is highest while training is still running.
+
+nanoGPT's idiom is the right one:
+
+```python
+if val_loss < best_val_loss:
+    best_val_loss = val_loss
+    save_checkpoint('ckpt.pt')
+```
+
+Save *only* when validation improves. The on-disk checkpoint is then guaranteed to be the version of the model that generalized best, regardless of how long training continued after that.
+
+This is the cheapest form of early stopping. The same loop runs to completion, but the artifact you ship is the checkpoint where val bottomed out.
+</Step>
+
+<Step title="The one number that matters">
+Three numbers worth committing to memory for tiny-shakespeare-char:
+
+- **Iter-0 train loss:** $\ln \lvert V \rvert = \ln 65 \approx 4.17$. If you're not starting near here, your initialization is wrong or your loss reduction is wrong.
+- **Reasonable plateau val loss:** $\approx 1.5$ for a small model, $\approx 1.0$ for the nanoGPT default (6 layers, 6 heads, $d = 384$). Below 1.0 is overfitting.
+- **Loss is going down**, by itself, **means nothing**. Train loss going to zero on a tiny corpus is a *bug*, not a victory.
+
+The model that you ship from this loop is the input to the last lesson. Next: how to make it talk.
+</Step>
