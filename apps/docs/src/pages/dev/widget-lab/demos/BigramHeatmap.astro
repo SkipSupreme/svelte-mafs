@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import BigramHeatmap from '../../../../components/demos/BigramHeatmap.svelte';
+import Widget from '../../../../components/demos/BigramHeatmap.svelte';
 ---
 <Base title="BigramHeatmap · Widget Lab" description="Audit surface for BigramHeatmap" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import BigramHeatmap from '../../../../components/demos/BigramHeatmap.svelte';
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="BigramHeatmap">
-    <BigramHeatmap client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

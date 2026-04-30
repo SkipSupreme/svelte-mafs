@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import RopeRotationDial from '../../../../components/demos/RopeRotationDial.svelte';
+import Widget from '../../../../components/demos/RopeRotationDial.svelte';
 ---
 <Base title="RopeRotationDial · Widget Lab" description="Audit surface for RopeRotationDial" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import RopeRotationDial from '../../../../components/demos/RopeRotationDial.svel
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="RopeRotationDial">
-    <RopeRotationDial client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

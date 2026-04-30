@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import LnPlacementGrad from '../../../../components/demos/LnPlacementGrad.svelte';
+import Widget from '../../../../components/demos/LnPlacementGrad.svelte';
 ---
 <Base title="LnPlacementGrad · Widget Lab" description="Audit surface for LnPlacementGrad" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import LnPlacementGrad from '../../../../components/demos/LnPlacementGrad.svelte
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="LnPlacementGrad">
-    <LnPlacementGrad client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

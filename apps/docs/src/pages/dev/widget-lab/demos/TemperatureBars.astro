@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import TemperatureBars from '../../../../components/demos/TemperatureBars.svelte';
+import Widget from '../../../../components/demos/TemperatureBars.svelte';
 ---
 <Base title="TemperatureBars · Widget Lab" description="Audit surface for TemperatureBars" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import TemperatureBars from '../../../../components/demos/TemperatureBars.svelte
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="TemperatureBars">
-    <TemperatureBars client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

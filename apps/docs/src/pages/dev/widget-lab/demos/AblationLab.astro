@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import AblationLab from '../../../../components/demos/AblationLab.svelte';
+import Widget from '../../../../components/demos/AblationLab.svelte';
 ---
 <Base title="AblationLab · Widget Lab" description="Audit surface for AblationLab" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import AblationLab from '../../../../components/demos/AblationLab.svelte';
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="AblationLab">
-    <AblationLab client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

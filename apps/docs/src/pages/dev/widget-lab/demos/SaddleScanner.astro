@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import SaddleScanner from '../../../../components/demos/SaddleScanner.svelte';
+import Widget from '../../../../components/demos/SaddleScanner.svelte';
 ---
 <Base title="SaddleScanner · Widget Lab" description="Audit surface for SaddleScanner" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import SaddleScanner from '../../../../components/demos/SaddleScanner.svelte';
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="SaddleScanner">
-    <SaddleScanner client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

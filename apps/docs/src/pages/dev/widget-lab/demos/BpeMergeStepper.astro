@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import BpeMergeStepper from '../../../../components/demos/BpeMergeStepper.svelte';
+import Widget from '../../../../components/demos/BpeMergeStepper.svelte';
 ---
 <Base title="BpeMergeStepper · Widget Lab" description="Audit surface for BpeMergeStepper" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import BpeMergeStepper from '../../../../components/demos/BpeMergeStepper.svelte
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="BpeMergeStepper">
-    <BpeMergeStepper client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

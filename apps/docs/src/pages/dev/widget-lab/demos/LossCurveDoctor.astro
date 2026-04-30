@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import LossCurveDoctor from '../../../../components/demos/LossCurveDoctor.svelte';
+import Widget from '../../../../components/demos/LossCurveDoctor.svelte';
 ---
 <Base title="LossCurveDoctor · Widget Lab" description="Audit surface for LossCurveDoctor" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import LossCurveDoctor from '../../../../components/demos/LossCurveDoctor.svelte
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="LossCurveDoctor">
-    <LossCurveDoctor client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

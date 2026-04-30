@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import NucleusCutoff from '../../../../components/demos/NucleusCutoff.svelte';
+import Widget from '../../../../components/demos/NucleusCutoff.svelte';
 ---
 <Base title="NucleusCutoff · Widget Lab" description="Audit surface for NucleusCutoff" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import NucleusCutoff from '../../../../components/demos/NucleusCutoff.svelte';
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="NucleusCutoff">
-    <NucleusCutoff client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

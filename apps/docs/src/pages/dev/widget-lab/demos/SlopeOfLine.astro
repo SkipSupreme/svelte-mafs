@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import SlopeOfLine from '../../../../components/demos/SlopeOfLine.svelte';
+import Widget from '../../../../components/demos/SlopeOfLine.svelte';
 ---
 <Base title="SlopeOfLine · Widget Lab" description="Audit surface for SlopeOfLine" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import SlopeOfLine from '../../../../components/demos/SlopeOfLine.svelte';
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="SlopeOfLine">
-    <SlopeOfLine client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

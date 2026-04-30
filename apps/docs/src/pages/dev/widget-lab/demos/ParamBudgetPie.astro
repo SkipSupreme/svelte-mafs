@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import ParamBudgetPie from '../../../../components/demos/ParamBudgetPie.svelte';
+import Widget from '../../../../components/demos/ParamBudgetPie.svelte';
 ---
 <Base title="ParamBudgetPie · Widget Lab" description="Audit surface for ParamBudgetPie" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import ParamBudgetPie from '../../../../components/demos/ParamBudgetPie.svelte';
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="ParamBudgetPie">
-    <ParamBudgetPie client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

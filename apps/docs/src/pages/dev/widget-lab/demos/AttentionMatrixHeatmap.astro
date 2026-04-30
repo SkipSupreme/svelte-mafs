@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import AttentionMatrixHeatmap from '../../../../components/demos/AttentionMatrixHeatmap.svelte';
+import Widget from '../../../../components/demos/AttentionMatrixHeatmap.svelte';
 ---
 <Base title="AttentionMatrixHeatmap · Widget Lab" description="Audit surface for AttentionMatrixHeatmap" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import AttentionMatrixHeatmap from '../../../../components/demos/AttentionMatrix
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="AttentionMatrixHeatmap">
-    <AttentionMatrixHeatmap client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

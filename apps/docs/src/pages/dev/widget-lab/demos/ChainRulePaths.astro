@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import ChainRulePaths from '../../../../components/demos/ChainRulePaths.svelte';
+import Widget from '../../../../components/demos/ChainRulePaths.svelte';
 ---
 <Base title="ChainRulePaths · Widget Lab" description="Audit surface for ChainRulePaths" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import ChainRulePaths from '../../../../components/demos/ChainRulePaths.svelte';
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="ChainRulePaths">
-    <ChainRulePaths client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

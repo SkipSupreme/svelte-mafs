@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import BuildTheBlock from '../../../../components/demos/BuildTheBlock.svelte';
+import Widget from '../../../../components/demos/BuildTheBlock.svelte';
 ---
 <Base title="BuildTheBlock · Widget Lab" description="Audit surface for BuildTheBlock" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import BuildTheBlock from '../../../../components/demos/BuildTheBlock.svelte';
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="BuildTheBlock">
-    <BuildTheBlock client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import QkVectorPlayground from '../../../../components/demos/QkVectorPlayground.svelte';
+import Widget from '../../../../components/demos/QkVectorPlayground.svelte';
 ---
 <Base title="QkVectorPlayground · Widget Lab" description="Audit surface for QkVectorPlayground" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import QkVectorPlayground from '../../../../components/demos/QkVectorPlayground.
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="QkVectorPlayground">
-    <QkVectorPlayground client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

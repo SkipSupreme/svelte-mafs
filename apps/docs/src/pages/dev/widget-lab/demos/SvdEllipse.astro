@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import SvdEllipse from '../../../../components/demos/SvdEllipse.svelte';
+import Widget from '../../../../components/demos/SvdEllipse.svelte';
 ---
 <Base title="SvdEllipse · Widget Lab" description="Audit surface for SvdEllipse" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import SvdEllipse from '../../../../components/demos/SvdEllipse.svelte';
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="SvdEllipse">
-    <SvdEllipse client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

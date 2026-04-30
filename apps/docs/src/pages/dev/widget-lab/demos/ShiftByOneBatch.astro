@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import ShiftByOneBatch from '../../../../components/demos/ShiftByOneBatch.svelte';
+import Widget from '../../../../components/demos/ShiftByOneBatch.svelte';
 ---
 <Base title="ShiftByOneBatch · Widget Lab" description="Audit surface for ShiftByOneBatch" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import ShiftByOneBatch from '../../../../components/demos/ShiftByOneBatch.svelte
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="ShiftByOneBatch">
-    <ShiftByOneBatch client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

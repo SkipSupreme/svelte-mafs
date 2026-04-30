@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import M18ForwardSmoke from '../../../../components/demos/M18ForwardSmoke.svelte';
+import Widget from '../../../../components/demos/M18ForwardSmoke.svelte';
 ---
 <Base title="M18ForwardSmoke · Widget Lab" description="Audit surface for M18ForwardSmoke" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import M18ForwardSmoke from '../../../../components/demos/M18ForwardSmoke.svelte
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="M18ForwardSmoke">
-    <M18ForwardSmoke client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

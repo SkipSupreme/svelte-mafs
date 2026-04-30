@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import GradientDecay from '../../../../components/demos/GradientDecay.svelte';
+import Widget from '../../../../components/demos/GradientDecay.svelte';
 ---
 <Base title="GradientDecay · Widget Lab" description="Audit surface for GradientDecay" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import GradientDecay from '../../../../components/demos/GradientDecay.svelte';
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="GradientDecay">
-    <GradientDecay client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

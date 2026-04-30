@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import TokenInspector from '../../../../components/demos/TokenInspector.svelte';
+import Widget from '../../../../components/demos/TokenInspector.svelte';
 ---
 <Base title="TokenInspector · Widget Lab" description="Audit surface for TokenInspector" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import TokenInspector from '../../../../components/demos/TokenInspector.svelte';
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="TokenInspector">
-    <TokenInspector client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

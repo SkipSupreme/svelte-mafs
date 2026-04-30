@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import PermutationEquivarianceLab from '../../../../components/demos/PermutationEquivarianceLab.svelte';
+import Widget from '../../../../components/demos/PermutationEquivarianceLab.svelte';
 ---
 <Base title="PermutationEquivarianceLab · Widget Lab" description="Audit surface for PermutationEquivarianceLab" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import PermutationEquivarianceLab from '../../../../components/demos/Permutation
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="PermutationEquivarianceLab">
-    <PermutationEquivarianceLab client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

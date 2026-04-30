@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import PartialSlicer from '../../../../components/demos/PartialSlicer.svelte';
+import Widget from '../../../../components/demos/PartialSlicer.svelte';
 ---
 <Base title="PartialSlicer · Widget Lab" description="Audit surface for PartialSlicer" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import PartialSlicer from '../../../../components/demos/PartialSlicer.svelte';
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="PartialSlicer">
-    <PartialSlicer client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import LossLandscapeNavigator from '../../../../components/demos/LossLandscapeNavigator.svelte';
+import Widget from '../../../../components/demos/LossLandscapeNavigator.svelte';
 ---
 <Base title="LossLandscapeNavigator · Widget Lab" description="Audit surface for LossLandscapeNavigator" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import LossLandscapeNavigator from '../../../../components/demos/LossLandscapeNa
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="LossLandscapeNavigator">
-    <LossLandscapeNavigator client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

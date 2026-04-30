@@ -7,7 +7,7 @@
  */
 export const prerender = true;
 import Base from '../../../../layouts/Base.astro';
-import VarianceFanOut from '../../../../components/demos/VarianceFanOut.svelte';
+import Widget from '../../../../components/demos/VarianceFanOut.svelte';
 ---
 <Base title="VarianceFanOut · Widget Lab" description="Audit surface for VarianceFanOut" fullWidth>
   <header class="lab-bar">
@@ -15,7 +15,7 @@ import VarianceFanOut from '../../../../components/demos/VarianceFanOut.svelte';
     <p class="lab-meta"><a href="/dev/widget-lab/">← back to index</a> · checked against the Widget Visual Quality Bar in DESIGN.md</p>
   </header>
   <div class="audit-cell" data-widget="VarianceFanOut">
-    <VarianceFanOut client:visible />
+    <Widget client:visible />
   </div>
 </Base>
 <style>

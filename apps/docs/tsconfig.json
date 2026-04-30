@@ -9,6 +9,7 @@
     "./worker-configuration.d.ts"
   ],
   "exclude": [
-    "dist"
+    "dist",
+    "tests/e2e/**"
   ]
 }
