@@ -85,16 +85,6 @@ import EmbeddingPluck from '../components/demos/EmbeddingPluck.svelte';
     </div>
   </section>
 
-  <section class="status" aria-labelledby="status-heading">
-    <h2 id="status-heading">Where this stands</h2>
-    <p>
-      Actively being built in the open. Source:
-      <a href="https://github.com/SkipSupreme/svelte-mafs" rel="noopener">
-        github.com/SkipSupreme/svelte-mafs
-      </a>. Sign up — alpha is open and the first course (Math for ML)
-      is live. New modules every week.
-    </p>
-  </section>
 </Base>
 
 <style>
@@ -602,7 +592,7 @@ import EmbeddingPluck from '../components/demos/EmbeddingPluck.svelte';
   }
   .form-note a { color: var(--site-fg); }
 
-  .pitch, .status {
+  .pitch {
     padding: 2.75rem 0;
     border-top: 1px solid var(--site-border);
   }
@@ -636,8 +626,6 @@ import EmbeddingPluck from '../components/demos/EmbeddingPluck.svelte';
     font-size: 0.92rem;
     line-height: 1.5;
   }
-
-  .status p { color: var(--site-fg-muted); max-width: var(--max-prose); }
 
   .sr-only {
     position: absolute;
