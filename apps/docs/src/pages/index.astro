@@ -13,24 +13,32 @@ import FloatingMath from '../components/brand/FloatingMath.svelte';
   fullWidth
 >
   <section class="hero">
-    <p class="eyebrow">🌱 Alpha · 1 course live · new modules every week</p>
-    <h1>Learn by building intuition, not memorizing steps.</h1>
-    <p class="lede">
-      Tinker is a new kind of learning app for math, physics, and computer
-      science — interactive the whole way down, with spaced-repetition that
-      actually tracks your understanding, and visualizations you can drag.
-      For adults who want rigor and intuition in the same product.
-    </p>
+    <div class="hero-grid" data-hero-region>
+      <div class="hero-mascot">
+        <FloatingMath client:visible />
+        <Tinker client:visible size="clamp(220px, 32vw, 360px)" />
+      </div>
+      <div class="hero-copy">
+        <p class="eyebrow">🌱 Alpha · 1 course live · new modules every week</p>
+        <h1>Learn by building intuition, not memorizing steps.</h1>
+        <p class="lede">
+          Tinker is a new kind of learning app for math, physics, and computer
+          science — interactive the whole way down, with spaced-repetition that
+          actually tracks your understanding, and visualizations you can drag.
+          For adults who want rigor and intuition in the same product.
+        </p>
 
-    <div class="cta-row">
-      <a class="btn primary" href="/signup">Sign up — it's free</a>
-      <a class="btn secondary" href="/courses/ml-math">Explore the course</a>
+        <div class="cta-row">
+          <a class="btn primary" href="/signup">Sign up — it's free</a>
+          <a class="btn secondary" href="/courses/ml-math">Explore the course</a>
+        </div>
+        <p class="form-note">
+          One course live today: <a href="/courses/ml-math">Math for Machine Learning</a>.
+          New modules ship weekly. Sign up to track progress, save notes,
+          and get the heads-up when new courses drop.
+        </p>
+      </div>
     </div>
-    <p class="form-note">
-      One course live today: <a href="/courses/ml-math">Math for Machine Learning</a>.
-      New modules ship weekly. Sign up to track progress, save notes,
-      and get the heads-up when new courses drop.
-    </p>
   </section>
 
   <!-- Lesson tile preview — what you can learn. Cream band so the tiles pop. -->
