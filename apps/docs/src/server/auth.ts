@@ -1,36 +1,19 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { magicLink } from 'better-auth/plugins';
-import { getDb, type DB } from './db';
-import { sendMagicLinkEmail } from './email';
+import { getDb } from './db';
 
 export interface AuthEnv {
   DB: D1Database;
   BETTER_AUTH_SECRET: string;
-  GOOGLE_CLIENT_ID?: string;
-  GOOGLE_CLIENT_SECRET?: string;
-  GITHUB_CLIENT_ID?: string;
-  GITHUB_CLIENT_SECRET?: string;
-  RESEND_API_KEY?: string;
   PUBLIC_SITE_URL: string;
 }
 
 export type Auth = ReturnType<typeof createAuth>;
 
-function isLocalhost(siteUrl: string): boolean {
-  try {
-    const host = new URL(siteUrl).hostname;
-    return host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
-  } catch {
-    return false;
-  }
-}
-
 /**
- * Create a Better Auth instance for the current request.
- * Configured here are: D1-backed Drizzle adapter, magic-link plugin,
- * Google + GitHub OAuth (if their secrets are present), 30-day sessions
- * with daily refresh, secure cookies in production.
+ * Better Auth instance: email + password only.
+ * No magic link, no OAuth, no email transport.
+ * 30-day sessions with daily refresh; secure cookies in production.
  */
 export function createAuth(env: AuthEnv) {
   if (!env.BETTER_AUTH_SECRET) {
@@ -43,47 +26,12 @@ export function createAuth(env: AuthEnv) {
   const db = getDb(env.DB);
   const isHttps = env.PUBLIC_SITE_URL.startsWith('https://');
 
-  const socialProviders: Record<string, { clientId: string; clientSecret: string }> = {};
-  if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) {
-    socialProviders.google = {
-      clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET,
-    };
-  }
-  if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) {
-    socialProviders.github = {
-      clientId: env.GITHUB_CLIENT_ID,
-      clientSecret: env.GITHUB_CLIENT_SECRET,
-    };
-  }
-
   return betterAuth({
     database: drizzleAdapter(db, { provider: 'sqlite' }),
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.PUBLIC_SITE_URL,
     trustedOrigins: [env.PUBLIC_SITE_URL],
     emailAndPassword: { enabled: true, autoSignIn: true },
-    socialProviders,
-    plugins: [
-      magicLink({
-        expiresIn: 60 * 15, // 15 minutes
-        disableSignUp: false,
-        sendMagicLink: async ({ email, url }) => {
-          if (!env.RESEND_API_KEY) {
-            // Without a Resend key we have to fall back to console — but only
-            // for localhost. Anywhere else (preview, prod) this would log a
-            // sign-in URL into Cloudflare's tail logs and effectively become
-            // an account-takeover surface for anyone with logs access.
-            if (isLocalhost(env.PUBLIC_SITE_URL)) {
-              console.log('[magic-link] (no RESEND_API_KEY set) ', email, url);
-              return;
-            }
-            throw new Error('RESEND_API_KEY is required to send magic links in production');
-          }
-          await sendMagicLinkEmail(env.RESEND_API_KEY, email, url);
-        },
-      }),
-    ],
     advanced: {
       cookiePrefix: '__Secure-tinker',
       useSecureCookies: isHttps,
@@ -94,8 +42,8 @@ export function createAuth(env: AuthEnv) {
       },
     },
     session: {
-      expiresIn: 60 * 60 * 24 * 30, // 30 days
-      updateAge: 60 * 60 * 24, // refresh once per day
+      expiresIn: 60 * 60 * 24 * 30,
+      updateAge: 60 * 60 * 24,
     },
     user: {
       additionalFields: {

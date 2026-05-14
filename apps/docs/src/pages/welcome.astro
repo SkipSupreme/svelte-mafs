@@ -5,23 +5,17 @@ import Base from '../layouts/Base.astro';
 import { createAuth, getSession } from '../server/auth';
 import { getDb } from '../server/db';
 import { userProfile } from '../server/schema';
-import { sendWelcomeEmail } from '../server/email';
 import { getEnv } from '../server/env';
 
 const env = getEnv();
 const auth = createAuth({
   DB: env.DB,
   BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET,
-  GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
-  GITHUB_CLIENT_ID: env.GITHUB_CLIENT_ID,
-  GITHUB_CLIENT_SECRET: env.GITHUB_CLIENT_SECRET,
-  RESEND_API_KEY: env.RESEND_API_KEY,
   PUBLIC_SITE_URL: env.PUBLIC_SITE_URL,
 });
 
 const session = await getSession(auth, Astro.request.headers);
-if (!session) return Astro.redirect('/signin');
+if (!session) return Astro.redirect('/auth?mode=signin');
 
 const db = getDb(env.DB);
 
@@ -31,20 +25,11 @@ const existing = await db
   .where(eq(userProfile.userId, session.user.id))
   .get();
 
-let firstTime = !existing;
-
-if (firstTime) {
+if (!existing) {
   await db.insert(userProfile).values({
     userId: session.user.id,
     marketingOptIn: false,
   });
-  if (env.RESEND_API_KEY) {
-    Astro.locals.cfContext.waitUntil(
-      sendWelcomeEmail(env.RESEND_API_KEY, session.user.email).catch((e) =>
-        console.error('welcome email failed:', e),
-      ),
-    );
-  }
 }
 
 if (Astro.request.method === 'POST') {

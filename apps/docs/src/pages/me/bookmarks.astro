@@ -10,16 +10,11 @@ const env = getEnv();
 const auth = createAuth({
   DB: env.DB,
   BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET,
-  GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
-  GITHUB_CLIENT_ID: env.GITHUB_CLIENT_ID,
-  GITHUB_CLIENT_SECRET: env.GITHUB_CLIENT_SECRET,
-  RESEND_API_KEY: env.RESEND_API_KEY,
   PUBLIC_SITE_URL: env.PUBLIC_SITE_URL,
 });
 
 const session = await getSession(auth, Astro.request.headers);
-if (!session) return Astro.redirect('/signin?next=/me/bookmarks');
+if (!session) return Astro.redirect('/auth?mode=signin&callbackURL=/me/bookmarks');
 
 const db = getDb(env.DB);
 const bookmarks = await listBookmarks(db, session.user.id);

@@ -1,9 +1,4 @@
-import {
-  magicLinkTemplate,
-  welcomeTemplate,
-  dropTemplate,
-  accountDeletedTemplate,
-} from './email-templates';
+import { dropTemplate, accountDeletedTemplate } from './email-templates';
 
 const RESEND_URL = 'https://api.resend.com/emails';
 const FROM = 'Tinker <hello@learntinker.com>';
@@ -45,24 +40,6 @@ async function postResend(apiKey: string, payload: ResendPayload): Promise<{ id:
     throw new ResendError(res.status, text);
   }
   return res.json() as Promise<{ id: string }>;
-}
-
-export async function sendMagicLinkEmail(apiKey: string, to: string, url: string) {
-  return postResend(apiKey, {
-    from: FROM,
-    to: [to],
-    subject: 'Sign in to Tinker',
-    html: magicLinkTemplate({ url }),
-  });
-}
-
-export async function sendWelcomeEmail(apiKey: string, to: string) {
-  return postResend(apiKey, {
-    from: FROM,
-    to: [to],
-    subject: 'Welcome to Tinker',
-    html: welcomeTemplate(),
-  });
 }
 
 export async function sendDropEmail(

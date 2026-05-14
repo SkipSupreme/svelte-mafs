@@ -30,14 +30,4 @@ describe('createAuth', () => {
     expect(() => createAuth({ ...baseEnv, PUBLIC_SITE_URL: '' })).toThrow(/PUBLIC_SITE_URL/i);
   });
 
-  it('only registers social providers when both id and secret are present', () => {
-    const noProviders = createAuth({ ...baseEnv });
-    const withGoogle = createAuth({
-      ...baseEnv,
-      GOOGLE_CLIENT_ID: 'g',
-      GOOGLE_CLIENT_SECRET: 's',
-    });
-    expect(typeof noProviders.handler).toBe('function');
-    expect(typeof withGoogle.handler).toBe('function');
-  });
 });

@@ -31,11 +31,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const guard = await requireAdmin(request, {
     DB: env.DB,
     BETTER_AUTH_SECRET: env.BETTER_AUTH_SECRET,
-    GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID,
-    GOOGLE_CLIENT_SECRET: env.GOOGLE_CLIENT_SECRET,
-    GITHUB_CLIENT_ID: env.GITHUB_CLIENT_ID,
-    GITHUB_CLIENT_SECRET: env.GITHUB_CLIENT_SECRET,
-    RESEND_API_KEY: env.RESEND_API_KEY,
     PUBLIC_SITE_URL: env.PUBLIC_SITE_URL,
   });
   if (!guard.ok) return guard.response;

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  sendMagicLinkEmail,
   sendDropEmail,
   signUnsubscribeToken,
   verifyUnsubscribeToken,
@@ -12,26 +11,6 @@ beforeEach(() => {
   fetchMock.mockReset();
   fetchMock.mockResolvedValue(new Response(JSON.stringify({ id: 'msg_123' }), { status: 200 }));
   globalThis.fetch = fetchMock as unknown as typeof fetch;
-});
-
-describe('sendMagicLinkEmail', () => {
-  it('POSTs to Resend with correct shape', async () => {
-    await sendMagicLinkEmail('re_test', 'a@b.co', 'https://learntinker.com/verify?token=x');
-    expect(fetchMock).toHaveBeenCalledOnce();
-    const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe('https://api.resend.com/emails');
-    expect(init.method).toBe('POST');
-    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer re_test');
-    const body = JSON.parse(init.body as string);
-    expect(body.to).toEqual(['a@b.co']);
-    expect(body.subject).toBe('Sign in to Tinker');
-    expect(body.html).toContain('https://learntinker.com/verify?token=x');
-  });
-
-  it('throws on Resend error response', async () => {
-    fetchMock.mockResolvedValueOnce(new Response('upstream error', { status: 502 }));
-    await expect(sendMagicLinkEmail('re_test', 'a@b.co', 'x')).rejects.toThrow(/Resend 502/);
-  });
 });
 
 describe('sendDropEmail', () => {
