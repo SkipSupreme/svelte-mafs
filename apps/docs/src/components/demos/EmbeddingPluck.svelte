@@ -200,7 +200,7 @@
     onpointermove={onStagePointerMove}
     onpointerleave={onStagePointerLeave}
   >
-    <Mafs width={460} height={340} viewBox={{ x: [-2.7, 2.7], y: [-1.9, 1.9] }}>
+    <Mafs width={460} height={hero ? 250 : 340} viewBox={{ x: [-2.7, 2.7], y: [-1.9, 1.9] }}>
       {#if !hero}
         <Coordinates.Cartesian
           xAxis={{ labels: () => '' }}
@@ -218,11 +218,15 @@
       <!-- Selected char as a movable point. In hero mode the label is
            rendered as a positioned overlay (no Mafs tooltip), so the
            label prop is empty to avoid the dual-render. -->
+      <!-- aria-label only — not a visible Mafs tooltip. Hero mode still
+           needs a real accessible name; the prop name is unfortunate. -->
       <MovablePoint
         bind:x={positions[selected][0]}
         bind:y={positions[selected][1]}
         color={colorFor(selected)}
-        label={hero ? '' : `Embedding of ${display(selected)}`}
+        label={hero
+          ? `Embedding of ${display(selected)} — drag to reposition`
+          : `Embedding of ${display(selected)}`}
       />
     </Mafs>
 
