@@ -1,0 +1,198 @@
+---
+title: What you can say about a random variable in one number
+module: m8-probability
+summary: Mean, variance, covariance — three summary statistics that capture almost everything we need from a distribution. Weight initialization, BatchNorm, and the noise in stochastic gradient descent all live inside these three numbers.
+estimatedMinutes: 18
+order: 3
+prereqs:
+  - joint-marginal-conditional
+conceptsCovered:
+  - expectation
+  - variance-std
+  - covariance
+  - sample-estimators
+  - lln
+  - clt
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import CovarianceScatter from '../../components/demos/CovarianceScatter.svelte';
+import GaussianForge from '../../components/demos/GaussianForge.svelte';
+
+<Step title="Buy a lottery ticket. What is it worth?">
+A lottery ticket costs \$1. With probability $10^{-7}$ — one in ten million — you win \$1,000,000. Otherwise you win nothing.
+
+Almost every individual ticket loses you a dollar. But what's the *average* outcome, weighted by how often each outcome happens? Let $X$ be the net winnings:
+
+$$
+\mathbb{E}[X] \;=\; \underbrace{10^{-7} \cdot 999{,}999}_{\text{win case}} \;+\; \underbrace{(1 - 10^{-7}) \cdot (-1)}_{\text{lose case}} \;\approx\; -0.9.
+$$
+
+That number — about minus 90 cents per ticket — is the **expectation** of $X$. Even though you'll almost never see the $-0.9$ outcome on a *single* ticket, it's the right summary of "what happens on average over many tickets."
+
+Expectations are how distributions become single numbers. We're about to see why three of them — mean, variance, covariance — are the *only* statistics the math underneath weight initialization, BatchNorm, and the noise in SGD actually care about.
+</Step>
+
+<Step title="Expectation is a probability-weighted sum">
+For a discrete random variable with pmf $p$, the expectation is just
+
+$$
+\mathbb{E}[X] \;=\; \sum_x x \cdot p(x).
+$$
+
+Multiply each possible value by its probability; add them up. For a continuous random variable with density $f$, replace the sum with an integral:
+
+$$
+\mathbb{E}[X] \;=\; \int x \, f(x) \, dx.
+$$
+
+Same idea, two notations. The expectation has a name because it shows up everywhere — but at heart it is the same probability-weighted sum every time.
+</Step>
+
+<Step title="Expectation is linear (this saves you constantly)">
+The single most-used fact about expectations:
+
+$$
+\mathbb{E}[a X + b Y] \;=\; a\, \mathbb{E}[X] + b\, \mathbb{E}[Y].
+$$
+
+It does *not* require independence. It does not require anything. Linearity of expectation holds for *every* pair of random variables, including ones that are correlated, including ones where $Y$ is just a copy of $X$. Whenever a calculation has a sum inside an expectation, you can split it.
+
+(A common trap, for later: $\mathbb{E}[XY] = \mathbb{E}[X]\mathbb{E}[Y]$ is the *product* rule, and it only holds under independence. Linearity holds always; multiplicativity does not. Don't confuse the two.)
+</Step>
+
+<StepCheck
+  title="Expectation of a categorical"
+  prompt="E[X] = "
+  answer={1.3}
+  tolerance={0.001}
+  hint="E[X] = 0·0.1 + 1·0.5 + 2·0.4 = 0 + 0.5 + 0.8 = 1.3. Probability-weighted sum."
+>
+$X$ is categorical over the values $\{0, 1, 2\}$ with probability vector $(0.1, 0.5, 0.4)$.
+
+**What is $\mathbb{E}[X]$?**
+</StepCheck>
+
+<Step title="Variance: spread, in squared units">
+Two distributions can have the same mean and look completely different. The mean of a coin flip is $0.5$. The mean of "always return $0.5$" is also $0.5$. They are not the same distribution.
+
+**Variance** measures how much a distribution spreads out around its mean:
+
+$$
+\mathrm{Var}(X) \;=\; \mathbb{E}\!\left[(X - \mu)^2\right]
+\;=\; \mathbb{E}[X^2] - \mathbb{E}[X]^2.
+$$
+
+The right-hand identity is worth knowing — sometimes the squared form is easier to compute than the centered form. The **standard deviation** $\sigma = \sqrt{\mathrm{Var}(X)}$ has the same units as $X$ itself, which is why we usually report standard deviations to humans and variances to formulas.
+</Step>
+
+<Step title="Variances add (under independence). Standard deviations don't.">
+Take $X_1, X_2, \ldots, X_n$ independent, each with variance $\sigma^2$. Let $S_n = X_1 + \cdots + X_n$ and $\bar X_n = S_n / n$. Then
+
+$$
+\mathrm{Var}(S_n) = n \sigma^2, \qquad \mathrm{Var}(\bar X_n) = \frac{\sigma^2}{n}.
+$$
+
+The first formula is *why* neural-network weight initialization scales by $1 / \sqrt{\text{fan-in}}$: when $n$ inputs each contribute a Gaussian unit of noise, the *variance* of the sum scales with $n$, so its standard deviation scales with $\sqrt{n}$. Dividing by $\sqrt{n}$ keeps the *signal's variance* roughly constant from layer to layer. That single fact — variances add under independence — is the entire derivation of He/Xavier initialization, which we'll re-derive carefully in module 13.
+
+The second formula is the reason averages over more samples are *tighter* estimates. Quadruple your sample size, you halve your error bar.
+</Step>
+
+<StepCheck
+  title="Variance of a Bernoulli"
+  prompt="Var(X) = "
+  answer={0.21}
+  tolerance={0.001}
+  hint="For Bern(p): E[X] = p, E[X²] = p (since X² = X when X ∈ {0,1}). So Var(X) = p - p² = p(1-p) = 0.3·0.7 = 0.21."
+>
+Let $X \sim \mathrm{Bern}(0.3)$.
+
+**What is $\mathrm{Var}(X)$?**
+</StepCheck>
+
+<Step title="Covariance: how two variables co-vary">
+Variance is one variable's spread. **Covariance** generalizes to two:
+
+$$
+\mathrm{Cov}(X, Y) \;=\; \mathbb{E}\!\left[(X - \mu_X)(Y - \mu_Y)\right].
+$$
+
+Positive covariance means "when $X$ is above its mean, $Y$ tends to be too." Negative covariance means "when $X$ is high, $Y$ tends to be low." Zero covariance means *no linear association* — though it does *not* mean independence; nonlinear relationships can have zero covariance.
+
+Notice the symmetric structure with variance: $\mathrm{Var}(X) = \mathrm{Cov}(X, X)$. They are the same operation; variance is just covariance with itself.
+</Step>
+
+<Step title="Covariance is a dot product of centered data — pay attention here">
+Here's the surprise. Given $n$ paired observations $\{(x_i, y_i)\}_{i=1}^n$, define the centered vectors $\tilde x = (x_1 - \bar x, \ldots, x_n - \bar x)$ and $\tilde y$ likewise. Then the sample covariance is
+
+$$
+\widehat{\mathrm{Cov}}(X, Y) \;=\; \frac{1}{n-1}\sum_{i=1}^n (x_i - \bar x)(y_i - \bar y) \;=\; \frac{1}{n-1} \langle \tilde x, \tilde y \rangle.
+$$
+
+Covariance is *literally* a dot product. The same operation you spent a whole module on in module 7. The "similarity" interpretation of the dot product — "do these two vectors point the same way?" — is exactly the covariance question, "do these two variables tend to move together?"
+
+The sister identity is just as good. **Correlation** $r$ (the Pearson coefficient) is the cosine of the angle between $\tilde x$ and $\tilde y$:
+
+$$
+r \;=\; \frac{\mathrm{Cov}(X, Y)}{\sigma_X \, \sigma_Y} \;=\; \cos \theta(\tilde x, \tilde y).
+$$
+
+So $r$ lives in $[-1, +1]$, by the Cauchy–Schwarz inequality you already know.
+</Step>
+
+<Step title="Drag points; watch r move">
+Drag the red points into a straight diagonal. Watch $r$ approach $+1$. Drag them into a perpendicular line. Watch $r$ approach $0$. Drag them into the opposite diagonal. Watch $r$ approach $-1$.
+
+<CovarianceScatter client:visible />
+
+The coral arrows from the teal centroid *are* the centered vectors $\tilde x_i, \tilde y_i$ as 2D displacements. The number $\mathrm{Cov}(X, Y)$ is the running average of the products of their $x$-component and $y$-component. The number $r$ is the cosine of the angle between $\tilde x$ and $\tilde y$ viewed as vectors in $\mathbb{R}^n$. Two ways of looking at the same arithmetic.
+</Step>
+
+<Step title="Sample versus population — what changes when you only have data">
+So far the formulas have been about the *population* — the underlying distribution, with $\mu$ and $\sigma$ and a known pmf. In practice you have a sample: $n$ data points, period.
+
+The natural estimators are
+
+$$
+\bar x \;=\; \frac{1}{n}\sum_{i=1}^n x_i, \qquad s^2 \;=\; \frac{1}{n-1}\sum_{i=1}^n (x_i - \bar x)^2.
+$$
+
+The sample mean estimates $\mu$. The sample variance estimates $\sigma^2$. The reason the variance denominator is $n - 1$ rather than $n$ is "Bessel's correction" — by using $\bar x$ instead of the (unknown) true $\mu$, we've eaten one degree of freedom, and dividing by $n - 1$ makes the estimator unbiased. We'll come back to this when we derive MLE for a Gaussian in the next lesson; the *maximum-likelihood* estimator of variance divides by $n$ and is biased.
+</Step>
+
+<Step title="The law of large numbers, in one line">
+Sample averages converge to the true mean as the sample grows:
+
+$$
+\bar X_n \;\xrightarrow{n \to \infty}\; \mathbb{E}[X].
+$$
+
+Roll the same die 10 times; $\bar x$ might be 2.7. Roll it 10,000 times; $\bar x$ will be very close to 3.5. The LLN is what makes empirical estimation work at all.
+
+Use the Gaussian widget below to see it. Pick a $\mu$ and $\sigma$. Click "Sample 10k." Watch the empirical mean $\bar x$ and empirical standard deviation $s$ in the readout converge on the true values you set.
+
+<GaussianForge client:visible initialMu={-1} initialSigma={1.5} hideStandardize />
+</Step>
+
+<Step title="The central limit theorem, in one line">
+Take any distribution with a finite variance — *any* distribution. Average $n$ i.i.d. draws from it. As $n$ grows, the distribution of the (properly scaled) sample mean approaches a Gaussian:
+
+$$
+\frac{\bar X_n - \mu}{\sigma / \sqrt{n}} \;\xrightarrow{d}\; \mathcal{N}(0, 1).
+$$
+
+This is the **central limit theorem** (CLT). It is the reason error bars in physics, the noise in stochastic gradient descent, and the histogram of "average of a hundred rolls" all look Gaussian, regardless of what they started as. Sums and averages of many independent things forget their individual shape.
+
+(Big caveat: the CLT is about *averages*, not individual data points. Token frequencies, file sizes, incomes — those are not Gaussian. Tradeoff intuition built on the CLT often does not transfer; we'll see this trip up loss-curve interpretations in module 13.)
+
+We are not going to use the CLT to do confidence intervals; those are out of scope. We mention it because every "noise is Gaussian" sentence in the rest of this course derives from this one line.
+</Step>
+
+<Step title="Where this lands — three numbers, used everywhere">
+$\mathbb{E}[X]$ is in every loss function — the loss we minimize is the *expectation* of the per-example NLL.
+$\mathrm{Var}(X)$ is in every weight initializer — the unit-variance rule keeps signal-flow predictable.
+$\mathrm{Cov}(X, Y)$ is in every BatchNorm / LayerNorm — both compute a mean and subtract; both compute a variance and divide.
+
+The transformer is doing one of these three things on almost every line. Next lesson: how *all of statistical learning* — every loss, every "train this thing to fit data" command — is one principle, applied over and over. Maximum likelihood. That's the next stop.
+</Step>

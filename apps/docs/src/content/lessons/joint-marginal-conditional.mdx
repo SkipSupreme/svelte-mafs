@@ -1,0 +1,175 @@
+---
+title: Joint, marginal, conditional
+module: m8-probability
+summary: When two random variables share a world, the joint pmf is the whole picture, marginals are projections, and conditioning is taking a slice and renormalizing it. Bayes' theorem is the punchline.
+estimatedMinutes: 16
+order: 2
+prereqs:
+  - what-does-probability-measure
+conceptsCovered:
+  - joint
+  - marginal
+  - conditional
+  - independence
+  - chain-rule-prob
+  - bayes-rule
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import JointMarginalScrub from '../../components/demos/JointMarginalScrub.svelte';
+import BayesGrid from '../../components/demos/BayesGrid.svelte';
+
+<Step title="Two flips, one table">
+Flip two coins. There are four outcomes: $HH$, $HT$, $TH$, $TT$. If both coins are fair, each outcome has probability $1/4$.
+
+The whole world fits in a 2×2 table. That table — the probability of each *pair* of outcomes — is called the **joint pmf**. Written $p_{X,Y}(x, y)$, it answers one question: *what's the probability that $X = x$ AND $Y = y$?* For two independent fair flips, every cell is $0.25$.
+
+When two random variables live in the same universe, the joint is the whole story. Everything else in this lesson — marginals, conditionals, Bayes — is a way of asking *less* of it.
+</Step>
+
+<Step title="Joints on a grid">
+Real distributions are rarely 2×2 and rarely uniform. Below is a 5×5 joint pmf. The shade of each cell is its probability — darker means more likely. The cells sum to 1.
+
+<JointMarginalScrub client:visible />
+
+Drag on a cell to paint more weight onto it (shift-drag to subtract). The other 24 cells auto-rescale so the whole thing still sums to 1. The bars on top and right are *marginals* — you'll meet them in the next step. The labels along the axes ($x_1, \ldots, x_5$ and $y_1, \ldots, y_5$) are clickable; that's coming too.
+</Step>
+
+<Step title="Marginal = sum out the variable you don't care about">
+Sometimes you don't care about both variables. You want to know $P(X = x)$ without conditioning on what $Y$ does. The fix is to *sum* the joint over every possible value of $Y$:
+
+$$
+p_X(x) \;=\; \sum_{y} p_{X,Y}(x, y).
+$$
+
+That's it. Project the 2D joint down onto the $X$ axis by collapsing the $Y$ axis. The result is called the **marginal** of $X$. The reason the operation has a name is that in the days of paper-and-ink probability tables, you'd literally write the row-sums in the *margin* of the page.
+
+The top strip of bars on the widget is $p_X$. The right strip is $p_Y$. Drag cells around; watch the margins update. They are continuously *projections* of whatever joint you're painting.
+</Step>
+
+<StepCheck
+  title="Marginal of X"
+  prompt="P(X = 1) = "
+  answer={0.5}
+  tolerance={0.001}
+  hint="Sum the joint over Y. P(X=1) = p(X=1, Y=0) + p(X=1, Y=1) = 0.3 + 0.2 = 0.5. Note: row-major means rows are X values."
+>
+The joint pmf on $\{0, 1\} \times \{0, 1\}$ has values
+
+$$
+p(0, 0) = 0.1, \quad p(0, 1) = 0.4, \quad p(1, 0) = 0.3, \quad p(1, 1) = 0.2.
+$$
+
+(Here the first index is $X$, the second is $Y$.)
+
+**What is the marginal $P(X = 1)$?**
+</StepCheck>
+
+<Step title="Conditional = slice + renormalize">
+Now suppose you *do* know what $Y$ is. You want $P(X = x \mid Y = y)$ — the probability of $X$ taking value $x$ given that $Y$ took value $y$.
+
+Geometrically, it's a two-step move. **Slice** the joint to just the row (or column) where $Y = y$. Then **renormalize** — divide every entry by the row's total — so the slice sums to 1.
+
+$$
+P(X = x \mid Y = y) \;=\; \frac{P(X = x, \, Y = y)}{P(Y = y)}.
+$$
+
+The numerator is one cell of the joint. The denominator is the marginal of $Y$. Click a row label ($y_1, \ldots, y_5$) or a column label ($x_1, \ldots, x_5$) on the widget. The picked slice gets renormalized and appears as a conditional bar chart below. *That* is what "conditioning on" means: take a slice, rescale.
+</Step>
+
+<StepCheck
+  title="Slice and rescale"
+  prompt="P(Y = 1 | X = 1) = "
+  answer={0.4}
+  tolerance={0.001}
+  hint="Slice the joint to the row where X = 1: cells (1,0)=0.3 and (1,1)=0.2. That row sums to 0.5 (the marginal P(X=1)). Now divide: P(Y=1|X=1) = 0.2 / 0.5 = 0.4."
+>
+Using the same joint from before — $p(0,0)=0.1, p(0,1)=0.4, p(1,0)=0.3, p(1,1)=0.2$ — **what is $P(Y = 1 \mid X = 1)$?**
+</StepCheck>
+
+<Step title="Independence: when the joint is just the product">
+Two random variables are **independent** when knowing one tells you nothing about the other. The mathematical version of that sentence is: the joint factors as the product of the marginals.
+
+$$
+X \perp Y \;\iff\; p_{X,Y}(x, y) \;=\; p_X(x)\, p_Y(y) \quad \text{for all } x, y.
+$$
+
+If you painted a joint where every cell is $p_X(\text{its column}) \cdot p_Y(\text{its row})$, you'd have independence. *Most* real distributions aren't independent — that's why we care about joints at all. The whole reason a language model has 175 billion parameters is to capture how tokens are *not* independent of context.
+
+(A second, subtler form: $X \perp Y \mid Z$ — "conditionally independent given $Z$." Naive Bayes pretends this holds even when it doesn't, and gets away with it for spam classification. Self-attention exists *precisely* to model the conditional dependencies naive Bayes ignores. We'll come back to this in module 15.)
+</Step>
+
+<Step title="Chain rule of probability — the spine of every LM">
+Take any joint over $n$ variables. By applying the conditional-probability identity over and over, you get a *guaranteed* factorization:
+
+$$
+P(X_1, X_2, \ldots, X_n) \;=\; \prod_{i=1}^{n} P(X_i \mid X_1, \ldots, X_{i-1}).
+$$
+
+This is the **chain rule of probability**. It is not an assumption; it is an algebraic identity, true for *every* joint distribution. It says: any joint can be factored into a product of conditional distributions, each conditioning on everything that came before.
+
+Now read it again with the right substitution. Replace $X_i$ with "the $i$-th token in a sentence." That product on the right is *exactly* what a language model computes — $P(\text{token}_i \mid \text{all previous tokens})$, multiplied together to score the whole sentence. The transformer architecture exists to estimate each factor of this product. The chain rule is the contract; the model is one way to fulfill it.
+</Step>
+
+<StepCheck
+  title="Score a sentence with a bigram model"
+  prompt="P(·ab·) = "
+  answer={0.024}
+  tolerance={0.0005}
+  hint="By the chain rule, P(·ab·) = P(a|·) · P(b|a) · P(·|b). Multiply the three given numbers: 0.3 · 0.4 · 0.2 = 0.024."
+>
+A tiny bigram language model has these conditional probabilities for a particular sequence:
+
+$$
+P(a \mid \cdot) = 0.3, \qquad P(b \mid a) = 0.4, \qquad P(\cdot \mid b) = 0.2.
+$$
+
+(The dot $\cdot$ is the start/end token.) **What probability does the model assign to the full sequence $\cdot a b \cdot$?**
+</StepCheck>
+
+<Step title="Bayes' theorem is one line of algebra">
+You already know how to compute $P(Y \mid X)$ from the joint. By the same definition,
+
+$$
+P(X \mid Y) \;=\; \frac{P(X, Y)}{P(Y)} \;=\; \frac{P(Y \mid X)\, P(X)}{P(Y)}.
+$$
+
+That's **Bayes' theorem**. One line of algebra. It lets you *flip* the direction of conditioning: if you know $P(Y \mid X)$ but want $P(X \mid Y)$, multiply by $P(X) / P(Y)$.
+
+The reason it has a name (and a whole school of philosophy) is the *names* you give those four quantities. $P(X)$ is the **prior** — what you believed before seeing data. $P(Y \mid X)$ is the **likelihood** — how plausible the data is under each hypothesis. $P(X \mid Y)$ is the **posterior** — what you believe after seeing data. $P(Y)$ is the **evidence** — a normalizer that makes the posterior a valid distribution.
+
+You'll see Bayes everywhere. Spam filters. Medical tests. The "Bayesian" interpretation of neural-network weights. It is one line, and the next step shows why it's also deeply counterintuitive.
+</Step>
+
+<Step title="The disease test that catches everyone">
+A disease has prevalence $0.1\%$ in the general population. A test for it has $99\%$ sensitivity — it correctly flags the sick — and $99\%$ specificity — it correctly clears the well. You take the test. It comes back positive.
+
+What is the probability that you actually have the disease?
+
+The intuitive answer is $99\%$. That answer is wrong. *Drag the prevalence slider to about 0.1%* (the horizontal line near the top of the sick stripe — drag it almost all the way up) and look at the posterior on the upper-right.
+
+<BayesGrid client:visible initialPrev={0.001} initialSens={0.99} initialSpec={0.99} />
+
+The red block (TP) is the population of *truly sick people who tested positive*. The coral block (FP) is the population of *healthy people the test mistakenly flagged*. When the disease is rare, even a tiny false-positive *rate* produces an enormous false-positive *count* — because the test runs on an enormous well population. The two blocks are roughly the same size at $0.1\%$ prevalence and $99\%$ test accuracy. So the test result on its own doesn't tell you much.
+
+This is the canonical "posteriors live downstream of priors" demonstration. Drag the prevalence up and watch the posterior shoot up too. Drag the sensitivity around and notice how little it moves the posterior compared to dragging the prevalence. The same numbers, three different intuitions.
+</Step>
+
+<StepCheck
+  title="Compute the posterior"
+  prompt="P(sick | +) ≈ "
+  answer={0.09}
+  tolerance={0.01}
+  hint="Bayes: P(sick|+) = (0.99 × 0.001) / (0.99 × 0.001 + 0.01 × 0.999). Numerator ≈ 0.00099. Denominator ≈ 0.00099 + 0.00999 ≈ 0.01098. Posterior ≈ 0.090."
+>
+With prevalence $0.1\%$, sensitivity $99\%$, and specificity $99\%$, **what is $P(\text{sick} \mid +)$**? (Round to two decimals.)
+</StepCheck>
+
+<Step title="Where this lands — every transformer prediction is a conditional">
+The transformer's output at position $i$ is a conditional probability vector: $P(\text{next token} \mid \text{everything before it})$. Generating text is sampling from that conditional. Computing a sentence's likelihood is multiplying the conditionals together — the chain rule, line by line, $i = 1$ to $i = n$.
+
+Bayes' theorem shows up the moment you flip the question: given the *text*, what was the model thinking? That's the basis of mechanistic interpretability — the field that asks "what intermediate hypothesis does this attention head support, given the data?"
+
+Next lesson: *one* number can summarize an entire distribution. Mean, variance, covariance — three of them, used everywhere, especially in weight initialization (which is a deliberate Gaussian) and in BatchNorm (which subtracts a mean and divides by a standard deviation, exactly as the names suggest).
+</Step>

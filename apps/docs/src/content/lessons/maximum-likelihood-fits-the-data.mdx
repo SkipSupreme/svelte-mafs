@@ -1,0 +1,169 @@
+---
+title: Maximum likelihood — fit the data, with a formula
+module: m8-probability
+summary: Every loss function you'll meet for the rest of this course is the same move — pick parameters that make the data as probable as possible. For Bernoulli, that's count-and-normalize. For Gaussian noise, that's least squares.
+estimatedMinutes: 14
+order: 4
+prereqs:
+  - summary-in-one-number
+conceptsCovered:
+  - mle
+  - bernoulli
+  - categorical
+  - gaussian
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import MleClimber from '../../components/demos/MleClimber.svelte';
+import BigramHeatmap from '../../components/demos/BigramHeatmap.svelte';
+
+<Step title="One biased coin. Ten flips. What's your best guess?">
+You flip a coin 10 times and get 7 heads, 3 tails. Someone hands you a Bernoulli with parameter $p$ and asks: *what's your best estimate of $p$?*
+
+You'd say $0.7$ and you'd be right. The reason — the formal reason — is **maximum likelihood estimation**. The idea has one sentence: *the best estimate of a parameter is the value that makes the data you actually saw most probable.* That sentence is the whole machinery of supervised learning. We're about to make it concrete.
+</Step>
+
+<Step title="Likelihood: data fixed, parameter varying">
+For an i.i.d. dataset $\{x_1, \ldots, x_n\}$ drawn from a distribution with parameter $\theta$, the **likelihood** is
+
+$$
+L(\theta) \;=\; \prod_{i=1}^{n} P(x_i \mid \theta).
+$$
+
+It looks like a probability but it isn't, exactly. The data is *fixed*; the unknown is $\theta$. We're asking, for each candidate $\theta$, "how plausible is the dataset I have under that choice?"
+
+Note the i.i.d. assumption hiding in the product form. It says: the data points are *independent draws from the same distribution*. That's a real assumption — it doesn't hold for tokens in a sentence (that's why language models exist) — but it's the right starting point.
+</Step>
+
+<Step title="Why take logs first — every time, without exception">
+The likelihood is a product. Products of small numbers underflow fast: ten flips of $p=0.5$ give a likelihood around $0.001$; a hundred flips give $10^{-30}$. Your floating-point arithmetic dies. Worse, derivatives of products are a chain-rule nightmare.
+
+Logs save us. Define the **log-likelihood**
+
+$$
+\ell(\theta) \;=\; \log L(\theta) \;=\; \sum_{i=1}^{n} \log P(x_i \mid \theta).
+$$
+
+Three things matter here. First, the product became a *sum* — no underflow, easy derivatives. Second, $\log$ is monotonic, so $\arg\max_\theta L(\theta) = \arg\max_\theta \ell(\theta)$ — the maximizer is the same. Third, we usually minimize *negative* log-likelihood (NLL) instead, so it looks like a loss function:
+
+$$
+\hat\theta \;=\; \arg\max_\theta \ell(\theta) \;=\; \arg\min_\theta \left( -\sum_i \log P(x_i \mid \theta) \right).
+$$
+
+Memorize that last line. It's the entire shape of supervised learning.
+</Step>
+
+<Step title="MLE for a Bernoulli — derive it once, use it forever">
+For a single Bernoulli with parameter $p$, observe $n_1$ heads and $n_0$ tails in $n = n_0 + n_1$ flips. The log-likelihood is
+
+$$
+\ell(p) \;=\; n_1 \log p + n_0 \log (1 - p).
+$$
+
+Set the derivative to zero:
+
+$$
+\ell'(p) \;=\; \frac{n_1}{p} - \frac{n_0}{1 - p} \;=\; 0 \quad\Longrightarrow\quad \hat p \;=\; \frac{n_1}{n}.
+$$
+
+The MLE is the empirical frequency. Count the heads; divide by the total. That's it.
+
+Below, click any flip to toggle it. The red curve is $L(p)$ — visibly *peaked*; the blue curve is $\ell(p)$ — same maximum, much friendlier shape. Drag the dashed sun-colored line across either plot; "Snap to MLE" jumps you to the optimum.
+
+<MleClimber client:visible />
+</Step>
+
+<StepCheck
+  title="7 heads, 3 tails — find p̂"
+  prompt="p̂ = "
+  answer={0.7}
+  tolerance={0.01}
+  hint="MLE for Bernoulli is just the empirical frequency: n₁/n = 7/10 = 0.7."
+>
+You observe 7 heads in 10 flips. **What is the MLE $\hat p$?**
+</StepCheck>
+
+<Step title="Categorical: same move, more options">
+The categorical generalization is immediate. With $K$ classes and observed counts $(n_1, \ldots, n_K)$ summing to $n$, the log-likelihood is
+
+$$
+\ell(\mathbf{p}) \;=\; \sum_{k=1}^{K} n_k \log p_k
+\qquad\text{subject to}\qquad \sum_k p_k = 1.
+$$
+
+A Lagrange-multiplier minute (we'll skip the algebra) gives
+
+$$
+\hat p_k \;=\; \frac{n_k}{n}.
+$$
+
+Count each class; divide by the total. Same shape as Bernoulli. This is why training a language model on a corpus and "just counting bigrams" produce *exactly the same model* in the limit — that's the bigram MLE result we're about to demonstrate.
+</Step>
+
+<Step title="Gaussian: MLE picks the sample mean and variance">
+For data drawn from $\mathcal{N}(\mu, \sigma^2)$, the same calculus gives
+
+$$
+\hat \mu \;=\; \frac{1}{n} \sum_{i=1}^n x_i = \bar x, \qquad \hat \sigma^2 \;=\; \frac{1}{n} \sum_{i=1}^n (x_i - \bar x)^2.
+$$
+
+The MLE of the mean is the sample mean. The MLE of the variance divides by $n$, not $n - 1$ — which is *biased* (it slightly underestimates $\sigma^2$ in small samples). The unbiased estimator $s^2$ from the last lesson divides by $n - 1$. Both estimators exist for good reasons; MLE just gives the biased one.
+</Step>
+
+<Step title="MLE under Gaussian noise IS least squares">
+This is the punchline that connects MLE to half of classical ML.
+
+Suppose your model says $y_i = f_\theta(x_i) + \varepsilon_i$ with $\varepsilon_i \sim \mathcal{N}(0, \sigma^2)$ i.i.d. The log-likelihood, dropping constants in $\theta$, becomes
+
+$$
+\ell(\theta) \;=\; -\frac{1}{2\sigma^2} \sum_{i=1}^n (y_i - f_\theta(x_i))^2 \;+\; \text{const}.
+$$
+
+Maximizing $\ell$ is the same as **minimizing the sum of squared errors**. The two phrases — "fit by maximum likelihood under Gaussian noise" and "fit by least squares" — are exactly the same procedure. Linear regression, your first ML algorithm, was MLE all along.
+</Step>
+
+<Step title="A language model is a categorical MLE — literally">
+Here's the move that earns this lesson its place in the course. A bigram language model says: *given the previous character $c_{i-1}$, the next character $c_i$ is categorical with some probability vector $\mathbf{p}^{(c_{i-1})}$.* That's $V$ separate categoricals (one per row), each with its own probability vector to estimate.
+
+By the result two steps up, the MLE for each row is just *count-and-normalize*: count how many times each character followed $c_{i-1}$ in the corpus, divide by the total. No gradient descent. No neural network. Just MLE.
+
+Type a few names below. Each name updates the bigram count matrix. Click a row label on the left (e.g. `a`) to see the conditional distribution $P(\text{next} \mid c_{i-1} = a)$ — that's exactly $\hat p_k = n_k / n$ for the row "characters that follow `a`."
+
+<BigramHeatmap
+  client:visible
+  corpus={['emma', 'olivia', 'noah', 'liam', 'ava', 'sophia', 'mason', 'isabella']}
+  editable={true}
+  showDistribution={true}
+  focusOnLoad={'a'}
+  hint="Click any row label on the left (·, a, b, …). The right panel shows the MLE distribution for that row."
+/>
+
+What you're looking at — the row of bars on the right — *is* the language model. A 27-row table of categorical MLEs. Module 14 will replace this table with a neural network, and the punchline of that lesson is that the network, trained by gradient descent on the right loss, converges to *exactly this table* in the limit. The neural-network approach is just a fancier way of doing the same MLE.
+</Step>
+
+<StepCheck
+  title="Bigram MLE on a tiny corpus"
+  prompt="P̂(b | a) = "
+  answer={0.5}
+  tolerance={0.01}
+  hint="Corpus has 'ab' and 'ac'. From 'a' we see 'b' once and 'c' once. So P̂(b|a) = 1/2 = 0.5."
+>
+Train a bigram model on the two-word corpus `ab`, `ac` (each implicitly bracketed by start/end markers `·`).
+
+**What is the MLE $\hat P(b \mid a)$?**
+</StepCheck>
+
+<Step title="NLL is the form you'll actually minimize">
+We never talk about "maximizing the likelihood" in code. We minimize the **negative log-likelihood**
+
+$$
+\mathrm{NLL}(\theta) \;=\; -\sum_{i=1}^n \log P(x_i \mid \theta).
+$$
+
+This is the loss every classifier in this course will minimize. Cross-entropy loss in PyTorch is *literally* this expression for a categorical distribution with one-hot targets. The "loss" the training loop spits out at iter 200 of the capstone is the average NLL of the model's predictions on a batch of tokens.
+
+Next lesson is module 9. It will rename NLL as **cross-entropy** and explain why $\mathrm{NLL} / \log(\text{vocab size})$ has a beautiful interpretation as "the model's uncertainty in bits." For now, the name to remember is NLL, and the takeaway is: *every loss curve you'll watch for the rest of this course is a NLL going down*.
+
+After that, one more module 8 lesson on the inverse problem: given a trained categorical, how do you actually *generate* samples from it? We've been counting to learn the distribution; next we'll roll dice to draw from it.
+</Step>

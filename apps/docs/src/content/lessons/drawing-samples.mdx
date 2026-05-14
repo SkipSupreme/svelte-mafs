@@ -1,0 +1,172 @@
+---
+title: Drawing samples (and what could possibly go wrong)
+module: m8-probability
+summary: torch.multinomial isn't magic. It's six lines of JavaScript. Once you can sample from a categorical, you can sample from a trained language model — and controlling generation is just settings on top of those six lines.
+estimatedMinutes: 14
+order: 5
+prereqs:
+  - maximum-likelihood-fits-the-data
+conceptsCovered:
+  - sample-categorical
+  - sample-gaussian
+  - bias-variance
+  - autoregressive-lm-bridge
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import CdfSampler from '../../components/demos/CdfSampler.svelte';
+import GaussianForge from '../../components/demos/GaussianForge.svelte';
+import BigramHeatmap from '../../components/demos/BigramHeatmap.svelte';
+
+<Step title="torch.multinomial seems magic. It is not.">
+Up until now we've spent the module *learning* distributions. This lesson is the inverse problem: given a categorical $\mathbf{p}$, how do we actually draw a sample from it? Not call a library function — *write* the function, line by line.
+
+The reason this matters: by the end of module 18 you will have trained a transformer. The transformer outputs a categorical at every position. *Generating text* means sampling from that categorical, position after position. The function you'll paste into the capstone is the same one we're about to write here, in eight lines.
+</Step>
+
+<Step title="Every PRNG hands you one thing: a uniform">
+JavaScript's `Math.random()`, NumPy's `np.random.random()`, PyTorch's `torch.rand` — every pseudo-random number generator on earth ultimately exposes the same primitive: a uniform random variable $u$ on the interval $[0, 1)$. *Every* other random thing — Gaussians, categoricals, Beta distributions, all of them — is constructed by transforming uniforms.
+
+So the entire problem of sampling reduces to: given a uniform, what arithmetic produces a draw from the distribution I want?
+</Step>
+
+<Step title="Inverse-CDF sampling for a categorical">
+Recall the cumulative distribution. For a categorical $\mathbf{p} = (p_1, \ldots, p_K)$, the **CDF** is the running cumulative sum:
+
+$$
+c_k \;=\; \sum_{j=1}^k p_j.
+$$
+
+So $c_0 = 0$, $c_K = 1$, and the values $c_1 \le c_2 \le \cdots \le c_K$ partition $[0, 1]$ into $K$ adjacent intervals whose widths are exactly $p_1, p_2, \ldots, p_K$.
+
+To sample: draw $u \sim \mathcal{U}(0, 1)$. Find the smallest $k$ such that $c_k \ge u$. Return $k$.
+
+Drop a ball on the widget below to watch it happen. The dashed yellow line is the chosen $u$; the bin it lands in (highlighted in yellow on the staircase) is the chosen token. Drop more; watch the empirical histogram on the right converge on the bars you set on the left.
+
+<CdfSampler client:visible />
+
+The interval $u$ lands in has width $p_k$, *exactly*, so the procedure returns each $k$ with probability $p_k$. That's the entire proof.
+</Step>
+
+<Step title="Walk through it by hand">
+Let $\mathbf{p} = (0.1, 0.5, 0.4)$ over the values $\{0, 1, 2\}$. Then $c = (0.1, 0.6, 1.0)$.
+
+Draw $u = 0.65$. Is $c_0 = 0.1 \ge 0.65$? No. Is $c_1 = 0.6 \ge 0.65$? No. Is $c_2 = 1.0 \ge 0.65$? Yes — return $2$.
+
+Draw $u = 0.07$. Is $c_0 = 0.1 \ge 0.07$? Yes — return $0$.
+
+That's the algorithm. Walk the cumulative sum, return the first index where you've passed $u$.
+</Step>
+
+<StepCheck
+  title="Find the bin"
+  prompt="k = "
+  answer={1}
+  tolerance={0}
+  hint="cdf = (0.2, 0.5, 1.0). c₀ = 0.2; is 0.2 ≥ 0.45? No. c₁ = 0.5; is 0.5 ≥ 0.45? Yes. Return 1."
+>
+With $\mathbf{p} = (0.2, 0.3, 0.5)$ over $\{0, 1, 2\}$ and $u = 0.45$, **what index does inverse-CDF sampling return?**
+</StepCheck>
+
+<Step title="The eight-line sampler">
+Here is the function. Copy it. Paste it into the capstone in module 18. It is the literal sampler.
+
+```js
+function sampleCategorical(p) {
+  const u = Math.random();
+  let cum = 0;
+  for (let i = 0; i < p.length; i++) {
+    cum += p[i];
+    if (cum >= u) return i;
+  }
+  return p.length - 1; // numeric safety: if probs don't sum to exactly 1
+}
+```
+
+Eight lines. No external library. No special hardware. This is the entire generative engine of a language model, once you have a probability vector. Module 18's sampler is structurally this; it just runs once per token and feeds the previous token back as context.
+
+There are clever variants — `cumsum + binary-search` for huge vocabularies, or the [alias method](https://en.wikipedia.org/wiki/Alias_method) for $O(1)$ sampling after a one-time $O(K)$ preprocess. They're optimizations; the algorithm above is the truth.
+</Step>
+
+<Step title="Sampling a Gaussian: Box-Muller">
+For continuous distributions the same idea applies — invert the CDF — but the CDF of a Gaussian has no closed form (it's the error function), so the direct approach is annoying. There's a trick.
+
+**Box-Muller:** Given two independent uniforms $U_1, U_2 \in (0, 1)$,
+
+$$
+Z_1 \;=\; \sqrt{-2 \ln U_1} \,\cos(2\pi U_2), \qquad Z_2 \;=\; \sqrt{-2 \ln U_1} \,\sin(2\pi U_2)
+$$
+
+are two independent draws from $\mathcal{N}(0, 1)$. The intuition (no derivation): the first uniform sets a radius via the radial CDF of the 2D Gaussian; the second sets an angle uniformly. The pair $(\sqrt{-2 \ln U_1}, 2\pi U_2)$ is the polar form of a 2D standard-normal draw; the rectangular components are the Gaussian samples.
+
+Two uniforms in. Two standard Gaussians out. That's all the magic.
+</Step>
+
+<Step title="Any Gaussian is an affine transform of N(0,1)">
+Once you can draw $Z \sim \mathcal{N}(0, 1)$, drawing $X \sim \mathcal{N}(\mu, \sigma^2)$ is one line:
+
+$$
+X \;=\; \sigma Z + \mu.
+$$
+
+Multiply by the standard deviation, add the mean. This is *exactly* what `torch.randn() * sigma + mu` does — and also *exactly* what BatchNorm's inverse transform does at inference time, using its learned $\mu$ and $\sigma$. Whenever you see "multiply by $\sigma$, add $\mu$" in ML code, it's this identity.
+
+Sample 10k draws below to confirm: histogram converges on the bell, $\bar x \to \mu$, $s \to \sigma$.
+
+<GaussianForge client:visible initialMu={2} initialSigma={0.8} />
+</Step>
+
+<Step title="Sampling vs argmax — same vector, two policies">
+Given a probability vector, there are two ways to "use" it.
+
+**Greedy / argmax:** Return the index with the highest probability. Deterministic. Picks the *mode* of the distribution.
+
+**Sample:** Apply inverse-CDF. Stochastic. Picks each index with probability $p_k$.
+
+They are *completely different* policies operating on the same vector. Argmax of $(0.42, 0.25, 0.21, 0.06, 0.06)$ always returns the first index. Sampling returns the first index about 42% of the time and the second about 25%.
+
+For a language model, greedy decoding produces repetitive, mode-collapsed output — it keeps picking the single most probable continuation, which on average is bland. Real generative LMs sample. They get *adjusted* via "temperature" and "top-$k$" (module 17), which reshape the vector *before* sampling. The actual sampling step is always the same inverse-CDF algorithm we just wrote.
+
+The widget below is the bigram count table from the last lesson. The bars on the right when you click a row label are exactly the categorical you'd sample from to choose the next character. Eight lines of JavaScript and a row of bars; that's a generative model.
+
+<BigramHeatmap
+  client:visible
+  corpus={['emma', 'olivia', 'noah', 'liam', 'ava', 'sophia', 'mason', 'isabella']}
+  editable={true}
+  showDistribution={true}
+  focusOnLoad={'a'}
+  hint="The right-panel bars ARE the distribution we'd inverse-CDF-sample to choose what comes after this character."
+/>
+</Step>
+
+<Step title="Bias-variance, in one page">
+Last detour before we close. When you estimate something from a sample — the mean, a model, a prediction — your estimator has two kinds of error.
+
+**Bias** is *systematic* error: how wrong, on average, the estimator is compared to the truth.
+
+**Variance** is *spread*: how much the estimator wobbles across different samples.
+
+Total expected squared error decomposes as
+
+$$
+\mathbb{E}\!\left[(\hat f(x) - f(x))^2\right] \;=\; \bigl(\mathbb{E}[\hat f(x)] - f(x)\bigr)^2 \;+\; \mathrm{Var}(\hat f(x)) \;+\; \sigma_\varepsilon^2.
+$$
+
+Three terms: bias squared, variance, irreducible noise. *No* estimator can drive all three to zero with finite data. Simple models have high bias and low variance — they miss the same way every time. Complex models have low bias and high variance — they fit different patterns to every sample. The tradeoff is real, and module 13 will name its empirical signature in deep learning ("when val loss diverges from train loss, your variance is winning").
+</Step>
+
+<Step title="That's module 8. Here's what you carry forward.">
+You can now read every probabilistic line in the rest of the course.
+
+When module 9 talks about *cross-entropy*, it's the same NLL you just learned to minimize.
+When module 13 talks about *initialization variance*, it's the variance-add rule you just used to derive $\mathrm{Var}(\bar X_n) = \sigma^2/n$.
+When module 14 talks about *the bigram model*, it's the categorical MLE you just clicked through.
+When module 15 talks about *causal attention*, it's a parameterization of the chain rule of probability.
+When module 17 talks about *temperature, top-$k$, top-$p$*, those are transforms on the same vector that the eight-line sampler eats.
+When module 18 calls `sample()` to generate text, it is — line for line — the function from earlier in this lesson.
+
+Training a language model is one thing: tune $\theta$ so $\sum_i \log P(x_i \mid \theta)$ is as large as possible. Sampling from it is the other thing: inverse-CDF on the categorical it outputs at every position. Every word in every chapter ahead is a sentence in the dialect you just learned.
+
+Module 9 is next. It renames negative log-likelihood as *cross-entropy* and tells you what units the resulting loss is measured in (bits, or nats, depending on the log base). The story continues.
+</Step>
