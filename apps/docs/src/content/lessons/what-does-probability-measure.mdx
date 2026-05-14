@@ -1,0 +1,135 @@
+---
+title: What does probability measure?
+module: m8-probability
+summary: Probability is a rule that hands numbers in [0, 1] to sets of outcomes. Random variables, pmfs, and densities are how we drag that rule onto the real line so we can do math.
+estimatedMinutes: 12
+order: 1
+conceptsCovered:
+  - sample-space-event
+  - probability-measure
+  - random-variable
+  - pmf
+  - pdf
+  - bernoulli
+  - categorical
+  - gaussian
+---
+
+import Step from '../../components/lesson/Step.astro';
+import StepCheck from '../../components/lesson/StepCheck.astro';
+import CdfSampler from '../../components/demos/CdfSampler.svelte';
+import GaussianForge from '../../components/demos/GaussianForge.svelte';
+
+<Step title="Roll two dice. How many ways to get a 7?">
+You probably know the answer — six. $(1,6), (2,5), (3,4), (4,3), (5,2), (6,1)$. There are $36$ possible rolls total. So the probability of summing to seven is $6/36 = 1/6$.
+
+You just used the only definition of probability we need to start: *count the ways the thing could happen, divide by the total number of ways anything could happen.* Everything in this module is a polished version of that move.
+
+Two ingredients are hiding in that sentence. First, the set of *all* outcomes — every pair $(d_1, d_2)$ — which we'll call $\Omega$ (capital omega). Second, the *event* we cared about — the subset where $d_1 + d_2 = 7$. Call that $A$. Then $P(A) = |A| / |\Omega|$ when every outcome is equally likely.
+</Step>
+
+<Step title="Sample space, events">
+$\Omega$ ("omega") is the **sample space** — the set of every possible outcome of whatever random thing we're doing. For two dice, $\Omega$ has 36 elements. For a coin flip, $\Omega = \{H, T\}$. For "pick a real number between 0 and 1," $\Omega$ is uncountable, but we'll deal with that later.
+
+An **event** is any subset $A \subseteq \Omega$. "Sum is 7" is one event. "First die is even" is another. "Both dice are 1" is an event with one element. "The dice land" is the event $A = \Omega$, which obviously happens with probability 1.
+
+The whole game is: pick a sample space, pick events you care about, assign each event a number in $[0, 1]$ that says how likely it is. Probability is just *that* — a rule for handing out numbers to sets.
+</Step>
+
+<Step title="The three axioms (don't be scared)">
+The rule isn't allowed to do whatever it wants. It has to satisfy three constraints:
+
+1. **Non-negative.** $P(A) \ge 0$ for every event. No negative probabilities.
+2. **Normalized.** $P(\Omega) = 1$. Something definitely happens.
+3. **Additive on disjoint events.** If $A$ and $B$ can't both happen at once ($A \cap B = \emptyset$), then $P(A \cup B) = P(A) + P(B)$.
+
+That's it. Those three sentences are the entire foundation of probability. Everything else — Bayes' theorem, expectations, the Gaussian, perplexity, the loss curve your language model will climb in module 14 — is a consequence of three lines.
+
+(There's a fourth, deeper foundation called *measure theory* that gives this its full mathematical home. For everything you'll ever do with a transformer, those three lines are enough. We mention measure theory so you know the rabbit hole exists. We are not going in.)
+</Step>
+
+<StepCheck
+  title="Add two events that overlap"
+  prompt="P(A ∪ B) = "
+  answer={0.8}
+  tolerance={0.001}
+  hint="Inclusion-exclusion: $P(A \cup B) = P(A) + P(B) - P(A \cap B)$. The overlap got counted twice when you added the two pieces, so subtract it once."
+>
+The third axiom only handles *disjoint* events. When the two events overlap, you have to subtract the double-count.
+
+Given $P(A) = 0.6$, $P(B) = 0.5$, $P(A \cap B) = 0.3$, **what is $P(A \cup B)$?**
+</StepCheck>
+
+<Step title="A random variable is just a function">
+So far events are subsets of $\Omega$. That makes sense for "is the sum seven?" — but to do *math* we want to talk about *the sum* as a number we can add, average, square.
+
+A **random variable** is a function $X: \Omega \to \mathbb{R}$ that turns each outcome into a number. For the two-dice example, $X = D_1 + D_2$ maps the outcome $(3, 4)$ to the number $7$. $X$ isn't random — it's a deterministic function — but the input is random, so the output ends up random too.
+
+This is the most common notational sleight-of-hand in probability. When we write $P(X = 7)$, we mean $P(\{\omega \in \Omega : X(\omega) = 7\})$ — the probability of the *event* "those outcomes for which $X$ spits out 7." The function makes the event invisible. Now you know it's there.
+</Step>
+
+<Step title="Pmf and pdf — two shapes, one job">
+Almost every random variable you'll meet in this course is one of two shapes.
+
+**Discrete** $X$ takes values in a countable set — like the integers $\{0, 1, \ldots, 50256\}$ which is *literally* the vocabulary of a GPT-style tokenizer. Its distribution is a **probability mass function** $p_X(x) = P(X = x)$. Non-negative. Sums to 1.
+
+**Continuous** $X$ takes values in $\mathbb{R}$ — like the weight of a single parameter in your model. Its distribution is a **probability density function** $f_X(x)$. Non-negative. *Integrates* to 1: $\int_{-\infty}^{\infty} f_X(x)\,dx = 1$. The probability of any single value is exactly zero — you have to ask about an *interval*: $P(a \le X \le b) = \int_a^b f_X(x)\,dx$.
+
+Here is the trap that gets everyone. **$f_X(x)$ is not a probability.** It is a *density* — probability per unit $x$. Densities are allowed to exceed 1. Watch this:
+</Step>
+
+<Step title="Densities can be huge — they're not probabilities">
+Drag the inflection point of this Gaussian inward to shrink $\sigma$. The peak of the curve climbs straight past $1.0$ (the dashed line). If density *were* probability, that'd be a violation. But it's fine: the curve gets narrower as it gets taller, and the *area* stays at 1.
+
+<GaussianForge client:visible initialMu={0} initialSigma={1} hideStandardize />
+
+Stop confusing density with probability — that's the entire move. For a pmf, the height of a bar *is* the probability of that value. For a pdf, the height is just a density; only the *area under the curve* is a probability. Two different shapes, two different jobs.
+</Step>
+
+<StepCheck
+  title="Make a pdf valid"
+  prompt="c = "
+  answer={0.5}
+  tolerance={0.001}
+  hint="A valid pdf integrates to 1. So $\int_0^2 c x \,dx = 1$. The integral of $cx$ from 0 to 2 is $c \cdot 2^2 / 2 = 2c$. Set $2c = 1$."
+>
+Consider $f(x) = c x$ on the interval $[0, 2]$, and $f(x) = 0$ elsewhere. For this to be a valid pdf, the area under the curve has to equal $1$.
+
+**What is $c$?**
+</StepCheck>
+
+<Step title="The three discrete distributions you'll see forever">
+Three pmfs underlie almost everything that follows in this course. Memorize their *shapes*; you'll meet their names from now until the capstone.
+
+**Bernoulli** $\mathrm{Bern}(p)$ is a single biased coin. $P(X=1) = p$, $P(X=0) = 1-p$. One parameter. The entire universe of binary classification — "is this email spam?" — is a Bernoulli with $p$ learned by a neural net.
+
+**Categorical** $\mathrm{Cat}(\mathbf{p})$ generalizes Bernoulli to $K$ options. A probability vector $\mathbf{p} = (p_1, \ldots, p_K)$, each $p_k \ge 0$, summing to 1. *The output of a language model at every position is a categorical over the vocabulary.* This is the most important distribution in this course. Drag the bars to set $\mathbf{p}$, then click Drop one — a uniform random number falls onto the cumulative-sum staircase and lands in one of the bins. That is *exactly* how we'll sample tokens from a trained transformer in module 18.
+
+<CdfSampler client:visible />
+
+**Uniform** over $\{1, \ldots, K\}$ is the special case $p_k = 1/K$ — perfect ignorance. Every token equally likely. We'll meet it in module 9 as the *maximum-entropy* distribution: the categorical that knows literally nothing.
+</Step>
+
+<Step title="The Gaussian, in three minutes">
+The continuous distribution that shows up everywhere in ML is the **Gaussian** (also called **normal**), parameterized by a mean $\mu$ and a standard deviation $\sigma$:
+
+$$
+f(x) \;=\; \frac{1}{\sigma\sqrt{2\pi}} \,\exp\!\left(-\frac{(x-\mu)^2}{2\sigma^2}\right).
+$$
+
+Two parameters, one shape, *enormous* downstream consequences. Weight initialization draws from a Gaussian. BatchNorm and LayerNorm assume Gaussian-ish activations. The "noise" in stochastic gradient descent is approximately Gaussian by the Central Limit Theorem, which we'll meet two lessons from now.
+
+Drag the red dot horizontally to move $\mu$. Drag the blue dot to widen or narrow $\sigma$. Sample 10k draws and watch the histogram (teal bars) settle onto the curve. The empirical mean $\bar x$ and empirical standard deviation $s$ are how you *estimate* $\mu$ and $\sigma$ from data — they're chasing the true values as the sample grows.
+
+<GaussianForge client:visible initialMu={0.5} initialSigma={1.2} />
+
+We'll come back to this widget in lessons 8.3 and 8.5 to extract more out of it. For now, just notice: changing $\mu$ slides the bell. Changing $\sigma$ squishes or spreads it. The empirical histogram converges on the curve. Three different sentences, one picture.
+</Step>
+
+<Step title="Where this lands — the transformer view">
+Every line we'll write about probability, expectations, sampling, and likelihood lives inside one of these shapes. The final layer of a GPT-style transformer takes a context and produces a *probability vector* over the vocabulary — a $\mathrm{Cat}(\mathbf{p})$ with $K \approx 50{,}000$. "Sampling a token" is dropping a uniform on the staircase you just played with. "Cross-entropy loss" (module 9) is built on the *log* of that vector. "Temperature" (module 17) is a one-line transform on the same vector before sampling.
+
+The transformer is huge. The math underneath it is not. The Gaussian shows up when we initialize weights. The categorical shows up at every position of every forward pass. Bernoulli underlies any binary decision. These three distributions — plus the rules from the three axioms — get you to module 18.
+
+Next lesson: when two random variables share a world (which is what a *context* is for a language model), how do joint, marginal, and conditional probabilities connect them? Bayes' theorem is the punchline.
+</Step>
