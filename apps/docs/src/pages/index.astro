@@ -236,19 +236,31 @@ import EmbeddingPluck from '../components/demos/EmbeddingPluck.svelte';
   }
   .shell.tall { text-align: center; padding: 1rem 0 2rem; }
 
-  /* === Hero === */
-  .hero { padding: clamp(1.5rem, 5vw, 4rem) 1.25rem clamp(2.5rem, 7vw, 5.5rem); }
+  /* === Hero ===
+     Padding kept tight so the CTAs sit above the fold on a 1280×900 viewport.
+     Previously top:4rem / bottom:5.5rem made the hero 965px and pushed the
+     CTAs below 900. */
+  .hero { padding: 1rem 1.25rem 1.5rem; }
   .hero-grid {
-    /* Apple on the left, copy on the right. Mascot column has a min-width
-       so the cropped apple head reads as a focal point even on narrow
-       laptop widths. align-items: center so the apple is vertically
-       centered against the copy column. The empty-space problem this
-       once caused has been mitigated by shrinking the hero widget and
-       tightening hero padding above. */
+    /* Apple on the left, copy on the right. align-items:start anchors the
+       mascot at the top of the headline instead of floating in the middle
+       of a 700px-tall copy column (which is what happened with center). */
     display: grid;
     grid-template-columns: minmax(220px, 1fr) minmax(0, 1.25fr);
     gap: clamp(2rem, 5vw, 5rem);
-    align-items: center;
+    align-items: start;
+  }
+  /* Eyebrow chip above the headline — uppercase kicker per DESIGN.md
+     (0.75rem, 0.14em letter-spacing). Without these styles it was
+     rendering as plain 16px Inter body text. */
+  .eyebrow {
+    margin: 0 0 0.6rem;
+    font-family: var(--font-game);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--ink-red);
   }
   @media (max-width: 900px) {
     .hero-grid {
@@ -302,7 +314,7 @@ import EmbeddingPluck from '../components/demos/EmbeddingPluck.svelte';
     line-height: 1.55;
     color: color-mix(in srgb, var(--band-dark-fg) 85%, transparent);
     max-width: 36ch;
-    margin: 0 0 1.75rem;
+    margin: 0 0 1.25rem;
   }
   .lede.dark {
     color: var(--band-dark-muted);
@@ -392,12 +404,12 @@ import EmbeddingPluck from '../components/demos/EmbeddingPluck.svelte';
      Capped narrower than the copy column so the CTAs stay above the fold
      on a 1280×900 viewport. */
   .hero-widget {
-    margin: 1.2rem 0 1.4rem;
+    margin: 0.4rem 0 1rem;
     width: 100%;
     max-width: 460px;
   }
   @media (max-width: 900px) {
-    .hero-widget { margin: 1rem auto 1.2rem; max-width: 100%; }
+    .hero-widget { margin: 0.6rem auto 1rem; max-width: 100%; }
   }
 
   /* Floating math symbols above the apple — Tinker is math-as-play, so the

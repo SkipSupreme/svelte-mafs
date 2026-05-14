@@ -423,6 +423,24 @@
     padding: 3px 7px;
   }
 
+  /* Drag affordance: in hero mode the only visible cue that the active
+     letter is interactive was the "DRAG A LETTER" hint at the bottom.
+     Add cursor:grab on the slider handle and a soft pulsing halo so the
+     dot reads as something you can pick up. */
+  .widget-hero :global(.mafs-movable-point) {
+    cursor: grab;
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--ink-red) 70%, transparent));
+    animation: pluck-pulse 2.2s ease-in-out infinite;
+  }
+  .widget-hero :global(.mafs-movable-point):active { cursor: grabbing; }
+  @keyframes pluck-pulse {
+    0%, 100% { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--ink-red) 55%, transparent)); }
+    50%      { filter: drop-shadow(0 0 12px color-mix(in srgb, var(--ink-red) 85%, transparent)); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .widget-hero :global(.mafs-movable-point) { animation: none; }
+  }
+
   .try-me {
     position: absolute;
     bottom: 10px;
