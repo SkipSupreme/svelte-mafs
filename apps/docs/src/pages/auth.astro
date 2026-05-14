@@ -1,0 +1,37 @@
+---
+export const prerender = false;
+import Base from '../layouts/Base.astro';
+import AuthForm from '../components/auth/AuthForm.svelte';
+import { resolveAuthError } from '../lib/auth-errors';
+
+const url = new URL(Astro.request.url);
+const params = url.searchParams;
+const errorMessage = resolveAuthError(params);
+const mode = params.get('mode') === 'signup' ? 'signup' : 'signin';
+const callbackURL = params.get('callbackURL') ?? '/welcome';
+
+// Only render OAuth buttons for providers that actually have credentials
+// deployed. createAuth registers providers conditionally (see server/auth.ts);
+// without this gate the UI promises buttons that route to 404.
+const providers: ('google' | 'github')[] = [];
+try {
+  const { env } = await import('cloudflare:workers');
+  const e = env as unknown as Env;
+  if (e?.GOOGLE_CLIENT_ID && e?.GOOGLE_CLIENT_SECRET) providers.push('google');
+  if (e?.GITHUB_CLIENT_ID && e?.GITHUB_CLIENT_SECRET) providers.push('github');
+} catch {
+  // env not available (build time, tests) — leave providers empty.
+}
+
+const title = mode === 'signup' ? 'Sign up' : 'Sign in';
+---
+
+<Base title={title}>
+  <AuthForm
+    client:load
+    mode={mode}
+    error={errorMessage}
+    providers={providers}
+    callbackURL={callbackURL}
+  />
+</Base>

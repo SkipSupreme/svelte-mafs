@@ -1,12 +1,7 @@
 ---
 export const prerender = false;
-import Base from '../layouts/Base.astro';
-import AuthForm from '../components/auth/AuthForm.svelte';
-import { resolveAuthError } from '../lib/auth-errors';
-
-const errorMessage = resolveAuthError(new URL(Astro.request.url).searchParams);
+// Legacy route: see signin.astro.
+const incoming = new URL(Astro.request.url).searchParams;
+incoming.set('mode', 'signup');
+return Astro.redirect(`/auth?${incoming.toString()}`, 302);
 ---
-
-<Base title="Sign up">
-  <AuthForm client:load mode="signup" error={errorMessage} />
-</Base>

@@ -1,12 +1,9 @@
 ---
 export const prerender = false;
-import Base from '../layouts/Base.astro';
-import AuthForm from '../components/auth/AuthForm.svelte';
-import { resolveAuthError } from '../lib/auth-errors';
-
-const errorMessage = resolveAuthError(new URL(Astro.request.url).searchParams);
+// Legacy route: /signin and /signup were collapsed into /auth?mode=...
+// Preserve any query params the caller passed (error= from Better Auth
+// callbacks, callbackURL=) so error banners and redirect targets survive.
+const incoming = new URL(Astro.request.url).searchParams;
+incoming.set('mode', 'signin');
+return Astro.redirect(`/auth?${incoming.toString()}`, 302);
 ---
-
-<Base title="Sign in">
-  <AuthForm client:load mode="signin" error={errorMessage} />
-</Base>

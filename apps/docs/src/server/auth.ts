@@ -62,7 +62,7 @@ export function createAuth(env: AuthEnv) {
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.PUBLIC_SITE_URL,
     trustedOrigins: [env.PUBLIC_SITE_URL],
-    emailAndPassword: { enabled: false },
+    emailAndPassword: { enabled: true, autoSignIn: true },
     socialProviders,
     plugins: [
       magicLink({

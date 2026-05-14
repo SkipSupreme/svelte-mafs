@@ -1,13 +1,79 @@
 <script lang="ts">
   type Mode = 'signin' | 'signup';
+  type Provider = 'google' | 'github';
+  type View = 'password' | 'magic';
 
-  let { mode = 'signin' as Mode, error = '' } = $props<{ mode?: Mode; error?: string }>();
+  let {
+    mode = 'signin' as Mode,
+    error = '',
+    providers = [] as Provider[],
+    callbackURL = '/welcome',
+  } = $props<{
+    mode?: Mode;
+    error?: string;
+    providers?: Provider[];
+    callbackURL?: string;
+  }>();
 
+  let view = $state<View>('password');
   let email = $state('');
+  let password = $state('');
+  let name = $state('');
   let status = $state<'idle' | 'sending' | 'sent' | 'error'>(error ? 'error' : 'idle');
   let errorMsg = $state(error);
 
-  async function submitEmail(ev: SubmitEvent) {
+  function toggleMode(ev: Event) {
+    ev.preventDefault();
+    // Real navigation so the URL stays honest and link-shareable.
+    const next = mode === 'signin' ? '/auth?mode=signup' : '/auth?mode=signin';
+    window.location.assign(next);
+  }
+
+  async function submitPassword(ev: SubmitEvent) {
+    ev.preventDefault();
+    status = 'sending';
+    errorMsg = '';
+    const endpoint = mode === 'signup' ? '/api/auth/sign-up/email' : '/api/auth/sign-in/email';
+    const body =
+      mode === 'signup'
+        ? { email, password, name: name.trim() || email.split('@')[0], callbackURL }
+        : { email, password, callbackURL };
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        // Map a few common statuses without echoing server body — that can
+        // leak Better Auth internals or hint at which emails are registered.
+        if (res.status === 401 || res.status === 403) {
+          throw new Error('That email and password combination didn’t match.');
+        }
+        if (res.status === 422 || res.status === 400) {
+          throw new Error(
+            mode === 'signup'
+              ? 'Check your email and pick a password with at least 8 characters.'
+              : 'Check your email and password and try again.',
+          );
+        }
+        if (res.status === 409) {
+          throw new Error('An account with that email already exists. Try signing in.');
+        }
+        if (res.status === 429) {
+          throw new Error('Too many tries. Wait a minute and try again.');
+        }
+        throw new Error('Something went wrong. Try again.');
+      }
+      // Better Auth sets the session cookie via Set-Cookie on this response.
+      window.location.assign(callbackURL);
+    } catch (e) {
+      status = 'error';
+      errorMsg = e instanceof Error ? e.message : 'Something went wrong';
+    }
+  }
+
+  async function submitMagic(ev: SubmitEvent) {
     ev.preventDefault();
     status = 'sending';
     errorMsg = '';
@@ -15,15 +81,16 @@
       const res = await fetch('/api/auth/sign-in/magic-link', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, callbackURL: '/welcome' }),
+        body: JSON.stringify({ email, callbackURL }),
       });
       if (!res.ok) {
-        // Don't echo the server response back — it can leak Better Auth or
-        // Resend internals. 429 is the only status we map to a custom string.
         if (res.status === 429) {
           throw new Error('Too many sign-in requests. Try again in a minute.');
         }
-        throw new Error("Couldn't send sign-in link. Try again.");
+        if (res.status >= 500) {
+          throw new Error('Sign-in email delivery is having issues — try the password form instead.');
+        }
+        throw new Error('Couldn’t send sign-in link. Try again.');
       }
       status = 'sent';
     } catch (e) {
@@ -31,28 +98,36 @@
       errorMsg = e instanceof Error ? e.message : 'Something went wrong';
     }
   }
+
+  const isSignup = $derived(mode === 'signup');
+  const hasProviders = $derived(providers.length > 0);
 </script>
 
 <section class="auth-card">
-  <h1>{mode === 'signup' ? 'Sign up for Tinker' : 'Welcome back'}</h1>
+  <h1>{isSignup ? 'Sign up for Tinker' : 'Welcome back'}</h1>
   <p class="lede">
-    {mode === 'signup'
+    {isSignup
       ? 'Tinker is in alpha. One course is live; new modules every week. Free.'
-      : 'Sign in with email or a connected provider.'}
+      : 'Sign in to pick up where you left off.'}
   </p>
 
-  <div class="providers">
-    <a class="btn provider" href="/api/auth/sign-in/social?provider=google&callbackURL=/welcome">
-      <span class="icon" aria-hidden="true">G</span>
-      Continue with Google
-    </a>
-    <a class="btn provider" href="/api/auth/sign-in/social?provider=github&callbackURL=/welcome">
-      <span class="icon" aria-hidden="true">⌥</span>
-      Continue with GitHub
-    </a>
-  </div>
-
-  <div class="sep" role="separator" aria-orientation="horizontal"><span>or with email</span></div>
+  {#if hasProviders}
+    <div class="providers">
+      {#if providers.includes('google')}
+        <a class="btn provider" href={`/api/auth/sign-in/social?provider=google&callbackURL=${encodeURIComponent(callbackURL)}`}>
+          <span class="icon" aria-hidden="true">G</span>
+          Continue with Google
+        </a>
+      {/if}
+      {#if providers.includes('github')}
+        <a class="btn provider" href={`/api/auth/sign-in/social?provider=github&callbackURL=${encodeURIComponent(callbackURL)}`}>
+          <span class="icon" aria-hidden="true">⌥</span>
+          Continue with GitHub
+        </a>
+      {/if}
+    </div>
+    <div class="sep" role="separator" aria-orientation="horizontal"><span>or with email</span></div>
+  {/if}
 
   {#if status === 'sent'}
     <div class="sent">
@@ -63,11 +138,64 @@
       </p>
       <p class="lede">Didn't get it? <button class="linkish" onclick={() => (status = 'idle')}>Try again</button>.</p>
     </div>
-  {:else}
-    <form onsubmit={submitEmail} novalidate>
+  {:else if view === 'password'}
+    <form onsubmit={submitPassword} novalidate>
       <label for="auth-email" class="sr-only">Email address</label>
       <input
         id="auth-email"
+        type="email"
+        autocomplete="email"
+        required
+        bind:value={email}
+        placeholder="Email"
+        disabled={status === 'sending'}
+      />
+      <label for="auth-password" class="sr-only">Password</label>
+      <input
+        id="auth-password"
+        type="password"
+        autocomplete={isSignup ? 'new-password' : 'current-password'}
+        required
+        minlength={8}
+        bind:value={password}
+        placeholder="Password"
+        disabled={status === 'sending'}
+      />
+      {#if isSignup}
+        <label for="auth-name" class="sr-only">Display name (optional)</label>
+        <input
+          id="auth-name"
+          type="text"
+          autocomplete="nickname"
+          bind:value={name}
+          placeholder="Display name (optional)"
+          disabled={status === 'sending'}
+        />
+      {/if}
+      <button type="submit" disabled={status === 'sending' || !email || !password}>
+        {#if status === 'sending'}
+          {isSignup ? 'Creating account…' : 'Signing in…'}
+        {:else if isSignup}
+          Create account
+        {:else}
+          Sign in
+        {/if}
+      </button>
+      {#if status === 'error' && errorMsg}
+        <p class="err" role="alert">{errorMsg}</p>
+      {/if}
+    </form>
+    <p class="alt-action">
+      Prefer a one-time link?
+      <button class="linkish" onclick={() => { view = 'magic'; status = 'idle'; errorMsg = ''; }}>
+        Email me a sign-in link
+      </button>
+    </p>
+  {:else}
+    <form onsubmit={submitMagic} novalidate>
+      <label for="auth-email-magic" class="sr-only">Email address</label>
+      <input
+        id="auth-email-magic"
         type="email"
         autocomplete="email"
         required
@@ -82,13 +210,20 @@
         <p class="err" role="alert">{errorMsg}</p>
       {/if}
     </form>
+    <p class="alt-action">
+      <button class="linkish" onclick={() => { view = 'password'; status = 'idle'; errorMsg = ''; }}>
+        Use a password instead
+      </button>
+    </p>
   {/if}
 
-  {#if mode === 'signup'}
-    <p class="alt">Already have an account? <a href="/signin">Sign in</a></p>
-  {:else}
-    <p class="alt">New to Tinker? <a href="/signup">Sign up</a></p>
-  {/if}
+  <p class="alt">
+    {#if isSignup}
+      Already have an account? <a href="/signin" onclick={toggleMode}>Sign in</a>
+    {:else}
+      New to Tinker? <a href="/signup" onclick={toggleMode}>Sign up</a>
+    {/if}
+  </p>
 </section>
 
 <style>
@@ -199,6 +334,12 @@
     text-align: center;
   }
   .alt a { color: var(--site-fg); }
+  .alt-action {
+    color: var(--site-fg-muted);
+    font-size: 0.85rem;
+    margin: 0.85rem 0 0;
+    text-align: center;
+  }
   .sent { text-align: left; }
   .linkish {
     background: none;
